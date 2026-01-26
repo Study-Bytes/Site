@@ -2,7 +2,7 @@ import { Box, Container, Typography, Stack, Button, IconButton, Divider } from "
 import TelegramIcon from "@mui/icons-material/Telegram";
 import YouTubeIcon from "@mui/icons-material/YouTube";
 import { Icon28LogoVkOutline } from "@vkontakte/icons";
-
+import MaxIcon from "icons/max.png";
 export default function Footer() {
     return (
         <Box sx={{ mt: 8, bgcolor: "#0B1020", color: "rgba(255,255,255,0.92)" }}>
@@ -41,6 +41,13 @@ export default function Footer() {
                         </IconButton>
                         <IconButton aria-label="YouTube" sx={{ color: "rgba(255,255,255,0.9)" }}>
                             <YouTubeIcon />
+                        </IconButton>
+                        <IconButton aria-label="Max" sx={{ color: "rgba(255,255,255,0.9)" }}>
+                            <img
+                                src={MaxIcon}
+                                alt="max Icon"
+                                style={{ width: 24, height: 24 }}
+                            />
                         </IconButton>
                     </Stack>
                 </Stack>
