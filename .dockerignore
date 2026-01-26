@@ -1,0 +1,18 @@
+# dependencies
+node_modules
+server/node_modules
+
+# build outputs
+dist
+server/dist
+
+# git + ide
+.git
+.idea
+.vscode
+
+# logs
+*.log
+
+# misc
+.DS_Store
