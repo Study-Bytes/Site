@@ -25,7 +25,7 @@ function FeatureCard({ title, text, icon }: { title: string; text: string; icon:
                 p: 3,
                 borderRadius: 2,
                 height: "100%",
-                background: "rgba(255,255,255,0.72)",
+                background: (theme) => (theme.palette.mode === "dark" ? "rgba(31,31,40,0.78)" : "rgba(255,255,255,0.72)"),
                 backdropFilter: "blur(10px)",
             }}
         >
@@ -54,7 +54,15 @@ function FeatureCard({ title, text, icon }: { title: string; text: string; icon:
 
 function StatCard({ value, label }: { value: string; label: string }) {
     return (
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, textAlign: "center", background: "rgba(255,255,255,0.72)" }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 2,
+                borderRadius: 1.5,
+                textAlign: "center",
+                background: (theme) => (theme.palette.mode === "dark" ? "rgba(31,31,40,0.78)" : "rgba(255,255,255,0.72)"),
+            }}
+        >
             <Typography variant="h5" sx={{ fontWeight: 950, color: "primary.main" }}>
                 {value}
             </Typography>
@@ -73,8 +81,11 @@ function CodePreviewCard() {
                 p: { xs: 2, md: 2.5 },
                 borderRadius: 2.5,
                 overflow: "hidden",
-                background: "linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(242,238,255,0.9) 100%)",
-                boxShadow: "0 30px 80px rgba(53,37,205,0.12)",
+                background: (theme) =>
+                    theme.palette.mode === "dark"
+                        ? "linear-gradient(145deg, rgba(31,31,40,0.96) 0%, rgba(19,18,27,0.94) 100%)"
+                        : "linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(242,238,255,0.9) 100%)",
+                boxShadow: (theme) => (theme.palette.mode === "dark" ? "0 30px 80px rgba(0,0,0,0.34)" : "0 30px 80px rgba(53,37,205,0.12)"),
             }}
         >
             <Box component="img" src="/hero-study.jpg" alt="Study workspace" sx={{ width: "100%", borderRadius: 2, display: "block", mb: 2 }} />
@@ -137,8 +148,10 @@ export default function Home() {
                 sx={{
                     pt: { xs: 12, md: 17 },
                     pb: { xs: 7, md: 12 },
-                    background:
-                        "radial-gradient(1000px 480px at 16% 6%, rgba(53,37,205,0.18), transparent 62%), radial-gradient(760px 420px at 88% 18%, rgba(113,42,226,0.14), transparent 58%), linear-gradient(180deg, #fcf8ff 0%, #ffffff 100%)",
+                    background: (theme) =>
+                        theme.palette.mode === "dark"
+                            ? "radial-gradient(1000px 480px at 16% 6%, rgba(195,192,255,0.16), transparent 62%), radial-gradient(760px 420px at 88% 18%, rgba(60,221,199,0.11), transparent 58%), linear-gradient(180deg, #13121b 0%, #0e0d16 100%)"
+                            : "radial-gradient(1000px 480px at 16% 6%, rgba(53,37,205,0.18), transparent 62%), radial-gradient(760px 420px at 88% 18%, rgba(113,42,226,0.14), transparent 58%), linear-gradient(180deg, #fcf8ff 0%, #ffffff 100%)",
                 }}
             >
                 <Container maxWidth="lg">
@@ -202,7 +215,7 @@ export default function Home() {
                 </Stack>
             </Container>
 
-            <Box component="section" sx={{ py: { xs: 6, md: 9 }, bgcolor: "rgba(245,241,255,0.68)" }}>
+            <Box component="section" sx={{ py: { xs: 6, md: 9 }, bgcolor: (theme) => (theme.palette.mode === "dark" ? "#1b1b24" : "rgba(245,241,255,0.68)") }}>
                 <Container maxWidth="lg">
                     <Stack spacing={4}>
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "flex-end" }} justifyContent="space-between">
@@ -253,8 +266,10 @@ export default function Home() {
                         p: { xs: 3, md: 5 },
                         borderRadius: 2.5,
                         overflow: "hidden",
-                        background:
-                            "radial-gradient(600px 260px at 90% 10%, rgba(113,42,226,0.18), transparent 60%), linear-gradient(135deg, #ffffff 0%, #f3efff 100%)",
+                        background: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "radial-gradient(600px 260px at 90% 10%, rgba(60,221,199,0.12), transparent 60%), linear-gradient(135deg, #1f1f28 0%, #13121b 100%)"
+                                : "radial-gradient(600px 260px at 90% 10%, rgba(113,42,226,0.18), transparent 60%), linear-gradient(135deg, #ffffff 0%, #f3efff 100%)",
                     }}
                 >
                     <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems={{ xs: "flex-start", md: "center" }} justifyContent="space-between">

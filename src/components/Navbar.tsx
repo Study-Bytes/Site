@@ -24,7 +24,9 @@ import type { MouseEvent, ReactNode } from "react";
 import { useState } from "react";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
+import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
+import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
@@ -36,7 +38,8 @@ import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import type { UserRole } from "../api/bffContracts";
 import { useAuth } from "../auth/useAuth";
-import { studyBytesColors } from "../theme/theme";
+import { useColorMode } from "../theme/colorModeContext";
+import { getStudyBytesColors } from "../theme/theme";
 
 type NavVariant = "marketing" | "app";
 
@@ -114,7 +117,7 @@ function SearchBox({ placeholder = "Search courses, skills..." }: { placeholder?
                 minWidth: { md: 360 },
                 "& .MuiOutlinedInput-root": {
                     borderRadius: 999,
-                    bgcolor: studyBytesColors.surfaceContainerLow,
+                    bgcolor: (theme) => getStudyBytesColors(theme.palette.mode).surfaceContainerLow,
                 },
             }}
         />
@@ -171,8 +174,13 @@ function AccountMenu() {
 }
 
 function UtilityActions() {
+    const { mode, toggleMode } = useColorMode();
+
     return (
         <Stack direction="row" spacing={1} alignItems="center">
+            <IconButton onClick={toggleMode} aria-label={mode === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
+                {mode === "dark" ? <LightModeRoundedIcon /> : <DarkModeRoundedIcon />}
+            </IconButton>
             <IconButton aria-label="Notifications">
                 <Badge color="error" variant="dot">
                     <NotificationsNoneRoundedIcon />
@@ -196,8 +204,8 @@ function MarketingNavbar() {
             elevation={0}
             color="transparent"
             sx={{
-                borderBottom: `1px solid ${studyBytesColors.outlineVariant}`,
-                bgcolor: "rgba(240,236,249,0.86)",
+                borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(19,18,27,0.88)" : "rgba(240,236,249,0.86)"),
                 backdropFilter: "blur(14px)",
             }}
         >
@@ -228,8 +236,8 @@ function AppSidebar({ visibleItems }: { visibleItems: NavItem[] }) {
                 bottom: 0,
                 width: 256,
                 flexDirection: "column",
-                bgcolor: studyBytesColors.surfaceContainer,
-                borderRight: `1px solid ${studyBytesColors.outlineVariant}`,
+                bgcolor: (theme) => getStudyBytesColors(theme.palette.mode).surfaceContainer,
+                borderRight: (theme) => `1px solid ${theme.palette.divider}`,
                 zIndex: 1200,
                 py: 4,
             }}
@@ -252,7 +260,8 @@ function AppSidebar({ visibleItems }: { visibleItems: NavItem[] }) {
                                 py: 1.3,
                                 flexGrow: 0,
                                 minHeight: 52,
-                                borderLeft: active ? `4px solid ${studyBytesColors.primary}` : "4px solid transparent",
+                                borderLeft: active ? "4px solid" : "4px solid transparent",
+                                borderLeftColor: active ? "primary.main" : "transparent",
                                 borderRadius: active ? "0 8px 8px 0" : 0,
                                 color: active ? "primary.contrastText" : "text.primary",
                                 bgcolor: active ? "secondary.main" : "transparent",
@@ -285,8 +294,8 @@ function AppTopbar() {
                 display: { xs: "none", md: "block" },
                 left: 256,
                 width: "calc(100% - 256px)",
-                borderBottom: `1px solid ${studyBytesColors.outlineVariant}`,
-                bgcolor: "rgba(252,248,255,0.86)",
+                borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(19,18,27,0.88)" : "rgba(252,248,255,0.86)"),
                 backdropFilter: "blur(14px)",
             }}
         >
@@ -300,6 +309,8 @@ function AppTopbar() {
 }
 
 function MobileTopbar() {
+    const { mode, toggleMode } = useColorMode();
+
     return (
         <AppBar
             position="fixed"
@@ -307,8 +318,8 @@ function MobileTopbar() {
             color="transparent"
             sx={{
                 display: { xs: "block", md: "none" },
-                borderBottom: `1px solid ${studyBytesColors.outlineVariant}`,
-                bgcolor: "rgba(252,248,255,0.92)",
+                borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(19,18,27,0.94)" : "rgba(252,248,255,0.92)"),
                 backdropFilter: "blur(14px)",
             }}
         >
@@ -317,6 +328,9 @@ function MobileTopbar() {
                 <Box sx={{ flexGrow: 1 }} />
                 <IconButton aria-label="Search">
                     <SearchRoundedIcon />
+                </IconButton>
+                <IconButton onClick={toggleMode} aria-label={mode === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
+                    {mode === "dark" ? <LightModeRoundedIcon /> : <DarkModeRoundedIcon />}
                 </IconButton>
                 <IconButton aria-label="Notifications">
                     <NotificationsNoneRoundedIcon />
@@ -341,7 +355,7 @@ function MobileBottomNav({ visibleItems }: { visibleItems: NavItem[] }) {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                borderTop: `1px solid ${studyBytesColors.outlineVariant}`,
+                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
                 zIndex: 1300,
             }}
         >

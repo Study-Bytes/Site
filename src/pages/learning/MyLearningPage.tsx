@@ -31,8 +31,8 @@ function LearningCourseCard({ enrollment }: { enrollment: EnrollmentSummary }) {
                 transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
                 "&:hover": {
                     transform: "translateY(-3px)",
-                    borderColor: "rgba(53,37,205,0.32)",
-                    boxShadow: "0 24px 60px rgba(53,37,205,0.12)",
+                    borderColor: "primary.main",
+                    boxShadow: (theme) => (theme.palette.mode === "dark" ? "0 24px 60px rgba(0,0,0,0.28)" : "0 24px 60px rgba(53,37,205,0.12)"),
                 },
             }}
         >
@@ -120,8 +120,10 @@ export default function MyLearningPage() {
                     sx={{
                         p: { xs: 3, md: 5 },
                         borderRadius: 2.5,
-                        background:
-                            "radial-gradient(640px 320px at 92% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f3efff 100%)",
+                        background: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "radial-gradient(640px 320px at 92% 0%, rgba(60,221,199,0.12), transparent 62%), linear-gradient(135deg, #1f1f28 0%, #13121b 100%)"
+                                : "radial-gradient(640px 320px at 92% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f3efff 100%)",
                     }}
                 >
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 320px" }, gap: 3, alignItems: "center" }}>
@@ -150,7 +152,14 @@ export default function MyLearningPage() {
                             ) : null}
                         </Stack>
 
-                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, background: "rgba(255,255,255,0.76)" }}>
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 2.5,
+                                borderRadius: 2,
+                                background: (theme) => (theme.palette.mode === "dark" ? "rgba(31,31,40,0.78)" : "rgba(255,255,255,0.76)"),
+                            }}
+                        >
                             <Stack spacing={2}>
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
                                     Learning summary

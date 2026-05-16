@@ -36,7 +36,14 @@ import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCou
 
 function CourseMetric({ label, value }: { label: string; value: string | number }) {
     return (
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, background: "rgba(255,255,255,0.72)" }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 2,
+                borderRadius: 1.5,
+                background: (theme) => (theme.palette.mode === "dark" ? "rgba(31,31,40,0.78)" : "rgba(255,255,255,0.72)"),
+            }}
+        >
             <Typography variant="h6" sx={{ fontWeight: 950 }}>
                 {value}
             </Typography>
@@ -199,8 +206,10 @@ export default function CourseDetailsPage() {
                             p: { xs: 2.5, md: 4 },
                             borderRadius: 2.5,
                             overflow: "hidden",
-                            background:
-                                "radial-gradient(700px 320px at 88% 6%, rgba(113,42,226,0.16), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
+                            background: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "radial-gradient(700px 320px at 88% 6%, rgba(60,221,199,0.12), transparent 62%), linear-gradient(135deg, #1f1f28 0%, #13121b 100%)"
+                                    : "radial-gradient(700px 320px at 88% 6%, rgba(113,42,226,0.16), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
                         }}
                     >
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "7fr 5fr" }, gap: { xs: 3, md: 4 }, alignItems: "center" }}>
@@ -248,8 +257,10 @@ export default function CourseDetailsPage() {
                                             borderRadius: 2,
                                             display: "grid",
                                             placeItems: "center",
-                                            background:
-                                                "radial-gradient(circle at 22% 18%, rgba(53,37,205,0.28), transparent 30%), radial-gradient(circle at 82% 12%, rgba(113,42,226,0.24), transparent 28%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
+                                            background: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "radial-gradient(circle at 22% 18%, rgba(195,192,255,0.24), transparent 30%), radial-gradient(circle at 82% 12%, rgba(60,221,199,0.18), transparent 28%), linear-gradient(135deg, #2a2933 0%, #13121b 100%)"
+                                                    : "radial-gradient(circle at 22% 18%, rgba(53,37,205,0.28), transparent 30%), radial-gradient(circle at 82% 12%, rgba(113,42,226,0.24), transparent 28%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
                                         }}
                                     >
                                         <MenuBookRoundedIcon color="primary" sx={{ fontSize: 72 }} />

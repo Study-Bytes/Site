@@ -24,8 +24,8 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                 transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
                 "&:hover": {
                     transform: { md: "translateY(-4px)" },
-                    boxShadow: "0 18px 42px rgba(30, 25, 70, 0.10)",
-                    borderColor: "rgba(53,37,205,0.34)",
+                    boxShadow: (theme) => (theme.palette.mode === "dark" ? "0 18px 42px rgba(0,0,0,0.26)" : "0 18px 42px rgba(30, 25, 70, 0.10)"),
+                    borderColor: "primary.main",
                 },
             }}
         >
@@ -36,8 +36,10 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                     <Box
                         sx={{
                             height: compact ? 132 : 180,
-                            background:
-                                "radial-gradient(circle at 20% 20%, rgba(53,37,205,0.28), transparent 28%), radial-gradient(circle at 80% 10%, rgba(113,42,226,0.22), transparent 30%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
+                            background: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "radial-gradient(circle at 20% 20%, rgba(195,192,255,0.24), transparent 28%), radial-gradient(circle at 80% 10%, rgba(60,221,199,0.18), transparent 30%), linear-gradient(135deg, #2a2933 0%, #13121b 100%)"
+                                    : "radial-gradient(circle at 20% 20%, rgba(53,37,205,0.28), transparent 28%), radial-gradient(circle at 80% 10%, rgba(113,42,226,0.22), transparent 30%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
                         }}
                     />
                 )}
@@ -50,7 +52,7 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                         top: 12,
                         right: 12,
                         fontWeight: 900,
-                        backgroundColor: "rgba(255,255,255,0.92)",
+                        backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(31,31,40,0.92)" : "rgba(255,255,255,0.92)"),
                         backdropFilter: "blur(12px)",
                     }}
                 />

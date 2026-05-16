@@ -150,7 +150,7 @@ function QuizOptionCard({ option, selected, showFeedback, onToggle }: { option: 
                 borderRadius: 1.5,
                 cursor: "pointer",
                 borderColor: selected ? "primary.main" : "divider",
-                bgcolor: selected ? "rgba(53,37,205,0.06)" : "background.paper",
+                bgcolor: selected ? "action.selected" : "background.paper",
                 outline: "none",
                 "&:focus-visible": { boxShadow: "0 0 0 3px rgba(53,37,205,0.20)" },
             }}
@@ -342,8 +342,10 @@ export default function LearningItemPage() {
                         sx={{
                             p: { xs: 2.5, md: 4 },
                             borderRadius: 2.5,
-                            background:
-                                "radial-gradient(680px 300px at 88% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
+                            background: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "radial-gradient(680px 300px at 88% 0%, rgba(60,221,199,0.12), transparent 62%), linear-gradient(135deg, #1f1f28 0%, #13121b 100%)"
+                                    : "radial-gradient(680px 300px at 88% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
                         }}
                     >
                         <Stack spacing={2.4}>

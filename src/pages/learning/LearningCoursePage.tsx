@@ -33,7 +33,14 @@ function LearningItemRow({ courseId, item }: { courseId: number; item: CourseIte
     const state = itemState(item);
 
     return (
-        <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1.5, bgcolor: item.locked ? "rgba(0,0,0,0.02)" : "background.paper" }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 1.6,
+                borderRadius: 1.5,
+                bgcolor: item.locked ? "action.hover" : "background.paper",
+            }}
+        >
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "stretch", sm: "center" }}>
                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexGrow: 1, minWidth: 0 }}>
                     <ItemTypeBadge itemType={item.itemType} />
@@ -98,8 +105,10 @@ export default function LearningCoursePage() {
                         sx={{
                             p: { xs: 3, md: 5 },
                             borderRadius: 2.5,
-                            background:
-                                "radial-gradient(720px 320px at 88% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
+                            background: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "radial-gradient(720px 320px at 88% 0%, rgba(60,221,199,0.12), transparent 62%), linear-gradient(135deg, #1f1f28 0%, #13121b 100%)"
+                                    : "radial-gradient(720px 320px at 88% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
                         }}
                     >
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(0,1fr) 300px" }, gap: 3, alignItems: "center" }}>
@@ -127,7 +136,14 @@ export default function LearningCoursePage() {
                                 </Stack>
                             </Stack>
 
-                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, background: "rgba(255,255,255,0.74)" }}>
+                            <Paper
+                                variant="outlined"
+                                sx={{
+                                    p: 2.5,
+                                    borderRadius: 2,
+                                    background: (theme) => (theme.palette.mode === "dark" ? "rgba(31,31,40,0.78)" : "rgba(255,255,255,0.74)"),
+                                }}
+                            >
                                 <Stack spacing={2}>
                                     <Typography variant="h6" sx={{ fontWeight: 950 }}>
                                         Course progress
