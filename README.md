@@ -551,6 +551,32 @@ PUT /api/v1/teacher/items/{itemId}/options
 
 `language` remains a free string for `CODING` and `SQL`. Site and BFF must not hardcode supported execution languages as a required enum; actual language execution support is handled by LearningService/CodeExecutorService.
 
+
+## Implemented teacher editor flow
+
+The teacher editor now supports the full MVP course-authoring flow through the BFF API layer:
+
+```text
+/teacher/courses/{courseId}/edit
+/teacher/courses/{courseId}/edit/items/{itemId}
+```
+
+Supported editor features:
+
+- course metadata editing;
+- module create/edit/delete/reorder;
+- course item create/edit/delete/reorder;
+- item metadata editing;
+- content blocks editor;
+- hints editor;
+- CODING/SQL execution settings;
+- CODING/SQL test cases;
+- QUIZ options;
+- BFF validation errors through `ValidationErrorPanel`;
+- mock BFF compatibility for local development.
+
+The frontend still uses only `teacherApi` and the BFF contract. It does not call CourseService directly.
+
 ## Frontend API layer
 
 API service modules:

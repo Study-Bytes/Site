@@ -670,20 +670,24 @@ export const mockBff = {
         const course = findCourse(courseId);
         const module = { id: nextId(courses.flatMap((item) => item.modules.map((module) => module.id))), title: request.title, orderIndex: request.orderIndex, items: [] };
         course.modules.push(module);
+        course.updatedAt = new Date().toISOString();
         return delay(module);
     },
 
     async updateModule(moduleId: number, request: ModuleUpsertRequest): Promise<CourseModuleSummary> {
         requireTeacher();
-        const { module } = findModule(moduleId);
+        const { course, module } = findModule(moduleId);
         Object.assign(module, request);
+        course.updatedAt = new Date().toISOString();
         return delay(module);
     },
 
     async deleteModule(moduleId: number): Promise<void> {
         requireTeacher();
-        const { course } = findModule(moduleId);
+        const { course, module } = findModule(moduleId);
+        for (const item of module.items) delete itemDetails[item.id];
         course.modules = course.modules.filter((module) => module.id !== moduleId);
+        course.updatedAt = new Date().toISOString();
         return delay(undefined);
     },
 
@@ -695,16 +699,18 @@ export const mockBff = {
             if (!module) throw new ApiError("Invalid module reorder request", 400);
             return { ...module, orderIndex: index };
         });
+        course.updatedAt = new Date().toISOString();
         return delay(course.modules);
     },
 
     async createItem(moduleId: number, request: CourseItemUpsertRequest): Promise<TeacherItemDetails> {
         requireTeacher();
-        const { module } = findModule(moduleId);
+        const { course, module } = findModule(moduleId);
         const id = nextId(Object.keys(itemDetails).map(Number));
         const item: TeacherItemDetails = { id, moduleId, ...request, contentBlocks: [], hints: [], testCases: [], options: [] };
         itemDetails[id] = item;
         module.items.push({ id, title: request.title, itemType: request.itemType, orderIndex: request.orderIndex });
+        course.updatedAt = new Date().toISOString();
         return delay(item);
     },
 
@@ -717,24 +723,41 @@ export const mockBff = {
         requireTeacher();
         const item = findItem(itemId);
         Object.assign(item, request);
+        for (const course of courses) {
+            for (const module of course.modules) {
+                const summary = module.items.find((entry) => entry.id === itemId);
+                if (summary) {
+                    summary.title = request.title;
+                    summary.itemType = request.itemType;
+                    summary.orderIndex = request.orderIndex;
+                    course.updatedAt = new Date().toISOString();
+                }
+            }
+        }
         return delay(item);
     },
 
     async deleteItem(itemId: number): Promise<void> {
         requireTeacher();
         delete itemDetails[itemId];
-        for (const course of courses) for (const module of course.modules) module.items = module.items.filter((item) => item.id !== itemId);
+        for (const course of courses) {
+            for (const module of course.modules) module.items = module.items.filter((item) => item.id !== itemId);
+            course.updatedAt = new Date().toISOString();
+        }
         return delay(undefined);
     },
 
     async reorderItems(moduleId: number, request: ReorderItemsRequest): Promise<CourseModuleSummary> {
         requireTeacher();
-        const { module } = findModule(moduleId);
+        const { course, module } = findModule(moduleId);
         module.items = request.orderedItemIds.map((id, index) => {
             const item = module.items.find((entry) => entry.id === id);
             if (!item) throw new ApiError("Invalid item reorder request", 400);
+            const details = itemDetails[id];
+            if (details) details.orderIndex = index;
             return { ...item, orderIndex: index };
         });
+        course.updatedAt = new Date().toISOString();
         return delay(module);
     },
 

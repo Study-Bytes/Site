@@ -1,15 +1,53 @@
 import { useEffect, useMemo, useState } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip, FormControlLabel, MenuItem, Paper, Stack, Switch, TextField, Typography } from "@mui/material";
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Alert,
+    Box,
+    Button,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControlLabel,
+    IconButton,
+    MenuItem,
+    Paper,
+    Stack,
+    Switch,
+    TextField,
+    Tooltip,
+    Typography,
+} from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArchiveRoundedIcon from "@mui/icons-material/ArchiveRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
+import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
+import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import PublishRoundedIcon from "@mui/icons-material/PublishRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { ApiError, getErrorMessage } from "../../api/apiError";
 import { teacherApi } from "../../api/services";
-import type { ApiValidationError, CourseAccessType, CourseDifficulty, CourseUpsertRequest, TeacherCourseDetails } from "../../api/bffContracts";
+import type {
+    ApiValidationError,
+    CourseAccessType,
+    CourseDifficulty,
+    CourseItemSummary,
+    CourseItemType,
+    CourseItemUpsertRequest,
+    CourseModuleSummary,
+    CourseUpsertRequest,
+    ModuleUpsertRequest,
+    TeacherCourseDetails,
+    TeacherItemDetails,
+} from "../../api/bffContracts";
 import { AccessTypeBadge } from "../../components/ui/AccessTypeBadge";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -34,8 +72,39 @@ const defaultForm: CourseUpsertRequest = {
     estimatedMinutes: 120,
 };
 
+const defaultItemDraft = (orderIndex: number): CourseItemUpsertRequest => ({
+    title: "",
+    itemType: "THEORY",
+    statement: "",
+    orderIndex,
+    language: null,
+    starterCode: null,
+    solutionCode: null,
+    timeLimitMs: null,
+    memoryLimitMb: null,
+    outputLimitKb: null,
+    networkDisabled: true,
+    readOnlyFs: true,
+    comparisonMode: "EXACT",
+    normalizeLineEndings: true,
+    trimTrailingWhitespaces: true,
+});
+
 type Props = {
     mode?: "create" | "edit";
+};
+
+type ModuleDialogState = {
+    mode: "create" | "edit";
+    moduleId?: number;
+    draft: ModuleUpsertRequest;
+};
+
+type ItemDialogState = {
+    mode: "create" | "edit";
+    moduleId: number;
+    itemId?: number;
+    draft: CourseItemUpsertRequest;
 };
 
 function toForm(course: TeacherCourseDetails): CourseUpsertRequest {
@@ -78,6 +147,78 @@ function validateForm(form: CourseUpsertRequest): ApiValidationError[] {
     return errors;
 }
 
+function normalizeItemDraft(input: CourseItemUpsertRequest): CourseItemUpsertRequest {
+    const itemType = input.itemType;
+    const isExecutable = itemType === "CODING" || itemType === "SQL";
+    return {
+        ...input,
+        title: input.title.trim(),
+        statement: input.statement?.trim() || null,
+        orderIndex: Number(input.orderIndex),
+        language: isExecutable ? input.language?.trim() || "" : null,
+        starterCode: isExecutable ? input.starterCode ?? "" : null,
+        solutionCode: isExecutable ? input.solutionCode ?? null : null,
+        timeLimitMs: isExecutable ? Number(input.timeLimitMs ?? 2000) : null,
+        memoryLimitMb: isExecutable ? Number(input.memoryLimitMb ?? 256) : null,
+        outputLimitKb: isExecutable ? Number(input.outputLimitKb ?? 128) : null,
+        networkDisabled: input.networkDisabled,
+        readOnlyFs: input.readOnlyFs,
+        comparisonMode: input.comparisonMode,
+        normalizeLineEndings: input.normalizeLineEndings,
+        trimTrailingWhitespaces: input.trimTrailingWhitespaces,
+    };
+}
+
+function validateModuleDraft(input: ModuleUpsertRequest): ApiValidationError[] {
+    const errors: ApiValidationError[] = [];
+    if (!input.title.trim()) errors.push({ field: "module.title", message: "Module title is required" });
+    if (!Number.isFinite(input.orderIndex) || input.orderIndex < 0) errors.push({ field: "module.orderIndex", message: "Order index must be non-negative" });
+    return errors;
+}
+
+function validateItemDraft(input: CourseItemUpsertRequest): ApiValidationError[] {
+    const item = normalizeItemDraft(input);
+    const errors: ApiValidationError[] = [];
+    if (!item.title) errors.push({ field: "item.title", message: "Item title is required" });
+    if (!Number.isFinite(item.orderIndex) || item.orderIndex < 0) errors.push({ field: "item.orderIndex", message: "Order index must be non-negative" });
+    if ((item.itemType === "CODING" || item.itemType === "SQL") && !item.language) errors.push({ field: "item.language", message: "Language is required for CODING and SQL items" });
+    for (const field of ["timeLimitMs", "memoryLimitMb", "outputLimitKb"] as const) {
+        const value = item[field];
+        if ((item.itemType === "CODING" || item.itemType === "SQL") && (value === null || !Number.isFinite(value) || value < 0)) {
+            errors.push({ field: `item.${field}`, message: `${field} must be non-negative` });
+        }
+    }
+    return errors;
+}
+
+function itemDraftFromDetails(item: TeacherItemDetails): CourseItemUpsertRequest {
+    return {
+        title: item.title,
+        itemType: item.itemType,
+        statement: item.statement,
+        orderIndex: item.orderIndex,
+        language: item.language,
+        starterCode: item.starterCode,
+        solutionCode: item.solutionCode,
+        timeLimitMs: item.timeLimitMs,
+        memoryLimitMb: item.memoryLimitMb,
+        outputLimitKb: item.outputLimitKb,
+        networkDisabled: item.networkDisabled,
+        readOnlyFs: item.readOnlyFs,
+        comparisonMode: item.comparisonMode,
+        normalizeLineEndings: item.normalizeLineEndings,
+        trimTrailingWhitespaces: item.trimTrailingWhitespaces,
+    };
+}
+
+function sortedModules(course: TeacherCourseDetails) {
+    return course.modules.slice().sort((a, b) => a.orderIndex - b.orderIndex);
+}
+
+function sortedItems(module: CourseModuleSummary) {
+    return module.items.slice().sort((a, b) => a.orderIndex - b.orderIndex);
+}
+
 export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const { courseId } = useParams();
     const navigate = useNavigate();
@@ -88,10 +229,12 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const [form, setForm] = useState<CourseUpsertRequest>(defaultForm);
     const [isLoading, setIsLoading] = useState(!isCreate);
     const [isSaving, setIsSaving] = useState(false);
-    const [action, setAction] = useState<"publish" | "archive" | null>(null);
+    const [action, setAction] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [validationErrors, setValidationErrors] = useState<ApiValidationError[]>([]);
+    const [moduleDialog, setModuleDialog] = useState<ModuleDialogState | null>(null);
+    const [itemDialog, setItemDialog] = useState<ItemDialogState | null>(null);
 
     const loadCourse = async () => {
         if (isCreate) return;
@@ -183,6 +326,147 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         }
     };
 
+    const refreshAfterMutation = async (message: string) => {
+        setSuccessMessage(message);
+        if (!parsedCourseId) return;
+        const loaded = await teacherApi.getCourse(parsedCourseId);
+        setCourse(loaded);
+        setForm(toForm(loaded));
+    };
+
+    const saveModule = async () => {
+        if (!course || !moduleDialog) return;
+        setValidationErrors(validateModuleDraft(moduleDialog.draft));
+        if (validateModuleDraft(moduleDialog.draft).length > 0) return;
+        setAction("module");
+        setError(null);
+        try {
+            if (moduleDialog.mode === "create") {
+                await teacherApi.createModule(course.id, { title: moduleDialog.draft.title.trim(), orderIndex: Number(moduleDialog.draft.orderIndex) });
+                setModuleDialog(null);
+                await refreshAfterMutation("Module created");
+            } else if (moduleDialog.moduleId) {
+                await teacherApi.updateModule(moduleDialog.moduleId, { title: moduleDialog.draft.title.trim(), orderIndex: Number(moduleDialog.draft.orderIndex) });
+                setModuleDialog(null);
+                await refreshAfterMutation("Module saved");
+            }
+        } catch (requestError) {
+            handleApiError(requestError, "Failed to save module");
+        } finally {
+            setAction(null);
+        }
+    };
+
+    const deleteModule = async (moduleId: number) => {
+        if (!window.confirm("Delete this module and all its items?")) return;
+        setAction(`delete-module-${moduleId}`);
+        setError(null);
+        try {
+            await teacherApi.deleteModule(moduleId);
+            await refreshAfterMutation("Module deleted");
+        } catch (requestError) {
+            handleApiError(requestError, "Failed to delete module");
+        } finally {
+            setAction(null);
+        }
+    };
+
+    const reorderModules = async (moduleId: number, direction: -1 | 1) => {
+        if (!course) return;
+        const ordered = sortedModules(course);
+        const currentIndex = ordered.findIndex((module) => module.id === moduleId);
+        const nextIndex = currentIndex + direction;
+        if (currentIndex < 0 || nextIndex < 0 || nextIndex >= ordered.length) return;
+        const copy = [...ordered];
+        [copy[currentIndex], copy[nextIndex]] = [copy[nextIndex], copy[currentIndex]];
+        setAction("reorder-modules");
+        setError(null);
+        try {
+            await teacherApi.reorderModules(course.id, { orderedModuleIds: copy.map((module) => module.id) });
+            await refreshAfterMutation("Modules reordered");
+        } catch (requestError) {
+            handleApiError(requestError, "Failed to reorder modules");
+        } finally {
+            setAction(null);
+        }
+    };
+
+    const openCreateItemDialog = (module: CourseModuleSummary) => {
+        setValidationErrors([]);
+        setItemDialog({ mode: "create", moduleId: module.id, draft: defaultItemDraft(module.items.length) });
+    };
+
+    const openEditItemDialog = async (moduleId: number, item: CourseItemSummary) => {
+        setAction(`load-item-${item.id}`);
+        setError(null);
+        try {
+            const details = await teacherApi.getItem(item.id);
+            setItemDialog({ mode: "edit", moduleId, itemId: item.id, draft: itemDraftFromDetails(details) });
+        } catch (requestError) {
+            handleApiError(requestError, "Failed to load item");
+        } finally {
+            setAction(null);
+        }
+    };
+
+    const saveItem = async () => {
+        if (!itemDialog) return;
+        const errors = validateItemDraft(itemDialog.draft);
+        setValidationErrors(errors);
+        if (errors.length > 0) return;
+        setAction("item");
+        setError(null);
+        try {
+            const payload = normalizeItemDraft(itemDialog.draft);
+            if (itemDialog.mode === "create") {
+                await teacherApi.createItem(itemDialog.moduleId, payload);
+                setItemDialog(null);
+                await refreshAfterMutation("Item created");
+            } else if (itemDialog.itemId) {
+                await teacherApi.updateItem(itemDialog.itemId, payload);
+                setItemDialog(null);
+                await refreshAfterMutation("Item saved");
+            }
+        } catch (requestError) {
+            handleApiError(requestError, "Failed to save item");
+        } finally {
+            setAction(null);
+        }
+    };
+
+    const deleteItem = async (itemId: number) => {
+        if (!window.confirm("Delete this course item?")) return;
+        setAction(`delete-item-${itemId}`);
+        setError(null);
+        try {
+            await teacherApi.deleteItem(itemId);
+            await refreshAfterMutation("Item deleted");
+        } catch (requestError) {
+            handleApiError(requestError, "Failed to delete item");
+        } finally {
+            setAction(null);
+        }
+    };
+
+    const reorderItems = async (module: CourseModuleSummary, itemId: number, direction: -1 | 1) => {
+        const ordered = sortedItems(module);
+        const currentIndex = ordered.findIndex((item) => item.id === itemId);
+        const nextIndex = currentIndex + direction;
+        if (currentIndex < 0 || nextIndex < 0 || nextIndex >= ordered.length) return;
+        const copy = [...ordered];
+        [copy[currentIndex], copy[nextIndex]] = [copy[nextIndex], copy[currentIndex]];
+        setAction(`reorder-items-${module.id}`);
+        setError(null);
+        try {
+            await teacherApi.reorderItems(module.id, { orderedItemIds: copy.map((item) => item.id) });
+            await refreshAfterMutation("Items reordered");
+        } catch (requestError) {
+            handleApiError(requestError, "Failed to reorder items");
+        } finally {
+            setAction(null);
+        }
+    };
+
     if (isLoading) {
         return (
             <PageContainer>
@@ -202,15 +486,13 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     return (
         <PageContainer>
             <Stack spacing={3}>
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
-                    <Box sx={{ flexGrow: 1 }}>
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }} justifyContent="space-between">
+                    <Box>
                         <Button component={RouterLink} to="/teacher/courses" startIcon={<ArrowBackRoundedIcon />} sx={{ mb: 1 }}>
                             Back to courses
                         </Button>
                         <Typography variant="h2">{title}</Typography>
-                        <Typography sx={{ color: "text.secondary", mt: 1, maxWidth: 760 }}>
-                            Manage supported CourseService metadata. Module and item structure editing is kept visible here and will be implemented in the next teacher editor task.
-                        </Typography>
+                        <Typography sx={{ color: "text.secondary", mt: 1 }}>Edit course metadata, structure, modules and items through the BFF teacher API.</Typography>
                     </Box>
                     {course ? (
                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -246,64 +528,112 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                     </TextField>
                                 </Stack>
                                 <TextField label="Cover image URL" value={form.coverImageUrl ?? ""} onChange={(event) => updateField("coverImageUrl", event.target.value)} />
-                                <TextField
-                                    label="Estimated minutes"
-                                    type="number"
-                                    value={form.estimatedMinutes ?? ""}
-                                    onChange={(event) => updateField("estimatedMinutes", event.target.value === "" ? null : Number(event.target.value))}
-                                />
-                                <FormControlLabel
-                                    control={<Switch checked={form.enrollmentEnabled} onChange={(event) => updateField("enrollmentEnabled", event.target.checked)} />}
-                                    label="Enrollment enabled"
-                                />
+                                <TextField label="Estimated minutes" type="number" value={form.estimatedMinutes ?? ""} onChange={(event) => updateField("estimatedMinutes", event.target.value === "" ? null : Number(event.target.value))} />
+                                <FormControlLabel control={<Switch checked={form.enrollmentEnabled} onChange={(event) => updateField("enrollmentEnabled", event.target.checked)} />} label="Enrollment enabled" />
                             </Stack>
                         </FormSectionCard>
 
-                        <FormSectionCard title="Modules and items" description="Visible now for context. Full add/edit/reorder flows are intentionally left for the next task.">
+                        <FormSectionCard title="Modules and items" description="Build the course structure, reorder modules/items, then open the full item editor for content, hints and tests.">
                             {!course ? (
                                 <EmptyState title="Create course first" description="Modules and items can be added after the course draft exists." />
-                            ) : course.modules.length === 0 ? (
-                                <EmptyState title="No modules yet" description="The next teacher editor task will add module and item management." />
                             ) : (
                                 <Stack spacing={2}>
-                                    {course.modules
-                                        .slice()
-                                        .sort((a, b) => a.orderIndex - b.orderIndex)
-                                        .map((module) => (
-                                            <Accordion key={module.id} defaultExpanded variant="outlined" sx={{ borderRadius: 1.25, "&:before": { display: "none" } }}>
-                                                <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
-                                                    <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-                                                        <Typography sx={{ fontWeight: 900 }}>{module.title}</Typography>
-                                                        <Chip size="small" label={`${module.items.length} items`} />
-                                                    </Stack>
-                                                </AccordionSummary>
-                                                <AccordionDetails>
-                                                    <Stack spacing={1.25}>
-                                                        {module.items
-                                                            .slice()
-                                                            .sort((a, b) => a.orderIndex - b.orderIndex)
-                                                            .map((item) => (
-                                                                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1.25 }}>
-                                                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ sm: "center" }}>
-                                                                        <Box sx={{ flexGrow: 1 }}>
-                                                                            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                                                                <ItemTypeBadge itemType={item.itemType} />
-                                                                                <Typography sx={{ fontWeight: 900 }}>{item.title}</Typography>
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
+                                        <Typography sx={{ color: "text.secondary" }}>{course.modules.length} modules · {stats.items} items</Typography>
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<AddRoundedIcon />}
+                                            onClick={() => setModuleDialog({ mode: "create", draft: { title: "", orderIndex: course.modules.length } })}
+                                        >
+                                            Add module
+                                        </Button>
+                                    </Stack>
+
+                                    {course.modules.length === 0 ? (
+                                        <EmptyState title="No modules yet" description="Create the first module to start adding lessons and tasks." />
+                                    ) : (
+                                        sortedModules(course).map((module, moduleIndex) => {
+                                            const items = sortedItems(module);
+                                            return (
+                                                <Accordion key={module.id} defaultExpanded variant="outlined" sx={{ borderRadius: 1.25, "&:before": { display: "none" } }}>
+                                                    <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
+                                                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} sx={{ width: "100%", pr: 1 }}>
+                                                            <Box sx={{ flexGrow: 1 }}>
+                                                                <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                                    <Typography sx={{ fontWeight: 900 }}>{module.title}</Typography>
+                                                                    <Chip size="small" label={`${items.length} items`} />
+                                                                    <Chip size="small" label={`#${module.orderIndex}`} />
+                                                                </Stack>
+                                                            </Box>
+                                                        </Stack>
+                                                    </AccordionSummary>
+                                                    <AccordionDetails>
+                                                        <Stack spacing={1.5}>
+                                                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
+                                                                <Stack direction="row" spacing={0.5}>
+                                                                    <Tooltip title="Move module up">
+                                                                        <span><IconButton disabled={moduleIndex === 0 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
+                                                                    </Tooltip>
+                                                                    <Tooltip title="Move module down">
+                                                                        <span><IconButton disabled={moduleIndex === course.modules.length - 1 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
+                                                                    </Tooltip>
+                                                                </Stack>
+                                                                <Stack direction="row" spacing={1}>
+                                                                    <Button variant="outlined" size="small" startIcon={<EditRoundedIcon />} onClick={() => setModuleDialog({ mode: "edit", moduleId: module.id, draft: { title: module.title, orderIndex: module.orderIndex } })}>
+                                                                        Edit module
+                                                                    </Button>
+                                                                    <Button variant="outlined" size="small" color="error" startIcon={<DeleteRoundedIcon />} onClick={() => void deleteModule(module.id)}>
+                                                                        Delete
+                                                                    </Button>
+                                                                </Stack>
+                                                            </Stack>
+
+                                                            {items.length === 0 ? (
+                                                                <EmptyState title="No items in this module" description="Add theory, quiz, coding, SQL or file items." />
+                                                            ) : (
+                                                                <Stack spacing={1.25}>
+                                                                    {items.map((item, itemIndex) => (
+                                                                        <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1.25 }}>
+                                                                            <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} alignItems={{ md: "center" }}>
+                                                                                <Box sx={{ flexGrow: 1 }}>
+                                                                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                                                        <ItemTypeBadge itemType={item.itemType} />
+                                                                                        <Typography sx={{ fontWeight: 900 }}>{item.title}</Typography>
+                                                                                        <Chip size="small" label={`#${item.orderIndex}`} />
+                                                                                    </Stack>
+                                                                                </Box>
+                                                                                <Stack direction="row" spacing={0.5}>
+                                                                                    <Tooltip title="Move item up">
+                                                                                        <span><IconButton disabled={itemIndex === 0 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
+                                                                                    </Tooltip>
+                                                                                    <Tooltip title="Move item down">
+                                                                                        <span><IconButton disabled={itemIndex === items.length - 1 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
+                                                                                    </Tooltip>
+                                                                                    <Tooltip title="Quick edit metadata">
+                                                                                        <span><IconButton disabled={action === `load-item-${item.id}`} onClick={() => void openEditItemDialog(module.id, item)}><EditRoundedIcon /></IconButton></span>
+                                                                                    </Tooltip>
+                                                                                    <Tooltip title="Open full item editor">
+                                                                                        <IconButton component={RouterLink} to={`/teacher/courses/${course.id}/edit/items/${item.id}`}><OpenInNewRoundedIcon /></IconButton>
+                                                                                    </Tooltip>
+                                                                                    <Tooltip title="Delete item">
+                                                                                        <IconButton color="error" onClick={() => void deleteItem(item.id)}><DeleteRoundedIcon /></IconButton>
+                                                                                    </Tooltip>
+                                                                                </Stack>
                                                                             </Stack>
-                                                                        </Box>
-                                                                        <Button component={RouterLink} to={`/teacher/courses/${course.id}/edit/items/${item.id}`} variant="outlined" size="small">
-                                                                            Edit item
-                                                                        </Button>
-                                                                    </Stack>
-                                                                </Paper>
-                                                            ))}
-                                                        <Button variant="outlined" startIcon={<AddRoundedIcon />} disabled>
-                                                            Add item — next task
-                                                        </Button>
-                                                    </Stack>
-                                                </AccordionDetails>
-                                            </Accordion>
-                                        ))}
+                                                                        </Paper>
+                                                                    ))}
+                                                                </Stack>
+                                                            )}
+
+                                                            <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => openCreateItemDialog(module)}>
+                                                                Add item
+                                                            </Button>
+                                                        </Stack>
+                                                    </AccordionDetails>
+                                                </Accordion>
+                                            );
+                                        })
+                                    )}
                                 </Stack>
                             )}
                         </FormSectionCard>
@@ -329,38 +659,17 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                     ) : null}
                 </Box>
 
-                <Paper
-                    variant="outlined"
-                    sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        position: { md: "sticky" },
-                        bottom: { md: 16 },
-                        zIndex: 2,
-                        bgcolor: "background.paper",
-                    }}
-                >
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, position: { md: "sticky" }, bottom: { md: 16 }, zIndex: 2, bgcolor: "background.paper" }}>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                         <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={submitForm} disabled={isSaving || action !== null}>
                             {isCreate ? "Create course" : "Save metadata"}
                         </Button>
                         {!isCreate && course ? (
                             <>
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<PublishRoundedIcon />}
-                                    onClick={() => void runCourseAction("publish")}
-                                    disabled={isSaving || action !== null || course.status === "PUBLISHED"}
-                                >
+                                <Button variant="outlined" startIcon={<PublishRoundedIcon />} onClick={() => void runCourseAction("publish")} disabled={isSaving || action !== null || course.status === "PUBLISHED"}>
                                     Publish Course
                                 </Button>
-                                <Button
-                                    variant="outlined"
-                                    color="error"
-                                    startIcon={<ArchiveRoundedIcon />}
-                                    onClick={() => void runCourseAction("archive")}
-                                    disabled={isSaving || action !== null || course.status === "ARCHIVED"}
-                                >
+                                <Button variant="outlined" color="error" startIcon={<ArchiveRoundedIcon />} onClick={() => void runCourseAction("archive")} disabled={isSaving || action !== null || course.status === "ARCHIVED"}>
                                     Archive Course
                                 </Button>
                             </>
@@ -368,6 +677,61 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                     </Stack>
                 </Paper>
             </Stack>
+
+            <Dialog open={Boolean(moduleDialog)} onClose={() => setModuleDialog(null)} fullWidth maxWidth="sm">
+                <DialogTitle>{moduleDialog?.mode === "create" ? "Create module" : "Edit module"}</DialogTitle>
+                <DialogContent>
+                    {moduleDialog ? (
+                        <Stack spacing={2} sx={{ pt: 1 }}>
+                            <TextField label="Title" value={moduleDialog.draft.title} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, title: event.target.value } })} required />
+                            <TextField label="Order index" type="number" value={moduleDialog.draft.orderIndex} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, orderIndex: Number(event.target.value) } })} />
+                        </Stack>
+                    ) : null}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setModuleDialog(null)}>Cancel</Button>
+                    <Button variant="contained" onClick={() => void saveModule()} disabled={action === "module"}>Save module</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={Boolean(itemDialog)} onClose={() => setItemDialog(null)} fullWidth maxWidth="md">
+                <DialogTitle>{itemDialog?.mode === "create" ? "Create item" : "Edit item metadata"}</DialogTitle>
+                <DialogContent>
+                    {itemDialog ? (
+                        <Stack spacing={2} sx={{ pt: 1 }}>
+                            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                                <TextField label="Title" value={itemDialog.draft.title} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, title: event.target.value } })} required fullWidth />
+                                <TextField select label="Item type" value={itemDialog.draft.itemType} onChange={(event) => {
+                                    const nextType = event.target.value as CourseItemType;
+                                    setItemDialog({ ...itemDialog, draft: normalizeItemDraft({ ...itemDialog.draft, itemType: nextType }) });
+                                }} fullWidth>
+                                    <MenuItem value="THEORY">THEORY</MenuItem>
+                                    <MenuItem value="QUIZ">QUIZ</MenuItem>
+                                    <MenuItem value="CODING">CODING</MenuItem>
+                                    <MenuItem value="SQL">SQL</MenuItem>
+                                    <MenuItem value="FILE">FILE</MenuItem>
+                                </TextField>
+                            </Stack>
+                            <TextField label="Order index" type="number" value={itemDialog.draft.orderIndex} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, orderIndex: Number(event.target.value) } })} />
+                            <TextField label="Statement" multiline minRows={4} value={itemDialog.draft.statement ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, statement: event.target.value } })} />
+                            {itemDialog.draft.itemType === "CODING" || itemDialog.draft.itemType === "SQL" ? (
+                                <Stack spacing={2}>
+                                    <TextField label="Language" helperText="Free string. CourseService does not hardcode supported execution languages." value={itemDialog.draft.language ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, language: event.target.value } })} required />
+                                    <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                                        <TextField label="timeLimitMs" type="number" value={itemDialog.draft.timeLimitMs ?? 2000} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, timeLimitMs: Number(event.target.value) } })} fullWidth />
+                                        <TextField label="memoryLimitMb" type="number" value={itemDialog.draft.memoryLimitMb ?? 256} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, memoryLimitMb: Number(event.target.value) } })} fullWidth />
+                                        <TextField label="outputLimitKb" type="number" value={itemDialog.draft.outputLimitKb ?? 128} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, outputLimitKb: Number(event.target.value) } })} fullWidth />
+                                    </Stack>
+                                </Stack>
+                            ) : null}
+                        </Stack>
+                    ) : null}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setItemDialog(null)}>Cancel</Button>
+                    <Button variant="contained" onClick={() => void saveItem()} disabled={action === "item"}>Save item</Button>
+                </DialogActions>
+            </Dialog>
         </PageContainer>
     );
 }
