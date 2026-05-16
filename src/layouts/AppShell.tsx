@@ -2,10 +2,13 @@ import { Box } from "@mui/material";
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useAuth } from "../auth/useAuth";
 
 export function AppShell() {
     const location = useLocation();
-    const usesMarketingShell = location.pathname === "/" || location.pathname === "/login" || location.pathname === "/register";
+    const { user } = useAuth();
+    const isAuthRoute = location.pathname === "/login" || location.pathname === "/register";
+    const usesMarketingShell = isAuthRoute || (location.pathname === "/" && !user);
 
     return (
         <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
