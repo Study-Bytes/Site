@@ -38,7 +38,7 @@ export default function TeacherCoursesPage() {
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
                     <Box sx={{ flexGrow: 1 }}>
                         <Typography variant="h2">Teacher courses</Typography>
-                        <Typography sx={{ color: "text.secondary", mt: 1 }}>List endpoint contract: `GET /api/teacher/courses`.</Typography>
+                        <Typography sx={{ color: "text.secondary", mt: 1 }}>List endpoint contract: `GET /api/v1/teacher/courses`.</Typography>
                     </Box>
                     <Button component={RouterLink} to="/teacher/courses/new" variant="contained">
                         Create course

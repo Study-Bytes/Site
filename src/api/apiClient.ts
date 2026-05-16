@@ -35,7 +35,7 @@ export function clearAuthTokens() {
 
 function buildUrl(path: string, query?: QueryParams) {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    const url = `${env.bffBaseUrl}${normalizedPath}`;
+    const url = `${env.bffBaseUrl}${env.bffApiPrefix}${normalizedPath}`;
     if (!query) return url;
 
     const params = new URLSearchParams();

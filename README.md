@@ -29,10 +29,11 @@ LearningService
 CodeExecutorService
 ```
 
-Use a single backend base URL:
+Use a single BFF origin and a single external BFF API prefix:
 
 ```text
 VITE_BFF_BASE_URL
+VITE_BFF_API_PREFIX
 ```
 
 ## Environment variables
@@ -46,9 +47,12 @@ cp .env.example .env.local
 Available variables:
 
 ```env
-VITE_BFF_BASE_URL=/api
+VITE_BFF_BASE_URL=http://localhost:8080
+VITE_BFF_API_PREFIX=/api/v1
 VITE_USE_MOCK_BFF=true
 ```
+
+`VITE_BFF_BASE_URL` is the BFF origin. `VITE_BFF_API_PREFIX` is the versioned external Site-BFF API prefix. Service modules keep paths like `/courses` and `/teacher/courses`; the API client combines them into `/api/v1/courses` and `/api/v1/teacher/courses`.
 
 `VITE_USE_MOCK_BFF=true` enables the local mock BFF adapter. This lets frontend development continue before the real BFF endpoints are finished.
 
@@ -58,7 +62,8 @@ Set it to `false` when BFF is deployed:
 
 ```env
 VITE_USE_MOCK_BFF=false
-VITE_BFF_BASE_URL=https://studybytes.example.com/api
+VITE_BFF_BASE_URL=https://studybytes.example.com
+VITE_BFF_API_PREFIX=/api/v1
 ```
 
 ## Local development
@@ -112,10 +117,48 @@ This frontend foundation includes:
 
 The BFF should expose frontend-facing endpoints that hide internal microservice paths. The DTO names below correspond to TypeScript types in `src/api/bffContracts.ts`.
 
+The external Site-BFF API is versioned at `/api/v1`. The frontend is configured with a BFF origin and a BFF API prefix:
+
+```env
+VITE_BFF_BASE_URL=http://localhost:8080
+VITE_BFF_API_PREFIX=/api/v1
+```
+
+If the BFF has its own server-side route prefix config, it should expose the same public prefix:
+
+```env
+BFF_API_PREFIX=/api/v1
+```
+
+The version is not left to frontend discretion. `/api/v1` is the agreed external Site-BFF contract for this MVP. `VITE_BFF_API_PREFIX` only tells the built Site where that agreed BFF API is mounted. Moving to `/api/v2` should be handled as an explicit contract change.
+
+The frontend API client builds request URLs as:
+
+```text
+{VITE_BFF_BASE_URL}{VITE_BFF_API_PREFIX}{servicePath}
+```
+
+Example:
+
+```text
+servicePath: /teacher/courses
+request URL: http://localhost:8080/api/v1/teacher/courses
+```
+
+The frontend service modules keep UI-friendly paths such as `/courses`, `/learn/my-courses`, and `/teacher/courses`. They must not know internal backend service URLs or internal backend route names. The BFF owns proxying:
+
+```text
+Site -> BFF /api/v1/courses
+BFF  -> CourseService /api/v1/courses
+```
+
+If a backend service also uses `/api/v1`, that is internal to the BFF and not part of the Site contract.
+
 ### Common rules
 
-- Site uses only `VITE_BFF_BASE_URL`.
+- Site uses only `VITE_BFF_BASE_URL` plus `VITE_BFF_API_PREFIX`.
 - Site never calls internal backend service URLs directly.
+- Site service modules do not include `/api/v1` directly; the shared API client adds the configured prefix.
 - BFF returns UI-friendly DTOs.
 - Validation errors should use this shape:
 
@@ -133,14 +176,14 @@ The BFF should expose frontend-facing endpoints that hide internal microservice 
 ### Auth/session
 
 ```http
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-POST /api/auth/refresh
-GET  /api/me
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+POST /api/v1/auth/refresh
+GET  /api/v1/me
 ```
 
-`GET /api/me` response:
+`GET /api/v1/me` response:
 
 ```json
 {
@@ -178,22 +221,22 @@ If tokens are returned, Site stores them and sends `Authorization: Bearer <acces
 Minimum:
 
 ```http
-GET /api/me
+GET /api/v1/me
 ```
 
 Optional/future profile editing endpoints:
 
 ```http
-PUT /api/me/profile
-PUT /api/me/password
+PUT /api/v1/me/profile
+PUT /api/v1/me/password
 ```
 
 ### Public courses
 
 ```http
-GET /api/courses
-GET /api/courses/{courseId}
-GET /api/courses/{courseId}/items/{itemId}/preview
+GET /api/v1/courses
+GET /api/v1/courses/{courseId}
+GET /api/v1/courses/{courseId}/items/{itemId}/preview
 ```
 
 Supported catalog query params:
@@ -262,10 +305,10 @@ Course details:
 ### Student learning
 
 ```http
-POST /api/learn/courses/{courseId}/enroll
-GET  /api/learn/my-courses
-GET  /api/learn/courses/{courseId}
-GET  /api/learn/courses/{courseId}/items/{itemId}
+POST /api/v1/learn/courses/{courseId}/enroll
+GET  /api/v1/learn/my-courses
+GET  /api/v1/learn/courses/{courseId}
+GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 ```
 
 Learning dashboard item:
@@ -326,10 +369,10 @@ BFF must not expose hidden tests or expected outputs through normal learning ite
 ### Submissions/execution
 
 ```http
-POST /api/learn/courses/{courseId}/items/{itemId}/run
-POST /api/learn/courses/{courseId}/items/{itemId}/submit
-GET  /api/learn/courses/{courseId}/items/{itemId}/submissions
-GET  /api/learn/submissions/{submissionId}
+POST /api/v1/learn/courses/{courseId}/items/{itemId}/run
+POST /api/v1/learn/courses/{courseId}/items/{itemId}/submit
+GET  /api/v1/learn/courses/{courseId}/items/{itemId}/submissions
+GET  /api/v1/learn/submissions/{submissionId}
 ```
 
 Run/submit request:
@@ -374,13 +417,15 @@ Site must not know about `CodeExecutorService` URLs. Execution goes through BFF/
 ### Teacher courses
 
 ```http
-GET  /api/teacher/courses
-POST /api/teacher/courses
-GET  /api/teacher/courses/{courseId}
-PUT  /api/teacher/courses/{courseId}
-POST /api/teacher/courses/{courseId}/publish
-POST /api/teacher/courses/{courseId}/archive
+GET  /api/v1/teacher/courses
+POST /api/v1/teacher/courses
+GET  /api/v1/teacher/courses/{courseId}
+PUT  /api/v1/teacher/courses/{courseId}
+POST /api/v1/teacher/courses/{courseId}/publish
+POST /api/v1/teacher/courses/{courseId}/archive
 ```
+
+Teacher endpoints are intentionally named for the Site teacher cabinet. They must not leak internal CourseService admin route naming such as `/admin/...`.
 
 Teacher course list query params:
 
@@ -413,16 +458,16 @@ Course upsert request:
 ### Teacher modules and items
 
 ```http
-POST   /api/teacher/courses/{courseId}/modules
-PUT    /api/teacher/courses/{courseId}/modules/reorder
-PUT    /api/teacher/modules/{moduleId}
-DELETE /api/teacher/modules/{moduleId}
+POST   /api/v1/teacher/courses/{courseId}/modules
+PUT    /api/v1/teacher/courses/{courseId}/modules/reorder
+PUT    /api/v1/teacher/modules/{moduleId}
+DELETE /api/v1/teacher/modules/{moduleId}
 
-POST   /api/teacher/modules/{moduleId}/items
-PUT    /api/teacher/modules/{moduleId}/items/reorder
-GET    /api/teacher/items/{itemId}
-PUT    /api/teacher/items/{itemId}
-DELETE /api/teacher/items/{itemId}
+POST   /api/v1/teacher/modules/{moduleId}/items
+PUT    /api/v1/teacher/modules/{moduleId}/items/reorder
+GET    /api/v1/teacher/items/{itemId}
+PUT    /api/v1/teacher/items/{itemId}
+DELETE /api/v1/teacher/items/{itemId}
 ```
 
 Module reorder request:
@@ -444,10 +489,10 @@ Item reorder request:
 ### Teacher item nested content
 
 ```http
-PUT /api/teacher/items/{itemId}/content-blocks
-PUT /api/teacher/items/{itemId}/hints
-PUT /api/teacher/items/{itemId}/test-cases
-PUT /api/teacher/items/{itemId}/options
+PUT /api/v1/teacher/items/{itemId}/content-blocks
+PUT /api/v1/teacher/items/{itemId}/hints
+PUT /api/v1/teacher/items/{itemId}/test-cases
+PUT /api/v1/teacher/items/{itemId}/options
 ```
 
 `language` remains a free string for `CODING` and `SQL`. Site and BFF must not hardcode supported execution languages as a required enum; actual language execution support is handled by LearningService/CodeExecutorService.
@@ -478,7 +523,8 @@ Production Docker builds disable mock BFF by default:
 
 ```bash
 docker build \
-  --build-arg VITE_BFF_BASE_URL=/api \
+  --build-arg VITE_BFF_BASE_URL= \
+  --build-arg VITE_BFF_API_PREFIX=/api/v1 \
   --build-arg VITE_USE_MOCK_BFF=false \
   -t studybytes-site .
 ```
