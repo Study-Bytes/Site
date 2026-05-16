@@ -20,7 +20,7 @@ export default function ProfilePage() {
             <Stack spacing={3}>
                 <Box>
                     <Typography variant="h2">Profile</Typography>
-                    <Typography sx={{ color: "text.secondary", mt: 1 }}>Current user model is received through BFF `/api/me`.</Typography>
+                    <Typography sx={{ color: "text.secondary", mt: 1 }}>Current user model is received through BFF `/api/v1/me`.</Typography>
                 </Box>
 
                 <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 5 }}>

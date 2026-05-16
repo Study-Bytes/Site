@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Box, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import { bffClient } from "../../api/apiClient";
+import { coursesApi } from "../../api/services";
 import type { CourseAccessType, CourseCatalogItem, CourseDifficulty } from "../../api/bffContracts";
 import { CourseCard } from "../../components/course/CourseCard";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -25,7 +25,7 @@ export default function CoursesPage() {
         setIsLoading(true);
         setError(null);
         try {
-            setCourses(await bffClient.getCourses());
+            setCourses(await coursesApi.listCourses());
         } catch (requestError) {
             setError(getErrorMessage(requestError, "Failed to load courses"));
         } finally {

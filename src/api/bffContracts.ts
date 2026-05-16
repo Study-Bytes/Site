@@ -1,10 +1,14 @@
 export type UserRole = "STUDENT" | "TEACHER" | "ADMIN";
+export type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 
 export type CurrentUser = {
     id: number;
     email: string;
     fullName: string | null;
     role: UserRole;
+    status?: UserStatus;
+    avatarUrl?: string | null;
+    bio?: string | null;
 };
 
 export type LoginRequest = {
@@ -16,18 +20,72 @@ export type RegisterRequest = {
     fullName: string;
     email: string;
     password: string;
-    role?: UserRole;
+    role?: Exclude<UserRole, "ADMIN">;
 };
 
 export type AuthResponse = {
     user: CurrentUser;
+    accessToken?: string;
+    refreshToken?: string;
+    tokenType?: "Bearer" | string;
+    expiresIn?: number;
+};
+
+export type RefreshTokenRequest = {
+    refreshToken?: string;
+};
+
+export type UpdateProfileRequest = {
+    fullName: string;
+    avatarUrl?: string | null;
+    bio?: string | null;
+};
+
+export type ChangePasswordRequest = {
+    currentPassword: string;
+    newPassword: string;
 };
 
 export type CourseDifficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type CourseAccessType = "PUBLIC" | "UNLISTED" | "PRIVATE";
 export type CourseStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type CourseItemType = "THEORY" | "QUIZ" | "CODING" | "SQL" | "FILE";
+export type ContentBlockType = "TEXT" | "VIDEO" | "IMAGE" | "CODE" | "EMBED" | "FILE";
+export type TestCaseVisibility = "OPEN" | "HIDDEN";
+export type ComparisonMode = "EXACT" | "IGNORE_WHITESPACE" | "CUSTOM";
 export type LearningStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+export type SubmissionStatus = "PENDING" | "RUNNING" | "ACCEPTED" | "WRONG_ANSWER" | "RUNTIME_ERROR" | "COMPILATION_ERROR" | "TIME_LIMIT" | "MEMORY_LIMIT" | "SYSTEM_ERROR";
+
+export type ApiValidationError = {
+    field?: string;
+    message: string;
+};
+
+export type ApiErrorResponse = {
+    status: number;
+    error: string;
+    message: string;
+    validationErrors?: ApiValidationError[];
+};
+
+export type PageResponse<T> = {
+    items: T[];
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type CourseCatalogQuery = {
+    search?: string;
+    difficulty?: CourseDifficulty;
+    accessType?: CourseAccessType;
+    enrollmentEnabled?: boolean;
+    minEstimatedMinutes?: number;
+    maxEstimatedMinutes?: number;
+    page?: number;
+    size?: number;
+};
 
 export type CourseCatalogItem = {
     id: number;
@@ -47,6 +105,8 @@ export type CourseItemSummary = {
     itemType: CourseItemType;
     orderIndex: number;
     estimatedMinutes?: number | null;
+    completed?: boolean;
+    locked?: boolean;
 };
 
 export type CourseModuleSummary = {
@@ -62,6 +122,47 @@ export type CourseDetails = CourseCatalogItem & {
     modules: CourseModuleSummary[];
 };
 
+export type CourseItemPreview = CourseItemSummary & {
+    statement: string | null;
+    contentBlocks: ContentBlockDto[];
+};
+
+export type ContentBlockDto = {
+    id: number;
+    blockType: ContentBlockType;
+    orderIndex: number;
+    title: string | null;
+    textContent: string | null;
+    url: string | null;
+    language: string | null;
+    metadataJson: string | null;
+};
+
+export type HintDto = {
+    id: number;
+    orderIndex: number;
+    text: string;
+};
+
+export type QuizOptionDto = {
+    id: number;
+    orderIndex: number;
+    label: string | null;
+    text: string;
+    selected?: boolean;
+    correct?: boolean;
+    explanation?: string | null;
+};
+
+export type TestCaseDto = {
+    id: number;
+    testKey: string;
+    orderIndex: number;
+    visibility: TestCaseVisibility;
+    inputData: string | null;
+    expectedOutput?: string | null;
+};
+
 export type EnrollmentSummary = {
     course: CourseCatalogItem;
     progressPercent: number;
@@ -69,12 +170,150 @@ export type EnrollmentSummary = {
     nextItemId: number | null;
 };
 
+export type EnrollCourseResponse = {
+    courseId: number;
+    status: LearningStatus;
+    progressPercent: number;
+};
+
+export type LearningCourse = CourseDetails & {
+    progressPercent: number;
+    enrollmentStatus: LearningStatus;
+    nextItemId: number | null;
+};
+
+export type LearningItem = {
+    course: Pick<CourseCatalogItem, "id" | "slug" | "title">;
+    item: {
+        id: number;
+        title: string;
+        itemType: CourseItemType;
+        statement: string | null;
+        contentBlocks: ContentBlockDto[];
+        hints: HintDto[];
+        options: QuizOptionDto[];
+        starterCode: string | null;
+        language: string | null;
+    };
+    progress: {
+        status: LearningStatus;
+        attemptsCount: number;
+        lastScore: number | null;
+    };
+    navigation: {
+        previousItemId: number | null;
+        nextItemId: number | null;
+    };
+};
+
+export type RunItemRequest = {
+    sourceCode?: string;
+    sql?: string;
+    selectedOptionIds?: number[];
+};
+
+export type SubmitItemRequest = RunItemRequest;
+
+export type TestResultDto = {
+    testKey: string;
+    visibility: TestCaseVisibility;
+    passed: boolean;
+    actualOutput: string | null;
+    message: string | null;
+    durationMs: number | null;
+    memoryMb: number | null;
+};
+
+export type SubmissionResult = {
+    id: number;
+    itemId: number;
+    status: SubmissionStatus;
+    score: number | null;
+    passedTests: number;
+    totalTests: number;
+    stdout: string | null;
+    stderr: string | null;
+    testResults: TestResultDto[];
+    createdAt: string;
+};
+
+export type SubmissionHistoryItem = Pick<SubmissionResult, "id" | "itemId" | "status" | "score" | "passedTests" | "totalTests" | "createdAt">;
+
+export type TeacherCourseQuery = {
+    search?: string;
+    status?: CourseStatus;
+    difficulty?: CourseDifficulty;
+    accessType?: CourseAccessType;
+    createdByUserId?: number;
+    page?: number;
+    size?: number;
+};
+
 export type TeacherCourseSummary = CourseCatalogItem & {
     status: CourseStatus;
     updatedAt: string;
+    createdByUserId?: number;
 };
 
-export type ApiValidationError = {
-    field?: string;
-    message: string;
+export type TeacherCourseDetails = CourseDetails & {
+    createdByUserId: number;
+    createdAt: string;
+    updatedAt: string;
+    publishedAt: string | null;
 };
+
+export type CourseUpsertRequest = {
+    slug: string;
+    title: string;
+    shortDescription: string;
+    description: string;
+    difficulty: CourseDifficulty;
+    accessType: CourseAccessType;
+    enrollmentEnabled: boolean;
+    coverImageUrl: string | null;
+    estimatedMinutes: number | null;
+};
+
+export type ModuleUpsertRequest = {
+    title: string;
+    orderIndex: number;
+};
+
+export type ReorderModulesRequest = {
+    orderedModuleIds: number[];
+};
+
+export type ReorderItemsRequest = {
+    orderedItemIds: number[];
+};
+
+export type TeacherItemDetails = {
+    id: number;
+    moduleId: number;
+    title: string;
+    itemType: CourseItemType;
+    statement: string | null;
+    orderIndex: number;
+    language: string | null;
+    starterCode: string | null;
+    solutionCode: string | null;
+    timeLimitMs: number | null;
+    memoryLimitMb: number | null;
+    outputLimitKb: number | null;
+    networkDisabled: boolean;
+    readOnlyFs: boolean;
+    comparisonMode: ComparisonMode;
+    normalizeLineEndings: boolean;
+    trimTrailingWhitespaces: boolean;
+    contentBlocks: ContentBlockDto[];
+    hints: HintDto[];
+    testCases: TestCaseDto[];
+    options: QuizOptionDto[];
+};
+
+export type CourseItemUpsertRequest = Omit<TeacherItemDetails, "id" | "moduleId" | "contentBlocks" | "hints" | "testCases" | "options">;
+
+export type ContentBlockUpsertRequest = Omit<ContentBlockDto, "id">;
+export type HintUpsertRequest = Omit<HintDto, "id">;
+export type TestCaseUpsertRequest = Omit<TestCaseDto, "id">;
+export type QuizOptionUpsertRequest = Omit<QuizOptionDto, "id" | "selected">;

@@ -1,22 +1,51 @@
 import { env } from "../config/env";
 import { ApiError } from "./apiError";
-import { mockBff } from "../mocks/mockBff";
-import type {
-    ApiValidationError,
-    AuthResponse,
-    CourseCatalogItem,
-    CourseDetails,
-    CurrentUser,
-    EnrollmentSummary,
-    LoginRequest,
-    RegisterRequest,
-    TeacherCourseSummary,
-} from "./bffContracts";
+import type { ApiValidationError } from "./bffContracts";
 
-type RequestOptions = {
-    method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+export type QueryParams = Record<string, string | number | boolean | null | undefined>;
+
+export type RequestOptions = {
+    method?: HttpMethod;
     body?: unknown;
+    query?: QueryParams;
 };
+
+const accessTokenStorageKey = "studybytes_access_token";
+const refreshTokenStorageKey = "studybytes_refresh_token";
+
+export function getStoredAccessToken() {
+    return localStorage.getItem(accessTokenStorageKey);
+}
+
+export function getStoredRefreshToken() {
+    return localStorage.getItem(refreshTokenStorageKey);
+}
+
+export function storeAuthTokens(accessToken?: string, refreshToken?: string) {
+    if (accessToken) localStorage.setItem(accessTokenStorageKey, accessToken);
+    if (refreshToken) localStorage.setItem(refreshTokenStorageKey, refreshToken);
+}
+
+export function clearAuthTokens() {
+    localStorage.removeItem(accessTokenStorageKey);
+    localStorage.removeItem(refreshTokenStorageKey);
+}
+
+function buildUrl(path: string, query?: QueryParams) {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const url = `${env.bffBaseUrl}${env.bffApiPrefix}${normalizedPath}`;
+    if (!query) return url;
+
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") params.set(key, String(value));
+    });
+
+    const queryString = params.toString();
+    return queryString ? `${url}?${queryString}` : url;
+}
 
 async function parseError(response: Response): Promise<ApiError> {
     let message = `Request failed with status ${response.status}`;
@@ -33,13 +62,17 @@ async function parseError(response: Response): Promise<ApiError> {
     return new ApiError(message, response.status, validationErrors);
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const response = await fetch(`${env.bffBaseUrl}${path}`, {
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    const accessToken = getStoredAccessToken();
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+    const response = await fetch(buildUrl(path, options.query), {
         method: options.method ?? "GET",
         credentials: "include",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
 
@@ -47,16 +80,3 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
 }
-
-const realBff = {
-    getMe: () => request<CurrentUser | null>("/me"),
-    login: (body: LoginRequest) => request<AuthResponse>("/auth/login", { method: "POST", body }),
-    register: (body: RegisterRequest) => request<AuthResponse>("/auth/register", { method: "POST", body }),
-    logout: () => request<void>("/auth/logout", { method: "POST" }),
-    getCourses: () => request<CourseCatalogItem[]>("/courses"),
-    getCourse: (courseId: number) => request<CourseDetails>(`/courses/${courseId}`),
-    getMyLearning: () => request<EnrollmentSummary[]>("/learn/my-courses"),
-    getTeacherCourses: () => request<TeacherCourseSummary[]>("/teacher/courses"),
-};
-
-export const bffClient = env.useMockBff ? mockBff : realBff;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { bffClient } from "../api/apiClient";
+import { authApi } from "../api/services";
 import type { CurrentUser } from "../api/bffContracts";
 import { AuthContext } from "./auth-context";
 import type { AuthContextValue } from "./auth-context";
@@ -12,7 +12,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const reloadSession = async () => {
         setIsLoading(true);
         try {
-            const currentUser = await bffClient.getMe();
+            const currentUser = await authApi.me();
             setUser(currentUser);
         } catch {
             setUser(null);
@@ -31,15 +31,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isLoading,
             isAuthenticated: Boolean(user),
             async login(input) {
-                const response = await bffClient.login(input);
+                const response = await authApi.login(input);
                 setUser(response.user);
             },
             async register(input) {
-                const response = await bffClient.register(input);
+                const response = await authApi.register(input);
                 setUser(response.user);
             },
             async logout() {
-                await bffClient.logout();
+                await authApi.logout();
                 setUser(null);
             },
             reloadSession,

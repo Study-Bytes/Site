@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Paper, Stack, Typography } from "@mui/material";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
-import { bffClient } from "../../api/apiClient";
+import { coursesApi } from "../../api/services";
 import type { CourseDetails } from "../../api/bffContracts";
 import { AccessTypeBadge } from "../../components/ui/AccessTypeBadge";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
@@ -34,7 +34,7 @@ export default function CourseDetailsPage() {
             setIsLoading(true);
             setError(null);
             try {
-                setCourse(await bffClient.getCourse(parsedCourseId));
+                setCourse(await coursesApi.getCourse(parsedCourseId));
             } catch (requestError) {
                 setError(getErrorMessage(requestError, "Failed to load course"));
             } finally {
