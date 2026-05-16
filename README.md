@@ -124,6 +124,20 @@ The public Site flow now uses the shared `coursesApi` service and the versioned 
 
 These pages must not use direct CourseService URLs or page-level hardcoded course mocks. In local development, mock data is provided only through the mock BFF adapter behind the same API service layer.
 
+## Implemented student learning flow
+
+The authenticated student flow now uses the shared `learningApi` service and the versioned BFF contract:
+
+- `/courses/:courseId` enrolls authenticated users through `POST /api/v1/learn/courses/{courseId}/enroll` before opening the learning workspace.
+- `/my-learning` renders enrolled courses, progress, continue actions, loading/error/empty states and responsive cards.
+- `/learn/:courseId` renders the learning course page with modules, item type badges, progress, continue action and mobile-friendly accordions.
+- `/learn/:courseId/items/:itemId` renders THEORY, FILE, QUIZ, CODING and SQL items.
+- CODING/SQL items support run/submit actions, output console, test results and submission history.
+- QUIZ items support option selection and answer submission.
+- THEORY/FILE items render content blocks and navigation without execution controls.
+
+Student learning pages must not call LearningService or CodeExecutorService directly. Local development uses the mock BFF adapter through the same `learningApi` methods.
+
 
 ## BFF OpenAPI contract
 

@@ -3,9 +3,11 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    Alert,
     Box,
     Button,
     Chip,
+    CircularProgress,
     Divider,
     Paper,
     Stack,
@@ -18,10 +20,10 @@ import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
-import { Link as RouterLink, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { ApiError, getErrorMessage } from "../../api/apiError";
 import type { CourseDetails, CourseItemSummary } from "../../api/bffContracts";
-import { coursesApi } from "../../api/services";
+import { coursesApi, learningApi } from "../../api/services";
 import { useAuth } from "../../auth/useAuth";
 import { AccessTypeBadge } from "../../components/ui/AccessTypeBadge";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
@@ -46,6 +48,8 @@ function CourseMetric({ label, value }: { label: string; value: string | number 
 }
 
 function CourseItemRow({ item }: { item: CourseItemSummary }) {
+    const stateLabel = item.locked ? "Locked" : item.completed ? "Completed" : "Available";
+
     return (
         <Paper
             variant="outlined"
@@ -66,7 +70,7 @@ function CourseItemRow({ item }: { item: CourseItemSummary }) {
                         </Typography>
                     </Box>
                 </Stack>
-                <Chip size="small" variant="outlined" label={item.locked ? "Locked" : "Available"} sx={{ fontWeight: 800 }} />
+                <Chip size="small" variant="outlined" label={stateLabel} sx={{ fontWeight: 800 }} />
             </Stack>
         </Paper>
     );
@@ -74,7 +78,23 @@ function CourseItemRow({ item }: { item: CourseItemSummary }) {
 
 function CourseCta({ course }: { course: CourseDetails }) {
     const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const [isEnrolling, setIsEnrolling] = useState(false);
+    const [enrollError, setEnrollError] = useState<string | null>(null);
     const hasStarted = course.modules.some((module) => module.items.some((item) => item.completed));
+
+    const enrollAndOpen = async () => {
+        setIsEnrolling(true);
+        setEnrollError(null);
+        try {
+            await learningApi.enrollCourse(course.id);
+            await navigate(`/learn/${course.id}`);
+        } catch (error) {
+            setEnrollError(getErrorMessage(error, "Failed to enroll in this course"));
+        } finally {
+            setIsEnrolling(false);
+        }
+    };
 
     if (course.status !== "PUBLISHED") {
         return (
@@ -101,9 +121,18 @@ function CourseCta({ course }: { course: CourseDetails }) {
     }
 
     return (
-        <Button component={RouterLink} to={`/learn/${course.id}`} variant="contained" endIcon={<ArrowForwardRoundedIcon />} fullWidth>
-            {hasStarted ? "Continue learning" : "Start course"}
-        </Button>
+        <Stack spacing={1.5}>
+            <Button
+                variant="contained"
+                endIcon={isEnrolling ? <CircularProgress size={18} color="inherit" /> : <ArrowForwardRoundedIcon />}
+                disabled={isEnrolling}
+                fullWidth
+                onClick={() => void enrollAndOpen()}
+            >
+                {hasStarted ? "Continue learning" : "Start course"}
+            </Button>
+            {enrollError ? <Alert severity="error">{enrollError}</Alert> : null}
+        </Stack>
     );
 }
 
@@ -238,7 +267,7 @@ export default function CourseDetailsPage() {
                             <Box>
                                 <Typography variant="h3">Course structure</Typography>
                                 <Typography sx={{ color: "text.secondary", mt: 1 }}>
-                                    Modules and public item metadata are loaded from the BFF public course details endpoint.
+                                    Modules and item metadata are loaded from the BFF public course details endpoint.
                                 </Typography>
                             </Box>
 
