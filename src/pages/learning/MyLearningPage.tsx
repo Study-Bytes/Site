@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Button, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
-import { bffClient } from "../../api/apiClient";
+import { learningApi } from "../../api/services";
 import type { EnrollmentSummary } from "../../api/bffContracts";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
@@ -18,7 +18,7 @@ export default function MyLearningPage() {
         setIsLoading(true);
         setError(null);
         try {
-            setItems(await bffClient.getMyLearning());
+            setItems(await learningApi.getMyCourses());
         } catch (requestError) {
             setError(getErrorMessage(requestError, "Failed to load learning dashboard"));
         } finally {

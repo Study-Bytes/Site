@@ -6,7 +6,6 @@ import type { SubmitHandler } from "react-hook-form";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../auth/useAuth";
-import type { UserRole } from "../../api/bffContracts";
 
 const registerSchema = z.object({
     fullName: z.string().min(2, "Full name is required").max(80, "Too long"),
@@ -39,7 +38,7 @@ export default function RegisterPage() {
     const onSubmit: SubmitHandler<RegisterForm> = async (values) => {
         setServerError(null);
         try {
-            await auth.register({ fullName: values.fullName, email: values.email, password: values.password, role: values.role as UserRole });
+            await auth.register({ fullName: values.fullName, email: values.email, password: values.password, role: values.role });
             navigate("/profile", { replace: true });
         } catch (error) {
             setServerError(error instanceof Error ? error.message : "Registration failed");

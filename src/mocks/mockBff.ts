@@ -1,13 +1,36 @@
 import { ApiError } from "../api/apiError";
 import type {
     AuthResponse,
+    ChangePasswordRequest,
+    ContentBlockUpsertRequest,
     CourseCatalogItem,
+    CourseCatalogQuery,
     CourseDetails,
+    CourseItemPreview,
+    CourseItemUpsertRequest,
+    CourseModuleSummary,
+    CourseUpsertRequest,
     CurrentUser,
+    EnrollCourseResponse,
     EnrollmentSummary,
+    HintUpsertRequest,
+    LearningCourse,
+    LearningItem,
     LoginRequest,
+    ModuleUpsertRequest,
+    QuizOptionUpsertRequest,
     RegisterRequest,
+    ReorderItemsRequest,
+    ReorderModulesRequest,
+    RunItemRequest,
+    SubmissionHistoryItem,
+    SubmissionResult,
+    TeacherCourseDetails,
+    TeacherCourseQuery,
     TeacherCourseSummary,
+    TeacherItemDetails,
+    TestCaseUpsertRequest,
+    UpdateProfileRequest,
 } from "../api/bffContracts";
 
 type MockAccount = CurrentUser & { password: string };
@@ -18,6 +41,9 @@ const mockAccounts: MockAccount[] = [
         email: "student@studybytes.dev",
         fullName: "Student Demo",
         role: "STUDENT",
+        status: "ACTIVE",
+        avatarUrl: null,
+        bio: "Learns programming through StudyBytes.",
         password: "password123",
     },
     {
@@ -25,6 +51,9 @@ const mockAccounts: MockAccount[] = [
         email: "teacher@studybytes.dev",
         fullName: "Teacher Demo",
         role: "TEACHER",
+        status: "ACTIVE",
+        avatarUrl: null,
+        bio: "Creates Java and SQL courses.",
         password: "password123",
     },
     {
@@ -32,35 +61,187 @@ const mockAccounts: MockAccount[] = [
         email: "admin@studybytes.dev",
         fullName: "Admin Demo",
         role: "ADMIN",
+        status: "ACTIVE",
+        avatarUrl: null,
+        bio: "Platform administrator.",
         password: "password123",
     },
 ];
 
 const currentUserKey = "studybytes_mock_current_user";
 
-const courses: CourseDetails[] = [
+const itemDetails: Record<number, TeacherItemDetails> = {
+    5001: {
+        id: 5001,
+        moduleId: 1001,
+        title: "Variables and types",
+        itemType: "THEORY",
+        statement: "Read the explanation and remember primitive Java types.",
+        orderIndex: 0,
+        language: null,
+        starterCode: null,
+        solutionCode: null,
+        timeLimitMs: null,
+        memoryLimitMb: null,
+        outputLimitKb: null,
+        networkDisabled: true,
+        readOnlyFs: true,
+        comparisonMode: "EXACT",
+        normalizeLineEndings: true,
+        trimTrailingWhitespaces: true,
+        contentBlocks: [
+            {
+                id: 9001,
+                blockType: "TEXT",
+                orderIndex: 0,
+                title: "Java variables",
+                textContent: "A variable stores a typed value. Java requires explicit types for local variables unless var is used.",
+                url: null,
+                language: null,
+                metadataJson: null,
+            },
+        ],
+        hints: [{ id: 9101, orderIndex: 0, text: "Focus on int, long, double, boolean and String." }],
+        testCases: [],
+        options: [],
+    },
+    5002: {
+        id: 5002,
+        moduleId: 1001,
+        title: "Syntax quiz",
+        itemType: "QUIZ",
+        statement: "Which declaration creates an integer variable in Java?",
+        orderIndex: 1,
+        language: null,
+        starterCode: null,
+        solutionCode: null,
+        timeLimitMs: null,
+        memoryLimitMb: null,
+        outputLimitKb: null,
+        networkDisabled: true,
+        readOnlyFs: true,
+        comparisonMode: "EXACT",
+        normalizeLineEndings: true,
+        trimTrailingWhitespaces: true,
+        contentBlocks: [],
+        hints: [],
+        testCases: [],
+        options: [
+            { id: 9201, orderIndex: 0, label: "A", text: "int count = 1;", correct: true, explanation: "Correct Java integer declaration." },
+            { id: 9202, orderIndex: 1, label: "B", text: "integer count = 1;", correct: false, explanation: "integer is not a Java primitive type." },
+        ],
+    },
+    5003: {
+        id: 5003,
+        moduleId: 1001,
+        title: "First method",
+        itemType: "CODING",
+        statement: "Implement method sum(int a, int b) that returns the sum of two numbers.",
+        orderIndex: 2,
+        language: "java",
+        starterCode: "public class Solution {\n    public int sum(int a, int b) {\n        return 0;\n    }\n}",
+        solutionCode: "public class Solution {\n    public int sum(int a, int b) {\n        return a + b;\n    }\n}",
+        timeLimitMs: 2000,
+        memoryLimitMb: 256,
+        outputLimitKb: 128,
+        networkDisabled: true,
+        readOnlyFs: true,
+        comparisonMode: "EXACT",
+        normalizeLineEndings: true,
+        trimTrailingWhitespaces: true,
+        contentBlocks: [],
+        hints: [{ id: 9301, orderIndex: 0, text: "Return the expression a + b." }],
+        testCases: [
+            { id: 9401, testKey: "sample-1", orderIndex: 0, visibility: "OPEN", inputData: "2 3", expectedOutput: "5" },
+            { id: 9402, testKey: "hidden-negative", orderIndex: 1, visibility: "HIDDEN", inputData: "-2 3", expectedOutput: "1" },
+        ],
+        options: [],
+    },
+    5101: {
+        id: 5101,
+        moduleId: 1002,
+        title: "SELECT and WHERE",
+        itemType: "THEORY",
+        statement: "Learn how SELECT and WHERE filter rows.",
+        orderIndex: 0,
+        language: null,
+        starterCode: null,
+        solutionCode: null,
+        timeLimitMs: null,
+        memoryLimitMb: null,
+        outputLimitKb: null,
+        networkDisabled: true,
+        readOnlyFs: true,
+        comparisonMode: "EXACT",
+        normalizeLineEndings: true,
+        trimTrailingWhitespaces: true,
+        contentBlocks: [
+            {
+                id: 9002,
+                blockType: "TEXT",
+                orderIndex: 0,
+                title: "SQL filtering",
+                textContent: "SELECT chooses columns. WHERE filters rows.",
+                url: null,
+                language: null,
+                metadataJson: null,
+            },
+        ],
+        hints: [],
+        testCases: [],
+        options: [],
+    },
+    5102: {
+        id: 5102,
+        moduleId: 1002,
+        title: "Write SQL query",
+        itemType: "SQL",
+        statement: "Select all active users from table users.",
+        orderIndex: 1,
+        language: "postgresql",
+        starterCode: "SELECT *\nFROM users\nWHERE ...;",
+        solutionCode: "SELECT *\nFROM users\nWHERE status = 'ACTIVE';",
+        timeLimitMs: 2000,
+        memoryLimitMb: 256,
+        outputLimitKb: 128,
+        networkDisabled: true,
+        readOnlyFs: true,
+        comparisonMode: "EXACT",
+        normalizeLineEndings: true,
+        trimTrailingWhitespaces: true,
+        contentBlocks: [],
+        hints: [{ id: 9302, orderIndex: 0, text: "Use WHERE status = 'ACTIVE'." }],
+        testCases: [{ id: 9403, testKey: "sample-sql", orderIndex: 0, visibility: "OPEN", inputData: null, expectedOutput: "rows" }],
+        options: [],
+    },
+};
+
+let courses: TeacherCourseDetails[] = [
     {
         id: 101,
         slug: "java-core",
         title: "Java Core",
         shortDescription: "ООП, коллекции, исключения и базовые паттерны для уверенного Java-кода.",
-        description:
-            "Практический курс по Java Core для студентов и junior-разработчиков. Теория закрепляется quiz и coding-заданиями.",
+        description: "Практический курс по Java Core для студентов и junior-разработчиков. Теория закрепляется quiz и coding-заданиями.",
         difficulty: "BEGINNER",
         accessType: "PUBLIC",
         enrollmentEnabled: true,
         coverImageUrl: "/course-java.jpg",
         estimatedMinutes: 420,
         status: "PUBLISHED",
+        createdByUserId: 2,
+        createdAt: new Date(Date.now() - 86400000 * 20).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+        publishedAt: new Date(Date.now() - 86400000 * 8).toISOString(),
         modules: [
             {
                 id: 1001,
-                title: "База языка",
+                title: "Java basics",
                 orderIndex: 0,
                 items: [
-                    { id: 5001, title: "Переменные и типы", itemType: "THEORY", orderIndex: 0, estimatedMinutes: 12 },
-                    { id: 5002, title: "Проверка синтаксиса", itemType: "QUIZ", orderIndex: 1, estimatedMinutes: 8 },
-                    { id: 5003, title: "Первый метод", itemType: "CODING", orderIndex: 2, estimatedMinutes: 20 },
+                    { id: 5001, title: "Variables and types", itemType: "THEORY", orderIndex: 0, estimatedMinutes: 12, completed: true },
+                    { id: 5002, title: "Syntax quiz", itemType: "QUIZ", orderIndex: 1, estimatedMinutes: 8, completed: true },
+                    { id: 5003, title: "First method", itemType: "CODING", orderIndex: 2, estimatedMinutes: 20, completed: false },
                 ],
             },
         ],
@@ -70,22 +251,25 @@ const courses: CourseDetails[] = [
         slug: "sql-basics",
         title: "SQL & Databases",
         shortDescription: "SELECT, JOIN, индексы и базовое понимание реляционных баз данных.",
-        description:
-            "Курс по SQL и работе с данными: от простых выборок до соединений и анализа запросов.",
+        description: "Курс по SQL и работе с данными: от простых выборок до соединений и анализа запросов.",
         difficulty: "INTERMEDIATE",
         accessType: "PUBLIC",
         enrollmentEnabled: true,
         coverImageUrl: "/course-sql.jpg",
         estimatedMinutes: 360,
         status: "PUBLISHED",
+        createdByUserId: 2,
+        createdAt: new Date(Date.now() - 86400000 * 18).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+        publishedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
         modules: [
             {
                 id: 1002,
-                title: "Запросы",
+                title: "Queries",
                 orderIndex: 0,
                 items: [
-                    { id: 5101, title: "SELECT и WHERE", itemType: "THEORY", orderIndex: 0, estimatedMinutes: 15 },
-                    { id: 5102, title: "Написать SQL-запрос", itemType: "SQL", orderIndex: 1, estimatedMinutes: 25 },
+                    { id: 5101, title: "SELECT and WHERE", itemType: "THEORY", orderIndex: 0, estimatedMinutes: 15, completed: true },
+                    { id: 5102, title: "Write SQL query", itemType: "SQL", orderIndex: 1, estimatedMinutes: 25, completed: false },
                 ],
             },
         ],
@@ -95,22 +279,26 @@ const courses: CourseDetails[] = [
         slug: "computer-networks",
         title: "Computer Networks",
         shortDescription: "TCP/IP, NAT, маршрутизация и диагностика сетевых проблем.",
-        description:
-            "Курс для тех, кто хочет понимать сетевую основу веба, VPN, Docker-сетей и микросервисов.",
+        description: "Курс для тех, кто хочет понимать сетевую основу веба, VPN, Docker-сетей и микросервисов.",
         difficulty: "ADVANCED",
         accessType: "UNLISTED",
         enrollmentEnabled: false,
         coverImageUrl: "/course-net.jpg",
         estimatedMinutes: 510,
-        status: "PUBLISHED",
+        status: "DRAFT",
+        createdByUserId: 2,
+        createdAt: new Date(Date.now() - 86400000 * 6).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+        publishedAt: null,
         modules: [],
     },
 ];
 
+let submissionSeq = 7000;
 let sessionUser: CurrentUser | null = loadSessionUser();
 
-function delay<T>(value: T, ms = 180): Promise<T> {
-    return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+function delay<T>(value: T, ms = 160): Promise<T> {
+    return new Promise((resolve) => window.setTimeout(() => resolve(structuredClone(value)), ms));
 }
 
 function publicCourse(course: CourseDetails): CourseCatalogItem {
@@ -124,6 +312,15 @@ function publicCourse(course: CourseDetails): CourseCatalogItem {
         enrollmentEnabled: course.enrollmentEnabled,
         coverImageUrl: course.coverImageUrl,
         estimatedMinutes: course.estimatedMinutes,
+    };
+}
+
+function publicCourseDetails(course: TeacherCourseDetails): CourseDetails {
+    return {
+        ...publicCourse(course),
+        description: course.description,
+        status: course.status,
+        modules: course.modules,
     };
 }
 
@@ -149,10 +346,48 @@ function requireUser() {
     return sessionUser;
 }
 
+function requireTeacher() {
+    const user = requireUser();
+    if (user.role !== "TEACHER" && user.role !== "ADMIN") throw new ApiError("Access denied", 403);
+    return user;
+}
+
 function findCourse(id: number) {
     const course = courses.find((item) => item.id === id);
     if (!course) throw new ApiError("Course not found", 404);
     return course;
+}
+
+function findModule(moduleId: number) {
+    for (const course of courses) {
+        const module = course.modules.find((item) => item.id === moduleId);
+        if (module) return { course, module };
+    }
+    throw new ApiError("Module not found", 404);
+}
+
+function findItem(itemId: number) {
+    const details = itemDetails[itemId];
+    if (!details) throw new ApiError("Course item not found", 404);
+    return details;
+}
+
+function courseMatchesQuery(course: TeacherCourseDetails, query?: CourseCatalogQuery | TeacherCourseQuery) {
+    if (!query) return true;
+    if (query.difficulty && course.difficulty !== query.difficulty) return false;
+    if (query.accessType && course.accessType !== query.accessType) return false;
+    if ("status" in query && query.status && course.status !== query.status) return false;
+    if ("createdByUserId" in query && query.createdByUserId && course.createdByUserId !== query.createdByUserId) return false;
+    if ("enrollmentEnabled" in query && query.enrollmentEnabled !== undefined && course.enrollmentEnabled !== query.enrollmentEnabled) return false;
+    if (query.search) {
+        const normalized = query.search.trim().toLowerCase();
+        if (normalized && !`${course.title} ${course.shortDescription}`.toLowerCase().includes(normalized)) return false;
+    }
+    return true;
+}
+
+function nextId(values: number[]) {
+    return Math.max(0, ...values) + 1;
 }
 
 export const mockBff = {
@@ -162,40 +397,36 @@ export const mockBff = {
 
     async login(request: LoginRequest): Promise<AuthResponse> {
         const account = mockAccounts.find((item) => item.email.toLowerCase() === request.email.toLowerCase());
-        if (!account || account.password !== request.password) {
-            throw new ApiError("Invalid email or password", 401);
-        }
-
-        const user: CurrentUser = {
-            id: account.id,
-            email: account.email,
-            fullName: account.fullName,
-            role: account.role,
-        };
+        if (!account || account.password !== request.password) throw new ApiError("Invalid email or password", 401);
+        const user: CurrentUser = { ...account };
+        delete (user as Partial<MockAccount>).password;
         persistSession(user);
-        return delay({ user });
+        return delay({ user, accessToken: "mock-access-token", refreshToken: "mock-refresh-token", tokenType: "Bearer", expiresIn: 900 });
     },
 
     async register(request: RegisterRequest): Promise<AuthResponse> {
         const exists = mockAccounts.some((item) => item.email.toLowerCase() === request.email.toLowerCase());
         if (exists) throw new ApiError("User with this email already exists", 409);
-
-        const user: MockAccount = {
-            id: mockAccounts.length + 1,
+        const account: MockAccount = {
+            id: nextId(mockAccounts.map((item) => item.id)),
             email: request.email,
             fullName: request.fullName,
             role: request.role ?? "STUDENT",
+            status: "ACTIVE",
+            avatarUrl: null,
+            bio: null,
             password: request.password,
         };
-        mockAccounts.push(user);
-        const publicUser: CurrentUser = {
-            id: user.id,
-            email: user.email,
-            fullName: user.fullName,
-            role: user.role,
-        };
-        persistSession(publicUser);
-        return delay({ user: publicUser });
+        mockAccounts.push(account);
+        const user: CurrentUser = { ...account };
+        delete (user as Partial<MockAccount>).password;
+        persistSession(user);
+        return delay({ user, accessToken: "mock-access-token", refreshToken: "mock-refresh-token", tokenType: "Bearer", expiresIn: 900 });
+    },
+
+    async refresh(): Promise<AuthResponse> {
+        const user = requireUser();
+        return delay({ user, accessToken: "mock-access-token", refreshToken: "mock-refresh-token", tokenType: "Bearer", expiresIn: 900 });
     },
 
     async logout(): Promise<void> {
@@ -203,12 +434,49 @@ export const mockBff = {
         return delay(undefined);
     },
 
-    async getCourses(): Promise<CourseCatalogItem[]> {
-        return delay(courses.filter((item) => item.status === "PUBLISHED").map(publicCourse));
+    async updateProfile(request: UpdateProfileRequest): Promise<CurrentUser> {
+        const user = requireUser();
+        const account = mockAccounts.find((item) => item.id === user.id);
+        if (!account) throw new ApiError("User not found", 404);
+        account.fullName = request.fullName;
+        account.avatarUrl = request.avatarUrl ?? null;
+        account.bio = request.bio ?? null;
+        const updated: CurrentUser = { id: account.id, email: account.email, fullName: account.fullName, role: account.role, status: account.status, avatarUrl: account.avatarUrl, bio: account.bio };
+        persistSession(updated);
+        return delay(updated);
+    },
+
+    async changePassword(_request: ChangePasswordRequest): Promise<void> {
+        void _request;
+        requireUser();
+        return delay(undefined);
+    },
+
+    async getCourses(query?: CourseCatalogQuery): Promise<CourseCatalogItem[]> {
+        return delay(courses.filter((course) => course.status === "PUBLISHED").filter((course) => courseMatchesQuery(course, query)).map(publicCourse));
     },
 
     async getCourse(courseId: number): Promise<CourseDetails> {
-        return delay(findCourse(courseId));
+        return delay(publicCourseDetails(findCourse(courseId)));
+    },
+
+    async getCourseItemPreview(courseId: number, itemId: number): Promise<CourseItemPreview> {
+        findCourse(courseId);
+        const item = findItem(itemId);
+        return delay({
+            id: item.id,
+            title: item.title,
+            itemType: item.itemType,
+            orderIndex: item.orderIndex,
+            statement: item.statement,
+            contentBlocks: item.contentBlocks,
+        });
+    },
+
+    async enrollCourse(courseId: number): Promise<EnrollCourseResponse> {
+        requireUser();
+        findCourse(courseId);
+        return delay({ courseId, status: "IN_PROGRESS", progressPercent: 0 });
     },
 
     async getMyLearning(): Promise<EnrollmentSummary[]> {
@@ -219,15 +487,225 @@ export const mockBff = {
         ]);
     },
 
-    async getTeacherCourses(): Promise<TeacherCourseSummary[]> {
-        const user = requireUser();
-        if (user.role !== "TEACHER" && user.role !== "ADMIN") throw new ApiError("Access denied", 403);
+    async getLearningCourse(courseId: number): Promise<LearningCourse> {
+        requireUser();
+        const course = findCourse(courseId);
+        return delay({ ...publicCourseDetails(course), progressPercent: courseId === 101 ? 42 : 100, enrollmentStatus: courseId === 101 ? "IN_PROGRESS" : "COMPLETED", nextItemId: course.modules[0]?.items[0]?.id ?? null });
+    },
+
+    async getLearningItem(courseId: number, itemId: number): Promise<LearningItem> {
+        requireUser();
+        const course = findCourse(courseId);
+        const item = findItem(itemId);
+        const allItems = course.modules.flatMap((module) => module.items).sort((a, b) => a.orderIndex - b.orderIndex);
+        const currentIndex = allItems.findIndex((entry) => entry.id === itemId);
+        return delay({
+            course: { id: course.id, slug: course.slug, title: course.title },
+            item: {
+                id: item.id,
+                title: item.title,
+                itemType: item.itemType,
+                statement: item.statement,
+                contentBlocks: item.contentBlocks,
+                hints: item.hints,
+                options: item.options.map((option) => ({ ...option, correct: undefined })),
+                starterCode: item.starterCode,
+                language: item.language,
+            },
+            progress: { status: currentIndex < 2 ? "COMPLETED" : "IN_PROGRESS", attemptsCount: 2, lastScore: currentIndex < 2 ? 100 : 60 },
+            navigation: {
+                previousItemId: currentIndex > 0 ? allItems[currentIndex - 1].id : null,
+                nextItemId: currentIndex >= 0 && currentIndex < allItems.length - 1 ? allItems[currentIndex + 1].id : null,
+            },
+        });
+    },
+
+    async runItem(courseId: number, itemId: number, _request: RunItemRequest): Promise<SubmissionResult> {
+        void _request;
+        requireUser();
+        findCourse(courseId);
+        findItem(itemId);
+        return delay({
+            id: ++submissionSeq,
+            itemId,
+            status: "ACCEPTED",
+            score: 100,
+            passedTests: 1,
+            totalTests: 1,
+            stdout: "Sample run completed",
+            stderr: null,
+            testResults: [{ testKey: "sample-1", visibility: "OPEN", passed: true, actualOutput: "5", message: null, durationMs: 16, memoryMb: 12 }],
+            createdAt: new Date().toISOString(),
+        });
+    },
+
+    async submitItem(courseId: number, itemId: number, request: RunItemRequest): Promise<SubmissionResult> {
+        return this.runItem(courseId, itemId, request);
+    },
+
+    async getItemSubmissions(_courseId: number, itemId: number): Promise<SubmissionHistoryItem[]> {
+        requireUser();
+        return delay([{ id: 6999, itemId, status: "ACCEPTED", score: 100, passedTests: 2, totalTests: 2, createdAt: new Date(Date.now() - 3600000).toISOString() }]);
+    },
+
+    async getSubmission(submissionId: number): Promise<SubmissionResult> {
+        requireUser();
+        return delay({ id: submissionId, itemId: 5003, status: "ACCEPTED", score: 100, passedTests: 2, totalTests: 2, stdout: "OK", stderr: null, testResults: [], createdAt: new Date().toISOString() });
+    },
+
+    async getTeacherCourses(query?: TeacherCourseQuery): Promise<TeacherCourseSummary[]> {
+        const user = requireTeacher();
         return delay(
-            courses.map((course) => ({
-                ...publicCourse(course),
-                status: course.status,
-                updatedAt: new Date().toISOString(),
-            }))
+            courses
+                .filter((course) => user.role === "ADMIN" || course.createdByUserId === user.id)
+                .filter((course) => courseMatchesQuery(course, query))
+                .map((course) => ({ ...publicCourse(course), status: course.status, updatedAt: course.updatedAt, createdByUserId: course.createdByUserId }))
         );
+    },
+
+    async createTeacherCourse(request: CourseUpsertRequest): Promise<TeacherCourseDetails> {
+        const user = requireTeacher();
+        const course: TeacherCourseDetails = {
+            id: nextId(courses.map((item) => item.id)),
+            ...request,
+            status: "DRAFT",
+            createdByUserId: user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            publishedAt: null,
+            modules: [],
+        };
+        courses = [course, ...courses];
+        return delay(course);
+    },
+
+    async getTeacherCourse(courseId: number): Promise<TeacherCourseDetails> {
+        requireTeacher();
+        return delay(findCourse(courseId));
+    },
+
+    async updateTeacherCourse(courseId: number, request: CourseUpsertRequest): Promise<TeacherCourseDetails> {
+        requireTeacher();
+        const course = findCourse(courseId);
+        Object.assign(course, request, { updatedAt: new Date().toISOString() });
+        return delay(course);
+    },
+
+    async publishTeacherCourse(courseId: number): Promise<TeacherCourseDetails> {
+        requireTeacher();
+        const course = findCourse(courseId);
+        course.status = "PUBLISHED";
+        course.publishedAt = new Date().toISOString();
+        course.updatedAt = new Date().toISOString();
+        return delay(course);
+    },
+
+    async archiveTeacherCourse(courseId: number): Promise<TeacherCourseDetails> {
+        requireTeacher();
+        const course = findCourse(courseId);
+        course.status = "ARCHIVED";
+        course.updatedAt = new Date().toISOString();
+        return delay(course);
+    },
+
+    async createModule(courseId: number, request: ModuleUpsertRequest): Promise<CourseModuleSummary> {
+        requireTeacher();
+        const course = findCourse(courseId);
+        const module = { id: nextId(courses.flatMap((item) => item.modules.map((module) => module.id))), title: request.title, orderIndex: request.orderIndex, items: [] };
+        course.modules.push(module);
+        return delay(module);
+    },
+
+    async updateModule(moduleId: number, request: ModuleUpsertRequest): Promise<CourseModuleSummary> {
+        requireTeacher();
+        const { module } = findModule(moduleId);
+        Object.assign(module, request);
+        return delay(module);
+    },
+
+    async deleteModule(moduleId: number): Promise<void> {
+        requireTeacher();
+        const { course } = findModule(moduleId);
+        course.modules = course.modules.filter((module) => module.id !== moduleId);
+        return delay(undefined);
+    },
+
+    async reorderModules(courseId: number, request: ReorderModulesRequest): Promise<CourseModuleSummary[]> {
+        requireTeacher();
+        const course = findCourse(courseId);
+        course.modules = request.orderedModuleIds.map((id, index) => {
+            const module = course.modules.find((entry) => entry.id === id);
+            if (!module) throw new ApiError("Invalid module reorder request", 400);
+            return { ...module, orderIndex: index };
+        });
+        return delay(course.modules);
+    },
+
+    async createItem(moduleId: number, request: CourseItemUpsertRequest): Promise<TeacherItemDetails> {
+        requireTeacher();
+        const { module } = findModule(moduleId);
+        const id = nextId(Object.keys(itemDetails).map(Number));
+        const item: TeacherItemDetails = { id, moduleId, ...request, contentBlocks: [], hints: [], testCases: [], options: [] };
+        itemDetails[id] = item;
+        module.items.push({ id, title: request.title, itemType: request.itemType, orderIndex: request.orderIndex });
+        return delay(item);
+    },
+
+    async getItem(itemId: number): Promise<TeacherItemDetails> {
+        requireTeacher();
+        return delay(findItem(itemId));
+    },
+
+    async updateItem(itemId: number, request: CourseItemUpsertRequest): Promise<TeacherItemDetails> {
+        requireTeacher();
+        const item = findItem(itemId);
+        Object.assign(item, request);
+        return delay(item);
+    },
+
+    async deleteItem(itemId: number): Promise<void> {
+        requireTeacher();
+        delete itemDetails[itemId];
+        for (const course of courses) for (const module of course.modules) module.items = module.items.filter((item) => item.id !== itemId);
+        return delay(undefined);
+    },
+
+    async reorderItems(moduleId: number, request: ReorderItemsRequest): Promise<CourseModuleSummary> {
+        requireTeacher();
+        const { module } = findModule(moduleId);
+        module.items = request.orderedItemIds.map((id, index) => {
+            const item = module.items.find((entry) => entry.id === id);
+            if (!item) throw new ApiError("Invalid item reorder request", 400);
+            return { ...item, orderIndex: index };
+        });
+        return delay(module);
+    },
+
+    async replaceContentBlocks(itemId: number, blocks: ContentBlockUpsertRequest[]): Promise<TeacherItemDetails> {
+        requireTeacher();
+        const item = findItem(itemId);
+        item.contentBlocks = blocks.map((block, index) => ({ id: 10000 + index, ...block }));
+        return delay(item);
+    },
+
+    async replaceHints(itemId: number, hints: HintUpsertRequest[]): Promise<TeacherItemDetails> {
+        requireTeacher();
+        const item = findItem(itemId);
+        item.hints = hints.map((hint, index) => ({ id: 11000 + index, ...hint }));
+        return delay(item);
+    },
+
+    async replaceTestCases(itemId: number, testCases: TestCaseUpsertRequest[]): Promise<TeacherItemDetails> {
+        requireTeacher();
+        const item = findItem(itemId);
+        item.testCases = testCases.map((testCase, index) => ({ id: 12000 + index, ...testCase }));
+        return delay(item);
+    },
+
+    async replaceOptions(itemId: number, options: QuizOptionUpsertRequest[]): Promise<TeacherItemDetails> {
+        requireTeacher();
+        const item = findItem(itemId);
+        item.options = options.map((option, index) => ({ id: 13000 + index, ...option }));
+        return delay(item);
     },
 };

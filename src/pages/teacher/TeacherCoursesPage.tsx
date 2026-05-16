@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
-import { bffClient } from "../../api/apiClient";
+import { teacherApi } from "../../api/services";
 import type { TeacherCourseSummary } from "../../api/bffContracts";
 import { AccessTypeBadge } from "../../components/ui/AccessTypeBadge";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
@@ -20,7 +20,7 @@ export default function TeacherCoursesPage() {
         setIsLoading(true);
         setError(null);
         try {
-            setCourses(await bffClient.getTeacherCourses());
+            setCourses(await teacherApi.listCourses());
         } catch (requestError) {
             setError(getErrorMessage(requestError, "Failed to load teacher courses"));
         } finally {
