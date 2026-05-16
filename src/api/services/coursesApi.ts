@@ -1,12 +1,17 @@
 import { env } from "../../config/env";
 import { mockBff } from "../../mocks/mockBff";
 import { request } from "../apiClient";
-import type { CourseCatalogItem, CourseCatalogQuery, CourseDetails, CourseItemPreview } from "../bffContracts";
+import type { CourseCatalogItem, CourseCatalogQuery, CourseDetails, CourseItemPreview, PageResponse } from "../bffContracts";
+
+function unwrapCourseList(response: CourseCatalogItem[] | PageResponse<CourseCatalogItem>) {
+    return Array.isArray(response) ? response : response.items;
+}
 
 export const coursesApi = {
-    listCourses(query?: CourseCatalogQuery): Promise<CourseCatalogItem[]> {
+    async listCourses(query?: CourseCatalogQuery): Promise<CourseCatalogItem[]> {
         if (env.useMockBff) return mockBff.getCourses(query);
-        return request<CourseCatalogItem[]>("/courses", { query });
+        const response = await request<CourseCatalogItem[] | PageResponse<CourseCatalogItem>>("/courses", { query });
+        return unwrapCourseList(response);
     },
 
     getCourse(courseId: number): Promise<CourseDetails> {

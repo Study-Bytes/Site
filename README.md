@@ -113,6 +113,17 @@ This frontend foundation includes:
   - `FormSectionCard`
   - `ValidationErrorPanel`
 
+
+## Implemented public pages
+
+The public Site flow now uses the shared `coursesApi` service and the versioned BFF contract:
+
+- `/` renders the StudyBytes landing page and featured courses.
+- `/courses` renders the responsive course catalog with search, difficulty, access type, enrollment and duration filters.
+- `/courses/:courseId` renders course details, modules, item type badges, CTA states and mobile-friendly accordions.
+
+These pages must not use direct CourseService URLs or page-level hardcoded course mocks. In local development, mock data is provided only through the mock BFF adapter behind the same API service layer.
+
 ## Site-BFF MVP contract
 
 The BFF should expose frontend-facing endpoints that hide internal microservice paths. The DTO names below correspond to TypeScript types in `src/api/bffContracts.ts`.

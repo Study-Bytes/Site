@@ -88,6 +88,23 @@ GET /api/v1/courses/{courseId}
 GET /api/v1/courses/{courseId}/items/{itemId}/preview
 ```
 
+`GET /api/v1/courses` is used by Home featured courses and Course Catalog. Supported query parameters:
+
+```text
+search
+difficulty
+accessType
+enrollmentEnabled
+minEstimatedMinutes
+maxEstimatedMinutes
+page
+size
+```
+
+Preferred response shape is `PageResponse<CourseCatalogItem>`. For early BFF development, the Site also accepts a plain `CourseCatalogItem[]` response and normalizes it in `coursesApi`.
+
+`GET /api/v1/courses/{courseId}` is used by Course Details. It must return public course metadata, modules and item summaries only. Hidden tests, expected outputs and correct quiz answers must not be included.
+
 ### Student learning
 
 ```http

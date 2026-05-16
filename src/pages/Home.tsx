@@ -1,35 +1,144 @@
-import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
 import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
 import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import TimelineRoundedIcon from "@mui/icons-material/TimelineRounded";
+import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
+import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import { Link as RouterLink } from "react-router-dom";
+import { getErrorMessage } from "../api/apiError";
+import type { CourseCatalogItem } from "../api/bffContracts";
+import { coursesApi } from "../api/services";
+import { CourseCard } from "../components/course/CourseCard";
+import { EmptyState } from "../components/ui/EmptyState";
+import { ErrorState } from "../components/ui/ErrorState";
+import { LoadingState } from "../components/ui/LoadingState";
 
 function FeatureCard({ title, text, icon }: { title: string; text: string; icon: ReactNode }) {
     return (
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: 4, height: "100%" }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 3,
+                borderRadius: 5,
+                height: "100%",
+                background: "rgba(255,255,255,0.72)",
+                backdropFilter: "blur(10px)",
+            }}
+        >
             <Stack spacing={1.5}>
-                <Box sx={{ color: "primary.main" }}>{icon}</Box>
+                <Box
+                    sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 3,
+                        display: "grid",
+                        placeItems: "center",
+                        color: "primary.main",
+                        bgcolor: "rgba(53,37,205,0.09)",
+                    }}
+                >
+                    {icon}
+                </Box>
                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
                     {title}
                 </Typography>
-                <Typography sx={{ color: "text.secondary" }}>{text}</Typography>
+                <Typography sx={{ color: "text.secondary", lineHeight: 1.65 }}>{text}</Typography>
             </Stack>
         </Paper>
     );
 }
 
+function StatCard({ value, label }: { value: string; label: string }) {
+    return (
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4, textAlign: "center", background: "rgba(255,255,255,0.72)" }}>
+            <Typography variant="h5" sx={{ fontWeight: 950, color: "primary.main" }}>
+                {value}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                {label}
+            </Typography>
+        </Paper>
+    );
+}
+
+function CodePreviewCard() {
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                p: { xs: 2, md: 2.5 },
+                borderRadius: 6,
+                overflow: "hidden",
+                background: "linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(242,238,255,0.9) 100%)",
+                boxShadow: "0 30px 80px rgba(53,37,205,0.12)",
+            }}
+        >
+            <Box component="img" src="/hero-study.jpg" alt="Study workspace" sx={{ width: "100%", borderRadius: 5, display: "block", mb: 2 }} />
+            <Paper
+                sx={{
+                    p: 2,
+                    borderRadius: 4,
+                    bgcolor: "#151321",
+                    color: "#f7f3ff",
+                    fontFamily: "monospace",
+                    fontSize: { xs: 12, sm: 13 },
+                    overflow: "hidden",
+                }}
+            >
+                <Stack spacing={1}>
+                    <Typography component="div" sx={{ color: "#9a91ff", fontFamily: "inherit", fontSize: "inherit" }}>
+                        public int sum(int a, int b) &#123;
+                    </Typography>
+                    <Typography component="div" sx={{ pl: 2, fontFamily: "inherit", fontSize: "inherit" }}>
+                        return a + b;
+                    </Typography>
+                    <Typography component="div" sx={{ color: "#9a91ff", fontFamily: "inherit", fontSize: "inherit" }}>
+                        &#125;
+                    </Typography>
+                    <Typography component="div" sx={{ color: "#8ee6a7", fontFamily: "inherit", fontSize: "inherit" }}>
+                        OK 4/4 tests passed
+                    </Typography>
+                </Stack>
+            </Paper>
+        </Paper>
+    );
+}
+
 export default function Home() {
+    const [featuredCourses, setFeaturedCourses] = useState<CourseCatalogItem[]>([]);
+    const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+    const [coursesError, setCoursesError] = useState<string | null>(null);
+
+    const loadFeaturedCourses = useCallback(async () => {
+        setIsLoadingCourses(true);
+        setCoursesError(null);
+        try {
+            const courses = await coursesApi.listCourses({ size: 3, page: 0, enrollmentEnabled: true });
+            setFeaturedCourses(courses.slice(0, 3));
+        } catch (error) {
+            setCoursesError(getErrorMessage(error, "Failed to load featured courses"));
+        } finally {
+            setIsLoadingCourses(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void loadFeaturedCourses();
+    }, [loadFeaturedCourses]);
+
     return (
         <Box>
             <Box
                 component="section"
                 sx={{
-                    pt: { xs: 12, md: 16 },
-                    pb: { xs: 8, md: 12 },
+                    pt: { xs: 12, md: 17 },
+                    pb: { xs: 7, md: 12 },
                     background:
-                        "radial-gradient(900px 420px at 20% 10%, rgba(53,37,205,0.16), transparent 60%), radial-gradient(720px 360px at 85% 20%, rgba(113,42,226,0.12), transparent 55%)",
+                        "radial-gradient(1000px 480px at 16% 6%, rgba(53,37,205,0.18), transparent 62%), radial-gradient(760px 420px at 88% 18%, rgba(113,42,226,0.14), transparent 58%), linear-gradient(180deg, #fcf8ff 0%, #ffffff 100%)",
                 }}
             >
                 <Container maxWidth="lg">
@@ -37,45 +146,135 @@ export default function Home() {
                         sx={{
                             display: "grid",
                             gridTemplateColumns: { xs: "1fr", md: "7fr 5fr" },
-                            gap: 5,
+                            gap: { xs: 5, md: 7 },
                             alignItems: "center",
                         }}
                     >
-                        <Stack spacing={3}>
-                            <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 950 }}>
-                                StudyBytes platform
+                        <Stack spacing={3.2}>
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ color: "primary.main" }}>
+                                <VerifiedRoundedIcon fontSize="small" />
+                                <Typography variant="overline" sx={{ fontWeight: 950, letterSpacing: 1 }}>
+                                    Interactive programming education
+                                </Typography>
+                            </Stack>
+                            <Typography variant="h1" sx={{ maxWidth: 760 }}>
+                                Learn programming through structured practice, not random tutorials.
                             </Typography>
-                            <Typography variant="h1">Learn programming through structured interactive courses.</Typography>
-                            <Typography variant="h6" sx={{ color: "text.secondary", maxWidth: 680, lineHeight: 1.55 }}>
-                                Theory, quizzes, coding tasks, SQL tasks and progress tracking in one clean learning workspace.
+                            <Typography variant="h6" sx={{ color: "text.secondary", maxWidth: 700, lineHeight: 1.65 }}>
+                                StudyBytes combines theory, quizzes, coding tasks, SQL practice and progress tracking in one clean learning workspace.
                             </Typography>
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                                <Button component={RouterLink} to="/courses" size="large" variant="contained">
+                                <Button component={RouterLink} to="/courses" size="large" variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
                                     Browse courses
                                 </Button>
                                 <Button component={RouterLink} to="/register" size="large" variant="outlined">
                                     Create account
                                 </Button>
                             </Stack>
+                            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.5, maxWidth: 620 }}>
+                                <StatCard value="5" label="item types" />
+                                <StatCard value="BFF" label="single API" />
+                                <StatCard value="MVP" label="course flow" />
+                            </Box>
                         </Stack>
 
-                        <Paper
-                            variant="outlined"
-                            sx={{ p: 2, borderRadius: 5, overflow: "hidden", background: "linear-gradient(145deg, #ffffff 0%, #f0ecf9 100%)" }}
-                        >
-                            <Box component="img" src="/hero-study.jpg" alt="Study workspace" sx={{ width: "100%", borderRadius: 4, display: "block" }} />
-                        </Paper>
+                        <CodePreviewCard />
                     </Box>
                 </Container>
             </Box>
 
             <Container maxWidth="lg" sx={{ py: { xs: 6, md: 9 } }}>
-                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" }, gap: 3 }}>
-                    <FeatureCard title="Structured courses" text="Modules and lessons are organized for predictable progress." icon={<SchoolRoundedIcon />} />
-                    <FeatureCard title="Coding tasks" text="Practice through executable tasks prepared by teachers." icon={<CodeRoundedIcon />} />
-                    <FeatureCard title="Quizzes" text="Check understanding before moving to harder tasks." icon={<FactCheckRoundedIcon />} />
-                    <FeatureCard title="Progress tracking" text="LearningService will aggregate progress and attempts." icon={<TimelineRoundedIcon />} />
-                </Box>
+                <Stack spacing={4}>
+                    <Box sx={{ maxWidth: 720 }}>
+                        <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 950 }}>
+                            Platform capabilities
+                        </Typography>
+                        <Typography variant="h2" sx={{ mt: 1 }}>
+                            Built for measurable progress
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 3 }}>
+                        <FeatureCard title="Structured courses" text="Modules and lessons are organized for predictable learning paths." icon={<SchoolRoundedIcon />} />
+                        <FeatureCard title="Coding tasks" text="Practice with executable tasks, starter code and test feedback." icon={<CodeRoundedIcon />} />
+                        <FeatureCard title="Quizzes" text="Check understanding with fast theory checkpoints before practice." icon={<FactCheckRoundedIcon />} />
+                        <FeatureCard title="Progress tracking" text="Learning data is aggregated through the BFF and LearningService." icon={<TimelineRoundedIcon />} />
+                    </Box>
+                </Stack>
+            </Container>
+
+            <Box component="section" sx={{ py: { xs: 6, md: 9 }, bgcolor: "rgba(245,241,255,0.68)" }}>
+                <Container maxWidth="lg">
+                    <Stack spacing={4}>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "flex-end" }} justifyContent="space-between">
+                            <Box>
+                                <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 950 }}>
+                                    Public catalog
+                                </Typography>
+                                <Typography variant="h2" sx={{ mt: 1 }}>
+                                    Featured courses
+                                </Typography>
+                                <Typography sx={{ color: "text.secondary", mt: 1, maxWidth: 650 }}>
+                                    Loaded through the shared BFF course API. Mock mode uses the same frontend service layer.
+                                </Typography>
+                            </Box>
+                            <Button component={RouterLink} to="/courses" variant="outlined" endIcon={<ArrowForwardRoundedIcon />} sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}>
+                                View all courses
+                            </Button>
+                        </Stack>
+
+                        {isLoadingCourses ? <LoadingState rows={3} /> : null}
+                        {coursesError ? <ErrorState message={coursesError} onRetry={loadFeaturedCourses} /> : null}
+                        {!isLoadingCourses && !coursesError && featuredCourses.length === 0 ? (
+                            <EmptyState
+                                title="No public courses yet"
+                                description="Once courses are published by teachers, they will appear here."
+                                action={
+                                    <Button component={RouterLink} to="/courses" variant="contained">
+                                        Open catalog
+                                    </Button>
+                                }
+                            />
+                        ) : null}
+                        {!isLoadingCourses && !coursesError && featuredCourses.length > 0 ? (
+                            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 3 }}>
+                                {featuredCourses.map((course) => (
+                                    <CourseCard key={course.id} course={course} />
+                                ))}
+                            </Box>
+                        ) : null}
+                    </Stack>
+                </Container>
+            </Box>
+
+            <Container maxWidth="lg" sx={{ py: { xs: 6, md: 9 } }}>
+                <Paper
+                    variant="outlined"
+                    sx={{
+                        p: { xs: 3, md: 5 },
+                        borderRadius: 6,
+                        overflow: "hidden",
+                        background:
+                            "radial-gradient(600px 260px at 90% 10%, rgba(113,42,226,0.18), transparent 60%), linear-gradient(135deg, #ffffff 0%, #f3efff 100%)",
+                    }}
+                >
+                    <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems={{ xs: "flex-start", md: "center" }} justifyContent="space-between">
+                        <Box>
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ color: "primary.main", mb: 1 }}>
+                                <TerminalRoundedIcon fontSize="small" />
+                                <Typography variant="overline" sx={{ fontWeight: 950 }}>
+                                    Ready for BFF integration
+                                </Typography>
+                            </Stack>
+                            <Typography variant="h3">One frontend API, multiple backend services behind it.</Typography>
+                            <Typography sx={{ color: "text.secondary", mt: 1.5, maxWidth: 740 }}>
+                                Site uses only the versioned BFF contract. CourseService, UserService, LearningService and CodeExecutorService stay hidden behind the BFF.
+                            </Typography>
+                        </Box>
+                        <Button component={RouterLink} to="/courses" size="large" variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
+                            Start exploring
+                        </Button>
+                    </Stack>
+                </Paper>
             </Container>
         </Box>
     );
