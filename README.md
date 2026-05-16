@@ -139,6 +139,22 @@ The authenticated student flow now uses the shared `learningApi` service and the
 Student learning pages must not call LearningService or CodeExecutorService directly. Local development uses the mock BFF adapter through the same `learningApi` methods.
 
 
+
+## Implemented teacher course management
+
+The teacher flow now uses the shared `teacherApi` service and the versioned BFF contract:
+
+- `/teacher` renders a teacher dashboard with course statistics, recent courses and quick actions.
+- `/teacher/courses` renders teacher-owned courses with search, status, difficulty and access type filters.
+- Teacher course cards support edit, publish and archive actions through the BFF API.
+- `/teacher/courses/new` creates a course draft through `POST /api/v1/teacher/courses`.
+- `/teacher/courses/:courseId/edit` loads and saves course metadata through `GET/PUT /api/v1/teacher/courses/{courseId}`.
+- Course metadata form includes title, slug, short description, description, difficulty, access type, enrollment toggle, cover image URL and estimated minutes.
+- BFF validation errors are displayed through `ValidationErrorPanel`.
+- Module and item structure is visible in the editor, while full add/edit/reorder structure management remains a separate next task.
+
+Teacher pages must not call CourseService admin endpoints directly. Local development uses the mock BFF adapter through the same `teacherApi` methods.
+
 ## BFF OpenAPI contract
 
 The complete Site-BFF API contract is available as OpenAPI:
