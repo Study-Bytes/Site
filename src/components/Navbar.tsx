@@ -237,7 +237,7 @@ function AppSidebar({ visibleItems }: { visibleItems: NavItem[] }) {
             <Box sx={{ px: 3, mb: 6 }}>
                 <Brand />
             </Box>
-            <Stack spacing={0.5} sx={{ flexGrow: 1 }}>
+            <Stack spacing={0.5} sx={{ flexGrow: 1, alignItems: "stretch" }}>
                 {visibleItems.map((item) => {
                     const active = isActivePath(location.pathname, item);
                     return (
@@ -249,7 +249,9 @@ function AppSidebar({ visibleItems }: { visibleItems: NavItem[] }) {
                             sx={{
                                 mx: 0,
                                 px: 3,
-                                py: 1.4,
+                                py: 1.3,
+                                flexGrow: 0,
+                                minHeight: 52,
                                 borderLeft: active ? `4px solid ${studyBytesColors.primary}` : "4px solid transparent",
                                 borderRadius: active ? "0 8px 8px 0" : 0,
                                 color: active ? "primary.contrastText" : "text.primary",
