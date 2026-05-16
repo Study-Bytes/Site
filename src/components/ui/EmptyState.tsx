@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 export function EmptyState(props: { title: string; description: string; action?: ReactNode }) {
     return (
-        <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 4 }}>
+        <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 1.5 }}>
             <Stack spacing={2} alignItems="center" textAlign="center">
                 <Box sx={{ width: 56, height: 56, borderRadius: 999, bgcolor: "#e2dfff" }} />
                 <Box>

@@ -26,7 +26,7 @@ function LearningCourseCard({ enrollment }: { enrollment: EnrollmentSummary }) {
             variant="outlined"
             sx={{
                 p: { xs: 2.2, md: 2.8 },
-                borderRadius: 5,
+                borderRadius: 2,
                 height: "100%",
                 transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
                 "&:hover": {
@@ -119,7 +119,7 @@ export default function MyLearningPage() {
                     variant="outlined"
                     sx={{
                         p: { xs: 3, md: 5 },
-                        borderRadius: 6,
+                        borderRadius: 2.5,
                         background:
                             "radial-gradient(640px 320px at 92% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f3efff 100%)",
                     }}
@@ -150,7 +150,7 @@ export default function MyLearningPage() {
                             ) : null}
                         </Stack>
 
-                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 5, background: "rgba(255,255,255,0.76)" }}>
+                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, background: "rgba(255,255,255,0.76)" }}>
                             <Stack spacing={2}>
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
                                     Learning summary

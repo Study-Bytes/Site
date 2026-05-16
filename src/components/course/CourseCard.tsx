@@ -1,4 +1,4 @@
-import { Box, Button, Card, CardContent, CardMedia, Chip, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, CardMedia, Chip, Divider, Stack, Typography } from "@mui/material";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -7,15 +7,16 @@ import { Link as RouterLink } from "react-router-dom";
 import type { CourseCatalogItem } from "../../api/bffContracts";
 import { formatDuration } from "../../utils/courseFormat";
 import { DifficultyBadge } from "../ui/DifficultyBadge";
-import { AccessTypeBadge } from "../ui/AccessTypeBadge";
 
 export function CourseCard({ course, compact = false }: { course: CourseCatalogItem; compact?: boolean }) {
+    const accessLabel = course.accessType === "PUBLIC" ? "Free Access" : course.accessType;
+
     return (
         <Card
             variant="outlined"
             sx={{
                 height: "100%",
-                borderRadius: 5,
+                borderRadius: 2,
                 overflow: "hidden",
                 display: "flex",
                 flexDirection: "column",
@@ -23,7 +24,7 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                 transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
                 "&:hover": {
                     transform: { md: "translateY(-4px)" },
-                    boxShadow: "0 22px 54px rgba(30, 25, 70, 0.12)",
+                    boxShadow: "0 18px 42px rgba(30, 25, 70, 0.10)",
                     borderColor: "rgba(53,37,205,0.34)",
                 },
             }}
@@ -42,24 +43,29 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                 )}
                 <Chip
                     size="small"
-                    icon={course.enrollmentEnabled ? <PlayCircleOutlineRoundedIcon /> : <LockOutlinedIcon />}
-                    label={course.enrollmentEnabled ? "Enrollment open" : "Enrollment disabled"}
+                    icon={course.accessType === "PRIVATE" ? <LockOutlinedIcon /> : undefined}
+                    label={accessLabel}
                     sx={{
                         position: "absolute",
-                        top: 14,
-                        left: 14,
+                        top: 12,
+                        right: 12,
                         fontWeight: 900,
-                        backgroundColor: course.enrollmentEnabled ? "rgba(255,255,255,0.92)" : "rgba(255,244,244,0.94)",
+                        backgroundColor: "rgba(255,255,255,0.92)",
                         backdropFilter: "blur(12px)",
                     }}
                 />
             </Box>
 
-            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", p: compact ? 2.25 : 2.75 }}>
-                <Stack spacing={2} sx={{ flexGrow: 1 }}>
+            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", p: compact ? 2 : 2.4 }}>
+                <Stack spacing={1.8} sx={{ flexGrow: 1 }}>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                         <DifficultyBadge difficulty={course.difficulty} />
-                        <AccessTypeBadge accessType={course.accessType} />
+                        <Stack direction="row" spacing={0.7} alignItems="center" sx={{ color: "text.secondary" }}>
+                            <AccessTimeRoundedIcon sx={{ fontSize: 16 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                {formatDuration(course.estimatedMinutes)}
+                            </Typography>
+                        </Stack>
                     </Stack>
 
                     <Box>
@@ -71,21 +77,23 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                         </Typography>
                     </Box>
 
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ color: "text.secondary", mt: "auto" }}>
-                        <AccessTimeRoundedIcon fontSize="small" />
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                            {formatDuration(course.estimatedMinutes)}
+                    <Divider sx={{ mt: "auto" }} />
+
+                    <Stack direction="row" spacing={0.8} alignItems="center" sx={{ color: course.enrollmentEnabled ? "primary.main" : "text.secondary" }}>
+                        {course.enrollmentEnabled ? <PlayCircleOutlineRoundedIcon sx={{ fontSize: 17 }} /> : <LockOutlinedIcon sx={{ fontSize: 17 }} />}
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                            {course.enrollmentEnabled ? "Open Enrollment" : "Enrollment Closed"}
                         </Typography>
                     </Stack>
 
                     <Button
                         component={RouterLink}
                         to={`/courses/${course.id}`}
-                        variant={course.enrollmentEnabled ? "contained" : "outlined"}
+                        variant="text"
                         endIcon={<ArrowForwardRoundedIcon />}
-                        sx={{ borderRadius: 999, fontWeight: 950, alignSelf: "stretch" }}
+                        sx={{ fontWeight: 950, alignSelf: "flex-end", px: 0 }}
                     >
-                        {course.enrollmentEnabled ? "View course" : "View details"}
+                        {course.enrollmentEnabled ? "Start" : "Details"}
                     </Button>
                 </Stack>
             </CardContent>

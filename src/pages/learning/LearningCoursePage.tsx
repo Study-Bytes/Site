@@ -33,7 +33,7 @@ function LearningItemRow({ courseId, item }: { courseId: number; item: CourseIte
     const state = itemState(item);
 
     return (
-        <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 3.5, bgcolor: item.locked ? "rgba(0,0,0,0.02)" : "background.paper" }}>
+        <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1.5, bgcolor: item.locked ? "rgba(0,0,0,0.02)" : "background.paper" }}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "stretch", sm: "center" }}>
                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexGrow: 1, minWidth: 0 }}>
                     <ItemTypeBadge itemType={item.itemType} />
@@ -97,7 +97,7 @@ export default function LearningCoursePage() {
                         variant="outlined"
                         sx={{
                             p: { xs: 3, md: 5 },
-                            borderRadius: 6,
+                            borderRadius: 2.5,
                             background:
                                 "radial-gradient(720px 320px at 88% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
                         }}
@@ -127,7 +127,7 @@ export default function LearningCoursePage() {
                                 </Stack>
                             </Stack>
 
-                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 5, background: "rgba(255,255,255,0.74)" }}>
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, background: "rgba(255,255,255,0.74)" }}>
                                 <Stack spacing={2}>
                                     <Typography variant="h6" sx={{ fontWeight: 950 }}>
                                         Course progress
@@ -155,7 +155,7 @@ export default function LearningCoursePage() {
                     </Paper>
 
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "320px minmax(0, 1fr)" }, gap: 3, alignItems: "start" }}>
-                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 5, position: { md: "sticky" }, top: { md: 96 } }}>
+                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, position: { md: "sticky" }, top: { md: 96 } }}>
                             <Stack spacing={1.7}>
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
                                     Course navigation
@@ -170,7 +170,7 @@ export default function LearningCoursePage() {
                         <Stack spacing={2.5}>
                             {course.modules.length === 0 ? <EmptyState title="No modules" description="This enrolled course has no modules yet." /> : null}
                             {course.modules.map((module, index) => (
-                                <Accordion key={module.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 4, overflow: "hidden", "&:before": { display: "none" } }}>
+                                <Accordion key={module.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 1.5, overflow: "hidden", "&:before": { display: "none" } }}>
                                     <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />} sx={{ px: { xs: 2, md: 2.6 }, py: 1 }}>
                                         <Stack direction="row" spacing={1.5} alignItems="center">
                                             <Chip label={index + 1} color="primary" size="small" sx={{ fontWeight: 950 }} />

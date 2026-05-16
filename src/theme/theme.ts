@@ -49,7 +49,7 @@ export const theme = createTheme({
         divider: studyBytesColors.outlineVariant,
     },
     shape: {
-        borderRadius: 16,
+        borderRadius: 8,
     },
     typography: {
         fontFamily: "Inter, Roboto, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -105,7 +105,11 @@ export const theme = createTheme({
         MuiButton: {
             styleOverrides: {
                 root: {
-                    borderRadius: 999,
+                    borderRadius: 8,
+                    boxShadow: "none",
+                },
+                contained: {
+                    boxShadow: "0 4px 10px rgba(53,37,205,0.22)",
                 },
             },
         },

@@ -178,35 +178,14 @@ export default function CoursesPage() {
 
     return (
         <PageContainer>
-            <Stack spacing={4}>
-                <Paper
-                    variant="outlined"
-                    sx={{
-                        p: { xs: 3, md: 5 },
-                        borderRadius: 6,
-                        background:
-                            "radial-gradient(620px 260px at 88% 4%, rgba(113,42,226,0.16), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
-                    }}
-                >
-                    <Stack direction={{ xs: "column", md: "row" }} spacing={3} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "flex-end" }}>
-                        <Box sx={{ maxWidth: 760 }}>
-                            <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 950 }}>
-                                Course catalog
-                            </Typography>
-                            <Typography variant="h2" sx={{ mt: 1 }}>
-                                Choose a course and start building skill through practice.
-                            </Typography>
-                            <Typography sx={{ color: "text.secondary", mt: 1.5, lineHeight: 1.65 }}>
-                                Browse published StudyBytes courses through the BFF contract. Use filters to narrow by difficulty, access type, enrollment state and duration.
-                            </Typography>
-                        </Box>
-                        <Chip label={`${visibleCourses.length} course${visibleCourses.length === 1 ? "" : "s"}`} color="primary" variant="outlined" sx={{ fontWeight: 900 }} />
-                    </Stack>
-                </Paper>
-
-                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "300px 1fr" }, gap: 3, alignItems: "start" }}>
-                    <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 5, display: { xs: "none", md: "block" }, position: "sticky", top: 96 }}>
-                        <Stack spacing={2}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "300px 1fr" }, gap: { xs: 3, md: 4 }, alignItems: "start" }}>
+                <Stack spacing={3} sx={{ display: { xs: "none", md: "flex" }, position: "sticky", top: 96 }}>
+                    <Box>
+                        <Typography variant="h4">Explore</Typography>
+                        <Typography sx={{ color: "text.secondary", mt: 0.7 }}>Find your next technical skill.</Typography>
+                    </Box>
+                    <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                        <Stack spacing={2.2}>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <TuneRoundedIcon color="primary" />
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
@@ -217,9 +196,35 @@ export default function CoursesPage() {
                             {filterControls}
                         </Stack>
                     </Paper>
+                </Stack>
 
-                    <Stack spacing={3}>
-                        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4, display: { xs: "block", md: "none" } }}>
+                <Stack spacing={3}>
+                    <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "flex-start" }} justifyContent="space-between">
+                        <Box>
+                            <Typography variant="h2">Recommended Courses</Typography>
+                            <Typography sx={{ color: "text.secondary", mt: 0.8, display: { xs: "block", md: "none" } }}>
+                                Discover high-quality educational content to advance your skills.
+                            </Typography>
+                        </Box>
+                        <Chip label={`Showing ${visibleCourses.length} result${visibleCourses.length === 1 ? "" : "s"}`} variant="outlined" sx={{ fontWeight: 900, alignSelf: { xs: "flex-start", md: "center" } }} />
+                    </Stack>
+
+                    <TextField
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Search for courses, topics, or skills..."
+                        fullWidth
+                        sx={{ display: { xs: "block", md: "none" } }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchRoundedIcon color="action" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+
+                        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, display: { xs: "block", md: "none" } }}>
                             <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" spacing={1} alignItems="center">
                                     <FilterListRoundedIcon color="primary" />
@@ -261,9 +266,8 @@ export default function CoursesPage() {
                                 ))}
                             </Box>
                         ) : null}
-                    </Stack>
-                </Box>
-            </Stack>
+                </Stack>
+            </Box>
 
             <Drawer anchor="bottom" open={filterDrawerOpen} onClose={() => setFilterDrawerOpen(false)} PaperProps={{ sx: { borderTopLeftRadius: 24, borderTopRightRadius: 24 } }}>
                 <Box sx={{ p: 2.5, pb: 4 }}>

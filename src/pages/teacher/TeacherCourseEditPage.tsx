@@ -57,7 +57,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
 
                 <FormSectionCard title="Modules and items" description="Reorder and item editor flows will be implemented in the next page tasks.">
                     <Stack spacing={2}>
-                        <Accordion defaultExpanded variant="outlined" sx={{ borderRadius: 3, "&:before": { display: "none" } }}>
+                        <Accordion defaultExpanded variant="outlined" sx={{ borderRadius: 1.25, "&:before": { display: "none" } }}>
                             <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
                                 <Typography sx={{ fontWeight: 900 }}>Module: Basics</Typography>
                             </AccordionSummary>

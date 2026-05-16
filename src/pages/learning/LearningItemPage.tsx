@@ -57,10 +57,10 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
 
     if (block.blockType === "IMAGE" && block.url) {
         return (
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5 }}>
                 <Stack spacing={1.5}>
                     <Typography sx={{ fontWeight: 950 }}>{title}</Typography>
-                    <Box component="img" src={block.url} alt={title} sx={{ width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 3 }} />
+                    <Box component="img" src={block.url} alt={title} sx={{ width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 1.25 }} />
                     {block.textContent ? <Typography sx={{ color: "text.secondary" }}>{block.textContent}</Typography> : null}
                 </Stack>
             </Paper>
@@ -69,7 +69,7 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
 
     if (block.blockType === "VIDEO" || block.blockType === "EMBED") {
         return (
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5 }}>
                 <Stack spacing={1}>
                     <Typography sx={{ fontWeight: 950 }}>{title}</Typography>
                     {block.url ? (
@@ -85,7 +85,7 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
 
     if (block.blockType === "CODE") {
         return (
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5 }}>
                 <Stack spacing={1.2}>
                     <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                         <Typography sx={{ fontWeight: 950 }}>{title}</Typography>
@@ -96,7 +96,7 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
                         sx={{
                             m: 0,
                             p: 2,
-                            borderRadius: 3,
+                            borderRadius: 1.25,
                             overflow: "auto",
                             bgcolor: studyBytesColors.codeSurface,
                             color: "#f8f8f2",
@@ -113,7 +113,7 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
 
     if (block.blockType === "FILE") {
         return (
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5 }}>
                 <Stack spacing={1}>
                     <Typography sx={{ fontWeight: 950 }}>{title}</Typography>
                     <Typography sx={{ color: "text.secondary" }}>{block.textContent ?? "Download or review the attached file."}</Typography>
@@ -128,7 +128,7 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
     }
 
     return (
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5 }}>
             <Typography sx={{ fontWeight: 950 }}>{title}</Typography>
             <Typography sx={{ color: "text.secondary", mt: 1, whiteSpace: "pre-wrap", lineHeight: 1.7 }}>{block.textContent ?? block.url ?? "No content."}</Typography>
         </Paper>
@@ -147,7 +147,7 @@ function QuizOptionCard({ option, selected, showFeedback, onToggle }: { option: 
             }}
             sx={{
                 p: 2,
-                borderRadius: 4,
+                borderRadius: 1.5,
                 cursor: "pointer",
                 borderColor: selected ? "primary.main" : "divider",
                 bgcolor: selected ? "rgba(53,37,205,0.06)" : "background.paper",
@@ -172,7 +172,7 @@ function QuizOptionCard({ option, selected, showFeedback, onToggle }: { option: 
 
 function TestResultRow({ test }: { test: TestResultDto }) {
     return (
-        <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 3, borderColor: test.passed ? "rgba(46,125,50,0.32)" : "rgba(186,26,26,0.32)" }}>
+        <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1.25, borderColor: test.passed ? "rgba(46,125,50,0.32)" : "rgba(186,26,26,0.32)" }}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ sm: "center" }}>
                 <Chip
                     size="small"
@@ -197,7 +197,7 @@ function TestResultRow({ test }: { test: TestResultDto }) {
 
 function SubmissionResultPanel({ result }: { result: SubmissionResult }) {
     return (
-        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 5 }}>
+        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
             <Stack spacing={2}>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ sm: "center" }}>
                     <Typography variant="h5" sx={{ flexGrow: 1 }}>
@@ -212,11 +212,11 @@ function SubmissionResultPanel({ result }: { result: SubmissionResult }) {
                 </Stack>
                 {(result.stdout || result.stderr) ? (
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
-                        <Paper sx={{ p: 2, borderRadius: 3, bgcolor: studyBytesColors.codeSurface, color: "#f8f8f2" }}>
+                        <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: studyBytesColors.codeSurface, color: "#f8f8f2" }}>
                             <Typography sx={{ fontWeight: 950, mb: 1 }}>stdout</Typography>
                             <Box component="pre" sx={{ m: 0, whiteSpace: "pre-wrap", fontFamily: "'Geist Mono', Consolas, monospace", fontSize: 13 }}>{result.stdout ?? ""}</Box>
                         </Paper>
-                        <Paper sx={{ p: 2, borderRadius: 3, bgcolor: studyBytesColors.codeSurface, color: "#f8f8f2" }}>
+                        <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: studyBytesColors.codeSurface, color: "#f8f8f2" }}>
                             <Typography sx={{ fontWeight: 950, mb: 1 }}>stderr</Typography>
                             <Box component="pre" sx={{ m: 0, whiteSpace: "pre-wrap", fontFamily: "'Geist Mono', Consolas, monospace", fontSize: 13 }}>{result.stderr ?? ""}</Box>
                         </Paper>
@@ -238,7 +238,7 @@ function SubmissionHistory({ history }: { history: SubmissionHistoryItem[] }) {
     if (history.length === 0) return null;
 
     return (
-        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 5 }}>
+        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
             <Stack spacing={1.4}>
                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
                     Attempt history
@@ -341,7 +341,7 @@ export default function LearningItemPage() {
                         variant="outlined"
                         sx={{
                             p: { xs: 2.5, md: 4 },
-                            borderRadius: 6,
+                            borderRadius: 2.5,
                             background:
                                 "radial-gradient(680px 300px at 88% 0%, rgba(113,42,226,0.15), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
                         }}
@@ -366,7 +366,7 @@ export default function LearningItemPage() {
 
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: isExecutable ? "minmax(0, 1fr) 420px" : "1fr" }, gap: 3, alignItems: "start" }}>
                         <Stack spacing={3}>
-                            <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 5 }}>
+                            <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
                                 <Stack spacing={2.2}>
                                     <Box>
                                         <Typography variant="h5">Instructions</Typography>
@@ -382,7 +382,7 @@ export default function LearningItemPage() {
                                     ) : null}
 
                                     {learningItem.item.hints.length > 0 ? (
-                                        <Accordion variant="outlined" sx={{ borderRadius: 4, overflow: "hidden", "&:before": { display: "none" } }}>
+                                        <Accordion variant="outlined" sx={{ borderRadius: 1.5, overflow: "hidden", "&:before": { display: "none" } }}>
                                             <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
                                                 <Stack direction="row" spacing={1} alignItems="center">
                                                     <HelpOutlineRoundedIcon color="primary" />
@@ -402,7 +402,7 @@ export default function LearningItemPage() {
                             </Paper>
 
                             {isQuiz ? (
-                                <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 5 }}>
+                                <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
                                     <Stack spacing={2}>
                                         <Box>
                                             <Typography variant="h5">Choose answer</Typography>
@@ -423,7 +423,7 @@ export default function LearningItemPage() {
                             ) : null}
 
                             {isContentOnly ? (
-                                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 5 }}>
+                                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
                                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between" alignItems={{ sm: "center" }}>
                                         <Typography sx={{ color: "text.secondary" }}>This item is content-only. Use navigation to continue after reading.</Typography>
                                         <Chip label="No execution required" color="primary" variant="outlined" sx={{ fontWeight: 900 }} />
@@ -436,7 +436,7 @@ export default function LearningItemPage() {
 
                         {isExecutable ? (
                             <Stack spacing={2.5} sx={{ position: { lg: "sticky" }, top: { lg: 96 } }}>
-                                <Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 5 }}>
+                                <Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 2 }}>
                                     <Stack spacing={2}>
                                         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
                                             <Box>
@@ -462,7 +462,7 @@ export default function LearningItemPage() {
                                                 "& .MuiInputBase-root": {
                                                     bgcolor: studyBytesColors.codeSurface,
                                                     color: "#f8f8f2",
-                                                    borderRadius: 3,
+                                                    borderRadius: 1.25,
                                                 },
                                             }}
                                         />

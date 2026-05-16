@@ -10,7 +10,7 @@ export default function TeacherDashboardPage() {
                     <Typography variant="h2">Teacher Cabinet</Typography>
                     <Typography sx={{ color: "text.secondary", mt: 1 }}>Course creation and editor flows are prepared for BFF teacher endpoints.</Typography>
                 </Box>
-                <Paper variant="outlined" sx={{ p: 3, borderRadius: 5 }}>
+                <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
                         <Box sx={{ flexGrow: 1 }}>
                             <Typography variant="h5">Manage courses</Typography>

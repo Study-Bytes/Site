@@ -36,7 +36,7 @@ import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCou
 
 function CourseMetric({ label, value }: { label: string; value: string | number }) {
     return (
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4, background: "rgba(255,255,255,0.72)" }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, background: "rgba(255,255,255,0.72)" }}>
             <Typography variant="h6" sx={{ fontWeight: 950 }}>
                 {value}
             </Typography>
@@ -55,7 +55,7 @@ function CourseItemRow({ item }: { item: CourseItemSummary }) {
             variant="outlined"
             sx={{
                 p: 1.5,
-                borderRadius: 3.5,
+                borderRadius: 1.5,
                 transition: "border-color 160ms ease, background-color 160ms ease",
                 "&:hover": { borderColor: "rgba(53,37,205,0.35)", backgroundColor: "rgba(53,37,205,0.025)" },
             }}
@@ -197,7 +197,7 @@ export default function CourseDetailsPage() {
                         variant="outlined"
                         sx={{
                             p: { xs: 2.5, md: 4 },
-                            borderRadius: 6,
+                            borderRadius: 2.5,
                             overflow: "hidden",
                             background:
                                 "radial-gradient(700px 320px at 88% 6%, rgba(113,42,226,0.16), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
@@ -240,12 +240,12 @@ export default function CourseDetailsPage() {
 
                             <Stack spacing={2.5}>
                                 {course.coverImageUrl ? (
-                                    <Box component="img" src={course.coverImageUrl} alt={course.title} sx={{ width: "100%", borderRadius: 5, display: "block", maxHeight: 330, objectFit: "cover" }} />
+                                    <Box component="img" src={course.coverImageUrl} alt={course.title} sx={{ width: "100%", borderRadius: 2, display: "block", maxHeight: 330, objectFit: "cover" }} />
                                 ) : (
                                     <Paper
                                         sx={{
                                             height: 280,
-                                            borderRadius: 5,
+                                            borderRadius: 2,
                                             display: "grid",
                                             placeItems: "center",
                                             background:
@@ -273,7 +273,7 @@ export default function CourseDetailsPage() {
 
                             {course.modules.length === 0 ? <EmptyState title="No modules yet" description="This course has no visible modules in the public catalog." /> : null}
                             {course.modules.map((module, index) => (
-                                <Accordion key={module.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 4, overflow: "hidden", "&:before": { display: "none" } }}>
+                                <Accordion key={module.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 1.5, overflow: "hidden", "&:before": { display: "none" } }}>
                                     <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />} sx={{ px: { xs: 2, md: 2.5 }, py: 1 }}>
                                         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
                                             <Chip label={index + 1} size="small" color="primary" sx={{ fontWeight: 950 }} />
@@ -297,7 +297,7 @@ export default function CourseDetailsPage() {
                             ))}
                         </Stack>
 
-                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 5, position: { md: "sticky" }, top: { md: 96 }, display: { xs: "none", md: "block" } }}>
+                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, position: { md: "sticky" }, top: { md: 96 }, display: { xs: "none", md: "block" } }}>
                             <Stack spacing={2.2}>
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
                                     Start learning
@@ -329,7 +329,7 @@ export default function CourseDetailsPage() {
                         variant="outlined"
                         sx={{
                             p: 2,
-                            borderRadius: 4,
+                            borderRadius: 1.5,
                             display: { xs: "block", md: "none" },
                             position: "sticky",
                             bottom: 12,

@@ -23,7 +23,7 @@ function FeatureCard({ title, text, icon }: { title: string; text: string; icon:
             variant="outlined"
             sx={{
                 p: 3,
-                borderRadius: 5,
+                borderRadius: 2,
                 height: "100%",
                 background: "rgba(255,255,255,0.72)",
                 backdropFilter: "blur(10px)",
@@ -34,7 +34,7 @@ function FeatureCard({ title, text, icon }: { title: string; text: string; icon:
                     sx={{
                         width: 48,
                         height: 48,
-                        borderRadius: 3,
+                        borderRadius: 1.25,
                         display: "grid",
                         placeItems: "center",
                         color: "primary.main",
@@ -54,7 +54,7 @@ function FeatureCard({ title, text, icon }: { title: string; text: string; icon:
 
 function StatCard({ value, label }: { value: string; label: string }) {
     return (
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4, textAlign: "center", background: "rgba(255,255,255,0.72)" }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, textAlign: "center", background: "rgba(255,255,255,0.72)" }}>
             <Typography variant="h5" sx={{ fontWeight: 950, color: "primary.main" }}>
                 {value}
             </Typography>
@@ -71,17 +71,17 @@ function CodePreviewCard() {
             variant="outlined"
             sx={{
                 p: { xs: 2, md: 2.5 },
-                borderRadius: 6,
+                borderRadius: 2.5,
                 overflow: "hidden",
                 background: "linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(242,238,255,0.9) 100%)",
                 boxShadow: "0 30px 80px rgba(53,37,205,0.12)",
             }}
         >
-            <Box component="img" src="/hero-study.jpg" alt="Study workspace" sx={{ width: "100%", borderRadius: 5, display: "block", mb: 2 }} />
+            <Box component="img" src="/hero-study.jpg" alt="Study workspace" sx={{ width: "100%", borderRadius: 2, display: "block", mb: 2 }} />
             <Paper
                 sx={{
                     p: 2,
-                    borderRadius: 4,
+                    borderRadius: 1.5,
                     bgcolor: "#151321",
                     color: "#f7f3ff",
                     fontFamily: "monospace",
@@ -251,7 +251,7 @@ export default function Home() {
                     variant="outlined"
                     sx={{
                         p: { xs: 3, md: 5 },
-                        borderRadius: 6,
+                        borderRadius: 2.5,
                         overflow: "hidden",
                         background:
                             "radial-gradient(600px 260px at 90% 10%, rgba(113,42,226,0.18), transparent 60%), linear-gradient(135deg, #ffffff 0%, #f3efff 100%)",
