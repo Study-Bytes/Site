@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Local design references
+.design-reference/
+stitch_*.zip
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

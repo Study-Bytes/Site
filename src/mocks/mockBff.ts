@@ -69,6 +69,7 @@ const mockAccounts: MockAccount[] = [
 ];
 
 const currentUserKey = "studybytes_mock_current_user";
+const enrolledCoursesKey = "studybytes_mock_enrolled_courses";
 
 const itemDetails: Record<number, TeacherItemDetails> = {
     5001: {
@@ -341,6 +342,34 @@ function persistSession(user: CurrentUser | null) {
     else localStorage.removeItem(currentUserKey);
 }
 
+function loadEnrolledCourseIds() {
+    const raw = localStorage.getItem(enrolledCoursesKey);
+    if (!raw) return [101, 102];
+    try {
+        const ids = JSON.parse(raw) as unknown;
+        return Array.isArray(ids) ? ids.filter((id): id is number => typeof id === "number") : [101, 102];
+    } catch {
+        localStorage.removeItem(enrolledCoursesKey);
+        return [101, 102];
+    }
+}
+
+function persistEnrolledCourseIds(ids: number[]) {
+    localStorage.setItem(enrolledCoursesKey, JSON.stringify(Array.from(new Set(ids))));
+}
+
+function progressForCourse(courseId: number) {
+    if (courseId === 101) return { progressPercent: 42, status: "IN_PROGRESS" as const, nextItemId: 5003 };
+    if (courseId === 102) return { progressPercent: 100, status: "COMPLETED" as const, nextItemId: null };
+    const course = findCourse(courseId);
+    return { progressPercent: 0, status: "IN_PROGRESS" as const, nextItemId: course.modules[0]?.items[0]?.id ?? null };
+}
+
+function assertCanEnroll(course: TeacherCourseDetails) {
+    if (course.status !== "PUBLISHED") throw new ApiError("Course is unavailable", 403);
+    if (!course.enrollmentEnabled) throw new ApiError("Enrollment is disabled", 403);
+}
+
 function requireUser() {
     if (!sessionUser) throw new ApiError("Authentication required", 401);
     return sessionUser;
@@ -475,22 +504,30 @@ export const mockBff = {
 
     async enrollCourse(courseId: number): Promise<EnrollCourseResponse> {
         requireUser();
-        findCourse(courseId);
-        return delay({ courseId, status: "IN_PROGRESS", progressPercent: 0 });
+        const course = findCourse(courseId);
+        assertCanEnroll(course);
+        const currentIds = loadEnrolledCourseIds();
+        if (!currentIds.includes(courseId)) persistEnrolledCourseIds([...currentIds, courseId]);
+        const progress = progressForCourse(courseId);
+        return delay({ courseId, status: progress.status, progressPercent: progress.progressPercent });
     },
 
     async getMyLearning(): Promise<EnrollmentSummary[]> {
         requireUser();
-        return delay([
-            { course: publicCourse(courses[0]), progressPercent: 42, status: "IN_PROGRESS", nextItemId: 5003 },
-            { course: publicCourse(courses[1]), progressPercent: 100, status: "COMPLETED", nextItemId: null },
-        ]);
+        const enrolled = loadEnrolledCourseIds()
+            .map((courseId) => courses.find((course) => course.id === courseId))
+            .filter((course): course is TeacherCourseDetails => Boolean(course))
+            .filter((course) => course.status === "PUBLISHED");
+
+        return delay(enrolled.map((course) => ({ course: publicCourse(course), ...progressForCourse(course.id) })));
     },
 
     async getLearningCourse(courseId: number): Promise<LearningCourse> {
         requireUser();
         const course = findCourse(courseId);
-        return delay({ ...publicCourseDetails(course), progressPercent: courseId === 101 ? 42 : 100, enrollmentStatus: courseId === 101 ? "IN_PROGRESS" : "COMPLETED", nextItemId: course.modules[0]?.items[0]?.id ?? null });
+        assertCanEnroll(course);
+        const progress = progressForCourse(courseId);
+        return delay({ ...publicCourseDetails(course), progressPercent: progress.progressPercent, enrollmentStatus: progress.status, nextItemId: progress.nextItemId });
     },
 
     async getLearningItem(courseId: number, itemId: number): Promise<LearningItem> {
@@ -520,21 +557,41 @@ export const mockBff = {
         });
     },
 
-    async runItem(courseId: number, itemId: number, _request: RunItemRequest): Promise<SubmissionResult> {
-        void _request;
+    async runItem(courseId: number, itemId: number, request: RunItemRequest): Promise<SubmissionResult> {
         requireUser();
         findCourse(courseId);
-        findItem(itemId);
+        const item = findItem(itemId);
+
+        if (item.itemType === "QUIZ") {
+            const selectedIds = request.selectedOptionIds ?? [];
+            const correctIds = item.options.filter((option) => option.correct).map((option) => option.id);
+            const passed = correctIds.length > 0 && correctIds.every((id) => selectedIds.includes(id)) && selectedIds.every((id) => correctIds.includes(id));
+            return delay({
+                id: ++submissionSeq,
+                itemId,
+                status: passed ? "ACCEPTED" : "WRONG_ANSWER",
+                score: passed ? 100 : 0,
+                passedTests: passed ? 1 : 0,
+                totalTests: 1,
+                stdout: null,
+                stderr: null,
+                testResults: [{ testKey: "quiz-answer", visibility: "OPEN", passed, actualOutput: selectedIds.join(","), message: passed ? "Correct answer" : "Review the explanation and try again", durationMs: null, memoryMb: null }],
+                createdAt: new Date().toISOString(),
+            });
+        }
+
+        const submittedText = item.itemType === "SQL" ? request.sql : request.sourceCode;
+        const passed = Boolean(submittedText?.trim());
         return delay({
             id: ++submissionSeq,
             itemId,
-            status: "ACCEPTED",
-            score: 100,
-            passedTests: 1,
+            status: passed ? "ACCEPTED" : "WRONG_ANSWER",
+            score: passed ? 100 : 0,
+            passedTests: passed ? 1 : 0,
             totalTests: 1,
-            stdout: "Sample run completed",
+            stdout: passed ? "Sample run completed" : null,
             stderr: null,
-            testResults: [{ testKey: "sample-1", visibility: "OPEN", passed: true, actualOutput: "5", message: null, durationMs: 16, memoryMb: 12 }],
+            testResults: [{ testKey: "sample-1", visibility: "OPEN", passed, actualOutput: passed ? "5" : null, message: passed ? null : "Source code is empty", durationMs: 16, memoryMb: 12 }],
             createdAt: new Date().toISOString(),
         });
     },

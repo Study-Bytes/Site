@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 export function FormSectionCard(props: { title: string; description?: string; children: ReactNode }) {
     return (
-        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 4 }}>
+        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1.5 }}>
             <Stack spacing={2}>
                 <Stack spacing={0.5}>
                     <Typography variant="h6" sx={{ fontWeight: 900 }}>

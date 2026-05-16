@@ -49,7 +49,7 @@ export default function TeacherCoursesPage() {
                 {error ? <ErrorState message={error} onRetry={loadCourses} /> : null}
                 <Stack spacing={2}>
                     {courses.map((course) => (
-                        <Paper key={course.id} variant="outlined" sx={{ p: 3, borderRadius: 4 }}>
+                        <Paper key={course.id} variant="outlined" sx={{ p: 3, borderRadius: 1.5 }}>
                             <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
                                 <Box sx={{ flexGrow: 1 }}>
                                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>

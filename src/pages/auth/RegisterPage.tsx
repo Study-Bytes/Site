@@ -48,7 +48,7 @@ export default function RegisterPage() {
     return (
         <Box sx={{ minHeight: "100svh", display: "flex", alignItems: "center", pt: 10, pb: 6 }}>
             <Container maxWidth="sm">
-                <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 5 }}>
+                <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 2 }}>
                     <Stack spacing={2.5}>
                         <Box>
                             <Typography variant="h4">Register</Typography>

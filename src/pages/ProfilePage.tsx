@@ -23,7 +23,7 @@ export default function ProfilePage() {
                     <Typography sx={{ color: "text.secondary", mt: 1 }}>Current user model is received through BFF `/api/v1/me`.</Typography>
                 </Box>
 
-                <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 5 }}>
+                <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 2 }}>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={3} alignItems={{ xs: "flex-start", sm: "center" }}>
                         <Avatar sx={{ width: 72, height: 72, bgcolor: "primary.main", fontSize: 28, fontWeight: 950 }}>
                             {(auth.user.fullName ?? auth.user.email).charAt(0).toUpperCase()}

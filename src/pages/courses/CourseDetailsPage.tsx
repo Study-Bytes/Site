@@ -3,9 +3,11 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    Alert,
     Box,
     Button,
     Chip,
+    CircularProgress,
     Divider,
     Paper,
     Stack,
@@ -18,10 +20,10 @@ import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
-import { Link as RouterLink, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { ApiError, getErrorMessage } from "../../api/apiError";
 import type { CourseDetails, CourseItemSummary } from "../../api/bffContracts";
-import { coursesApi } from "../../api/services";
+import { coursesApi, learningApi } from "../../api/services";
 import { useAuth } from "../../auth/useAuth";
 import { AccessTypeBadge } from "../../components/ui/AccessTypeBadge";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
@@ -34,7 +36,14 @@ import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCou
 
 function CourseMetric({ label, value }: { label: string; value: string | number }) {
     return (
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4, background: "rgba(255,255,255,0.72)" }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 2,
+                borderRadius: 1.5,
+                background: (theme) => (theme.palette.mode === "dark" ? "rgba(31,31,40,0.78)" : "rgba(255,255,255,0.72)"),
+            }}
+        >
             <Typography variant="h6" sx={{ fontWeight: 950 }}>
                 {value}
             </Typography>
@@ -46,12 +55,14 @@ function CourseMetric({ label, value }: { label: string; value: string | number 
 }
 
 function CourseItemRow({ item }: { item: CourseItemSummary }) {
+    const stateLabel = item.locked ? "Locked" : item.completed ? "Completed" : "Available";
+
     return (
         <Paper
             variant="outlined"
             sx={{
                 p: 1.5,
-                borderRadius: 3.5,
+                borderRadius: 1.5,
                 transition: "border-color 160ms ease, background-color 160ms ease",
                 "&:hover": { borderColor: "rgba(53,37,205,0.35)", backgroundColor: "rgba(53,37,205,0.025)" },
             }}
@@ -66,7 +77,7 @@ function CourseItemRow({ item }: { item: CourseItemSummary }) {
                         </Typography>
                     </Box>
                 </Stack>
-                <Chip size="small" variant="outlined" label={item.locked ? "Locked" : "Available"} sx={{ fontWeight: 800 }} />
+                <Chip size="small" variant="outlined" label={stateLabel} sx={{ fontWeight: 800 }} />
             </Stack>
         </Paper>
     );
@@ -74,7 +85,23 @@ function CourseItemRow({ item }: { item: CourseItemSummary }) {
 
 function CourseCta({ course }: { course: CourseDetails }) {
     const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const [isEnrolling, setIsEnrolling] = useState(false);
+    const [enrollError, setEnrollError] = useState<string | null>(null);
     const hasStarted = course.modules.some((module) => module.items.some((item) => item.completed));
+
+    const enrollAndOpen = async () => {
+        setIsEnrolling(true);
+        setEnrollError(null);
+        try {
+            await learningApi.enrollCourse(course.id);
+            await navigate(`/learn/${course.id}`);
+        } catch (error) {
+            setEnrollError(getErrorMessage(error, "Failed to enroll in this course"));
+        } finally {
+            setIsEnrolling(false);
+        }
+    };
 
     if (course.status !== "PUBLISHED") {
         return (
@@ -101,9 +128,18 @@ function CourseCta({ course }: { course: CourseDetails }) {
     }
 
     return (
-        <Button component={RouterLink} to={`/learn/${course.id}`} variant="contained" endIcon={<ArrowForwardRoundedIcon />} fullWidth>
-            {hasStarted ? "Continue learning" : "Start course"}
-        </Button>
+        <Stack spacing={1.5}>
+            <Button
+                variant="contained"
+                endIcon={isEnrolling ? <CircularProgress size={18} color="inherit" /> : <ArrowForwardRoundedIcon />}
+                disabled={isEnrolling}
+                fullWidth
+                onClick={() => void enrollAndOpen()}
+            >
+                {hasStarted ? "Continue learning" : "Start course"}
+            </Button>
+            {enrollError ? <Alert severity="error">{enrollError}</Alert> : null}
+        </Stack>
     );
 }
 
@@ -168,10 +204,12 @@ export default function CourseDetailsPage() {
                         variant="outlined"
                         sx={{
                             p: { xs: 2.5, md: 4 },
-                            borderRadius: 6,
+                            borderRadius: 2.5,
                             overflow: "hidden",
-                            background:
-                                "radial-gradient(700px 320px at 88% 6%, rgba(113,42,226,0.16), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
+                            background: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "radial-gradient(700px 320px at 88% 6%, rgba(60,221,199,0.12), transparent 62%), linear-gradient(135deg, #1f1f28 0%, #13121b 100%)"
+                                    : "radial-gradient(700px 320px at 88% 6%, rgba(113,42,226,0.16), transparent 62%), linear-gradient(135deg, #ffffff 0%, #f4f0ff 100%)",
                         }}
                     >
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "7fr 5fr" }, gap: { xs: 3, md: 4 }, alignItems: "center" }}>
@@ -211,16 +249,18 @@ export default function CourseDetailsPage() {
 
                             <Stack spacing={2.5}>
                                 {course.coverImageUrl ? (
-                                    <Box component="img" src={course.coverImageUrl} alt={course.title} sx={{ width: "100%", borderRadius: 5, display: "block", maxHeight: 330, objectFit: "cover" }} />
+                                    <Box component="img" src={course.coverImageUrl} alt={course.title} sx={{ width: "100%", borderRadius: 2, display: "block", maxHeight: 330, objectFit: "cover" }} />
                                 ) : (
                                     <Paper
                                         sx={{
                                             height: 280,
-                                            borderRadius: 5,
+                                            borderRadius: 2,
                                             display: "grid",
                                             placeItems: "center",
-                                            background:
-                                                "radial-gradient(circle at 22% 18%, rgba(53,37,205,0.28), transparent 30%), radial-gradient(circle at 82% 12%, rgba(113,42,226,0.24), transparent 28%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
+                                            background: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "radial-gradient(circle at 22% 18%, rgba(195,192,255,0.24), transparent 30%), radial-gradient(circle at 82% 12%, rgba(60,221,199,0.18), transparent 28%), linear-gradient(135deg, #2a2933 0%, #13121b 100%)"
+                                                    : "radial-gradient(circle at 22% 18%, rgba(53,37,205,0.28), transparent 30%), radial-gradient(circle at 82% 12%, rgba(113,42,226,0.24), transparent 28%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
                                         }}
                                     >
                                         <MenuBookRoundedIcon color="primary" sx={{ fontSize: 72 }} />
@@ -238,13 +278,13 @@ export default function CourseDetailsPage() {
                             <Box>
                                 <Typography variant="h3">Course structure</Typography>
                                 <Typography sx={{ color: "text.secondary", mt: 1 }}>
-                                    Modules and public item metadata are loaded from the BFF public course details endpoint.
+                                    Modules and item metadata are loaded from the BFF public course details endpoint.
                                 </Typography>
                             </Box>
 
                             {course.modules.length === 0 ? <EmptyState title="No modules yet" description="This course has no visible modules in the public catalog." /> : null}
                             {course.modules.map((module, index) => (
-                                <Accordion key={module.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 4, overflow: "hidden", "&:before": { display: "none" } }}>
+                                <Accordion key={module.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 1.5, overflow: "hidden", "&:before": { display: "none" } }}>
                                     <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />} sx={{ px: { xs: 2, md: 2.5 }, py: 1 }}>
                                         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
                                             <Chip label={index + 1} size="small" color="primary" sx={{ fontWeight: 950 }} />
@@ -268,7 +308,7 @@ export default function CourseDetailsPage() {
                             ))}
                         </Stack>
 
-                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 5, position: { md: "sticky" }, top: { md: 96 }, display: { xs: "none", md: "block" } }}>
+                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, position: { md: "sticky" }, top: { md: 96 }, display: { xs: "none", md: "block" } }}>
                             <Stack spacing={2.2}>
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
                                     Start learning
@@ -300,7 +340,7 @@ export default function CourseDetailsPage() {
                         variant="outlined"
                         sx={{
                             p: 2,
-                            borderRadius: 4,
+                            borderRadius: 1.5,
                             display: { xs: "block", md: "none" },
                             position: "sticky",
                             bottom: 12,
