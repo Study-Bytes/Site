@@ -2,6 +2,21 @@
 
 This document is the external frontend-facing contract expected by StudyBytes Site.
 
+
+## Machine-readable OpenAPI contract
+
+The complete frontend-facing BFF contract is documented in OpenAPI format here:
+
+```text
+docs/openapi/studybytes-bff-openapi.yaml
+```
+
+Use this file as the implementation reference for BFF endpoints, request bodies, response bodies, status codes, auth requirements, and common error shapes.
+
+The TypeScript DTOs in `src/api/bffContracts.ts` must stay aligned with this OpenAPI file. If a BFF endpoint changes, update both the OpenAPI contract and the frontend DTOs in the same PR.
+
+You can preview the contract with Swagger Editor, Redoc, or any OpenAPI-compatible viewer.
+
 ## Hard rule
 
 Site calls only BFF:

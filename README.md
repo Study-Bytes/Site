@@ -124,6 +124,19 @@ The public Site flow now uses the shared `coursesApi` service and the versioned 
 
 These pages must not use direct CourseService URLs or page-level hardcoded course mocks. In local development, mock data is provided only through the mock BFF adapter behind the same API service layer.
 
+
+## BFF OpenAPI contract
+
+The complete Site-BFF API contract is available as OpenAPI:
+
+```text
+docs/openapi/studybytes-bff-openapi.yaml
+```
+
+This file describes endpoint paths, query parameters, path parameters, request bodies, response bodies, status codes, auth requirements, and common error responses. It is the handoff document for BFF implementation.
+
+The TypeScript DTOs in `src/api/bffContracts.ts` must stay aligned with the OpenAPI contract.
+
 ## Site-BFF MVP contract
 
 The BFF should expose frontend-facing endpoints that hide internal microservice paths. The DTO names below correspond to TypeScript types in `src/api/bffContracts.ts`.
