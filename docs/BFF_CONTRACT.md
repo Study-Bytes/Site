@@ -2,6 +2,21 @@
 
 This document is the external frontend-facing contract expected by StudyBytes Site.
 
+
+## Machine-readable OpenAPI contract
+
+The complete frontend-facing BFF contract is documented in OpenAPI format here:
+
+```text
+docs/openapi/studybytes-bff-openapi.yaml
+```
+
+Use this file as the implementation reference for BFF endpoints, request bodies, response bodies, status codes, auth requirements, and common error shapes.
+
+The TypeScript DTOs in `src/api/bffContracts.ts` must stay aligned with this OpenAPI file. If a BFF endpoint changes, update both the OpenAPI contract and the frontend DTOs in the same PR.
+
+You can preview the contract with Swagger Editor, Redoc, or any OpenAPI-compatible viewer.
+
 ## Hard rule
 
 Site calls only BFF:
@@ -87,6 +102,23 @@ GET /api/v1/courses
 GET /api/v1/courses/{courseId}
 GET /api/v1/courses/{courseId}/items/{itemId}/preview
 ```
+
+`GET /api/v1/courses` is used by Home featured courses and Course Catalog. Supported query parameters:
+
+```text
+search
+difficulty
+accessType
+enrollmentEnabled
+minEstimatedMinutes
+maxEstimatedMinutes
+page
+size
+```
+
+Preferred response shape is `PageResponse<CourseCatalogItem>`. For early BFF development, the Site also accepts a plain `CourseCatalogItem[]` response and normalizes it in `coursesApi`.
+
+`GET /api/v1/courses/{courseId}` is used by Course Details. It must return public course metadata, modules and item summaries only. Hidden tests, expected outputs and correct quiz answers must not be included.
 
 ### Student learning
 
