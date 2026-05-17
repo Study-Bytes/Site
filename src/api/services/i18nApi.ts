@@ -6,7 +6,7 @@ import type { DefaultLocaleResponse, Locale } from "../bffContracts";
 export const i18nApi = {
     getDefaultLocale(): Promise<DefaultLocaleResponse> {
         if (env.useMockBff) return mockBff.getDefaultLocale();
-        return request<DefaultLocaleResponse>("/i18n/default-locale");
+        return request<DefaultLocaleResponse>("/i18n/default-locale", { auth: "none" });
     },
 
     updatePreferredLocale(locale: Locale): Promise<void> {

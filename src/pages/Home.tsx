@@ -12,6 +12,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { getErrorMessage } from "../api/apiError";
 import type { CourseCatalogItem } from "../api/bffContracts";
 import { coursesApi } from "../api/services";
+import { useI18n } from "../i18n/useI18n";
 import { CourseCard } from "../components/course/CourseCard";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ErrorState } from "../components/ui/ErrorState";
@@ -120,6 +121,7 @@ function CodePreviewCard() {
 }
 
 export default function Home() {
+    const { t } = useI18n();
     const [featuredCourses, setFeaturedCourses] = useState<CourseCatalogItem[]>([]);
     const [isLoadingCourses, setIsLoadingCourses] = useState(true);
     const [coursesError, setCoursesError] = useState<string | null>(null);
@@ -167,21 +169,21 @@ export default function Home() {
                             <Stack direction="row" spacing={1} alignItems="center" sx={{ color: "primary.main" }}>
                                 <VerifiedRoundedIcon fontSize="small" />
                                 <Typography variant="overline" sx={{ fontWeight: 950, letterSpacing: 1 }}>
-                                    Interactive programming education
+                                    {t("home.eyebrow")}
                                 </Typography>
                             </Stack>
                             <Typography variant="h1" sx={{ maxWidth: 760 }}>
-                                Learn programming through structured practice, not random tutorials.
+                                {t("home.heroTitle")}
                             </Typography>
                             <Typography variant="h6" sx={{ color: "text.secondary", maxWidth: 700, lineHeight: 1.65 }}>
-                                StudyBytes combines theory, quizzes, coding tasks, SQL practice and progress tracking in one clean learning workspace.
+                                {t("home.heroSubtitle")}
                             </Typography>
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                                 <Button component={RouterLink} to="/courses" size="large" variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
-                                    Browse courses
+                                    {t("home.browseCourses")}
                                 </Button>
                                 <Button component={RouterLink} to="/register" size="large" variant="outlined">
-                                    Create account
+                                    {t("home.createAccount")}
                                 </Button>
                             </Stack>
                             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.5, maxWidth: 620 }}>

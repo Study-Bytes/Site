@@ -659,6 +659,7 @@ If the current BFF does not implement these endpoints yet, it should return a cl
 ### QA and deployment docs
 
 - Manual QA checklist: `docs/QA_CHECKLIST.md`
+- Auth/access matrix: `docs/AUTH_ACCESS_MATRIX.md`
 - Site deployment notes: `docs/DEPLOYMENT.md`
 
 ## Site VPS deployment and CD
@@ -722,3 +723,25 @@ This version adds the final Site readiness layer:
 - BFF OpenAPI additions for localization, settings, and teacher requests.
 
 Production auth should use BFF-managed `HttpOnly` cookies where possible. Token-based auth is still supported in the API client for MVP compatibility.
+
+## Final auth/public hardening
+
+The Site treats public pages independently from session initialization.
+
+Important behavior:
+
+- `/`, `/courses`, `/courses/:courseId`, `/login`, `/register`, and system error pages work without an account.
+- `GET /api/v1/me` may return `401` for anonymous users. The frontend treats that response as an anonymous session, not as a public page error.
+- Public course endpoints are called through `coursesApi` with `auth: "none"`, so stale bearer tokens or cookies are not sent for public catalog/details requests.
+- Protected pages redirect anonymous users to `/login` with the intended return path.
+- Role-protected pages redirect authenticated users without required role to `/403`.
+- Public `auth: "none"` requests do not send local bearer tokens and use `credentials: omit`.
+
+Expected route matrix:
+
+| User state | `/courses` | `/courses/:id` | `/my-learning` | `/teacher/courses` | `/admin/teacher-requests` |
+|---|---|---|---|---|---|
+| Anonymous | allowed | allowed | login redirect | login redirect | login redirect |
+| STUDENT | allowed | allowed | allowed | 403 | 403 |
+| TEACHER | allowed | allowed | allowed | allowed | 403 |
+| ADMIN | allowed | allowed | allowed | allowed | allowed |

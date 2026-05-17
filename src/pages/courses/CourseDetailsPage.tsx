@@ -20,7 +20,7 @@ import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
-import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError, getErrorMessage } from "../../api/apiError";
 import type { CourseDetails, CourseItemSummary } from "../../api/bffContracts";
 import { coursesApi, learningApi } from "../../api/services";
@@ -86,6 +86,7 @@ function CourseItemRow({ item }: { item: CourseItemSummary }) {
 function CourseCta({ course }: { course: CourseDetails }) {
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isEnrolling, setIsEnrolling] = useState(false);
     const [enrollError, setEnrollError] = useState<string | null>(null);
     const hasStarted = course.modules.some((module) => module.items.some((item) => item.completed));
@@ -121,7 +122,7 @@ function CourseCta({ course }: { course: CourseDetails }) {
 
     if (!isAuthenticated) {
         return (
-            <Button component={RouterLink} to="/login" variant="contained" endIcon={<ArrowForwardRoundedIcon />} fullWidth>
+            <Button component={RouterLink} to="/login" state={{ from: `${location.pathname}${location.search}` }} variant="contained" endIcon={<ArrowForwardRoundedIcon />} fullWidth>
                 Login to start
             </Button>
         );

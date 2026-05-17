@@ -4,7 +4,8 @@ info:
   version: 1.0.0
   description: Frontend-facing BFF contract for the StudyBytes Site MVP. Site calls
     only this API under /api/v1; internal microservice routes are hidden behind the
-    BFF.
+    BFF. Public course endpoints and default locale must work without authentication.
+    GET /me returns 401 for anonymous users; the Site treats that as anonymous state.
 servers:
 - url: http://localhost:8080/api/v1
   description: Local BFF
@@ -115,6 +116,7 @@ paths:
       tags:
       - Profile
       summary: Get current user
+      description: Returns the current authenticated user. Anonymous requests should return 401, not 500. The Site treats this 401 as anonymous state on public pages.
       operationId: getMe
       security:
       - BearerAuth: []
@@ -185,6 +187,7 @@ paths:
       tags:
       - Public courses
       summary: List public courses
+      description: Public endpoint. Must not require authentication. Used by anonymous and authenticated users.
       operationId: listCourses
       parameters:
       - name: search
@@ -245,6 +248,7 @@ paths:
       tags:
       - Public courses
       summary: Get public course details
+      description: Public endpoint. Must not require authentication. Hidden tests, expected outputs, and correct quiz answers must not be returned.
       operationId: getCourse
       parameters:
       - name: courseId
@@ -267,6 +271,7 @@ paths:
       tags:
       - Public courses
       summary: Get public course item preview
+      description: Public endpoint if previews are enabled. Must return student-safe preview content only.
       operationId: getCourseItemPreview
       parameters:
       - name: courseId
@@ -1285,6 +1290,7 @@ paths:
       tags:
       - Localization
       summary: Get default locale hint
+      description: Public endpoint. Can use account setting for authenticated users, Accept-Language, Geo-IP hint, or fallback.
       operationId: getDefaultLocale
       responses:
         '200':

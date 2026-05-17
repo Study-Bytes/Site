@@ -73,6 +73,33 @@ BFF  -> CourseService /api/v1/courses
 
 The fact that a backend service may also use `/api/v1` is internal to the BFF and is not part of the Site contract.
 
+
+## Public/auth behavior matrix
+
+The Site initializes the session by calling `GET /api/v1/me`. For anonymous users this endpoint may return `401 Unauthorized`. That response is expected and must be treated as an anonymous state by the frontend, not as a public page failure.
+
+Public endpoints must work without authentication:
+
+```http
+GET /api/v1/courses
+GET /api/v1/courses/{courseId}
+GET /api/v1/courses/{courseId}/items/{itemId}/preview
+GET /api/v1/i18n/default-locale
+```
+
+The Site calls these public endpoints with API client auth mode `none`: no `Authorization` header, `credentials: omit`, no refresh attempt, and no session-expired event.
+
+Protected endpoints must return `401` for anonymous users. Role-protected endpoints must return `403` for authenticated users without the required role.
+
+| User state | `/courses` | `/courses/{id}` | `/my-learning` | `/teacher/courses` | `/admin/teacher-requests` |
+|---|---|---|---|---|---|
+| Anonymous | allowed | allowed | 401 / redirect login | 401 / redirect login | 401 / redirect login |
+| STUDENT | allowed | allowed | allowed | 403 | 403 |
+| TEACHER | allowed | allowed | allowed | allowed | 403 |
+| ADMIN | allowed | allowed | allowed | allowed | allowed |
+
+`GET /api/v1/me` must not return `500` for anonymous users. It should return the standard `401` error shape.
+
 ## Endpoint groups
 
 ### Auth/session
@@ -103,7 +130,7 @@ GET /api/v1/courses/{courseId}
 GET /api/v1/courses/{courseId}/items/{itemId}/preview
 ```
 
-`GET /api/v1/courses` is used by Home featured courses and Course Catalog. Supported query parameters:
+`GET /api/v1/courses` is public and is used by Home featured courses and Course Catalog. It must not require authentication. Supported query parameters:
 
 ```text
 search
@@ -118,7 +145,7 @@ size
 
 Preferred response shape is `PageResponse<CourseCatalogItem>`. For early BFF development, the Site also accepts a plain `CourseCatalogItem[]` response and normalizes it in `coursesApi`.
 
-`GET /api/v1/courses/{courseId}` is used by Course Details. It must return public course metadata, modules and item summaries only. Hidden tests, expected outputs and correct quiz answers must not be included.
+`GET /api/v1/courses/{courseId}` is public and is used by Course Details. It must not require authentication. It must return public course metadata, modules and item summaries only. Hidden tests, expected outputs and correct quiz answers must not be included.
 
 ### Student learning
 

@@ -4,6 +4,10 @@ import { useAuth } from "../auth/useAuth";
 import { LoadingState } from "../components/ui/LoadingState";
 import { PageContainer } from "../layouts/PageContainer";
 
+function returnPath(location: ReturnType<typeof useLocation>) {
+    return `${location.pathname}${location.search}${location.hash}`;
+}
+
 export function RequireAuth({ children }: { children: ReactNode }) {
     const auth = useAuth();
     const location = useLocation();
@@ -16,6 +20,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
         );
     }
 
-    if (!auth.user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    if (!auth.user) return <Navigate to="/login" state={{ from: returnPath(location) }} replace />;
     return <>{children}</>;
 }

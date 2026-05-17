@@ -3,17 +3,22 @@ import { ApiError } from "./apiError";
 import type { ApiErrorResponse, ApiValidationError, AuthResponse } from "./bffContracts";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-
+export type AuthMode = "required" | "optional" | "none";
 export type QueryParams = Record<string, string | number | boolean | null | undefined>;
 
 export type RequestOptions = {
     method?: HttpMethod;
     body?: unknown;
     query?: QueryParams;
+    auth?: AuthMode;
+    skipRefresh?: boolean;
+    suppressSessionExpired?: boolean;
+    returnNullOnUnauthorized?: boolean;
 };
 
 const accessTokenStorageKey = "studybytes_access_token";
 const refreshTokenStorageKey = "studybytes_refresh_token";
+const sessionHintStorageKey = "studybytes_has_session";
 export const sessionExpiredEventName = "studybytes:session-expired";
 
 export function getStoredAccessToken() {
@@ -24,7 +29,16 @@ export function getStoredRefreshToken() {
     return localStorage.getItem(refreshTokenStorageKey);
 }
 
+export function hasStoredSessionHint() {
+    return localStorage.getItem(sessionHintStorageKey) === "true";
+}
+
+export function markSessionPresent() {
+    localStorage.setItem(sessionHintStorageKey, "true");
+}
+
 export function storeAuthTokens(accessToken?: string, refreshToken?: string) {
+    markSessionPresent();
     if (accessToken) localStorage.setItem(accessTokenStorageKey, accessToken);
     if (refreshToken) localStorage.setItem(refreshTokenStorageKey, refreshToken);
 }
@@ -32,14 +46,19 @@ export function storeAuthTokens(accessToken?: string, refreshToken?: string) {
 export function clearAuthTokens() {
     localStorage.removeItem(accessTokenStorageKey);
     localStorage.removeItem(refreshTokenStorageKey);
+    localStorage.removeItem(sessionHintStorageKey);
 }
 
 function notifySessionExpired() {
     window.dispatchEvent(new CustomEvent(sessionExpiredEventName));
 }
 
+function normalizePath(path: string) {
+    return path.startsWith("/") ? path : `/${path}`;
+}
+
 function buildUrl(path: string, query?: QueryParams) {
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const normalizedPath = normalizePath(path);
     const url = `${env.bffBaseUrl}${env.bffApiPrefix}${normalizedPath}`;
     if (!query) return url;
 
@@ -50,6 +69,11 @@ function buildUrl(path: string, query?: QueryParams) {
 
     const queryString = params.toString();
     return queryString ? `${url}?${queryString}` : url;
+}
+
+function networkError(error: unknown) {
+    const message = error instanceof Error ? error.message : "Network request failed";
+    return new ApiError(message, 0, [], "NETWORK_ERROR");
 }
 
 async function parseError(response: Response): Promise<ApiError> {
@@ -71,27 +95,30 @@ async function parseError(response: Response): Promise<ApiError> {
     return new ApiError(message, response.status, validationErrors, code, requestId);
 }
 
-function createHeaders() {
+function createHeaders(includeAuth: boolean) {
     const accessToken = getStoredAccessToken();
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
     };
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    if (includeAuth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
     return headers;
 }
 
 function createFetchOptions(options: RequestOptions) {
+    const includeAuth = options.auth !== "none";
     return {
         method: options.method ?? "GET",
-        credentials: "include" as RequestCredentials,
-        headers: createHeaders(),
+        credentials: includeAuth ? "include" as RequestCredentials : "omit" as RequestCredentials,
+        headers: createHeaders(includeAuth),
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
     };
 }
 
-function shouldAttemptRefresh(path: string) {
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    return !["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"].some((authPath) => normalizedPath.startsWith(authPath));
+function shouldAttemptRefresh(path: string, options: RequestOptions, hasKnownSession: boolean) {
+    if (!hasKnownSession) return false;
+    if (options.auth === "none" || options.skipRefresh) return false;
+    const normalizedPath = normalizePath(path);
+    return !["/auth/login", "/auth/register", "/auth/register-teacher-request", "/auth/refresh", "/auth/logout"].some((authPath) => normalizedPath.startsWith(authPath));
 }
 
 async function refreshSession(): Promise<boolean> {
@@ -102,7 +129,7 @@ async function refreshSession(): Promise<boolean> {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+            body: refreshToken ? JSON.stringify({ refreshToken }) : undefined,
         });
 
         if (!response.ok) return false;
@@ -114,30 +141,38 @@ async function refreshSession(): Promise<boolean> {
     }
 }
 
-async function handleUnauthorized(path: string, response: Response, hadStoredTokens: boolean) {
-    if (shouldAttemptRefresh(path)) {
-        const refreshed = await refreshSession();
-        if (refreshed) return null;
+async function retryRequest<T>(path: string, options: RequestOptions): Promise<T> {
+    let retryResponse: Response;
+    try {
+        retryResponse = await fetch(buildUrl(path, options.query), createFetchOptions(options));
+    } catch (error) {
+        throw networkError(error);
     }
-
-    clearAuthTokens();
-    if (hadStoredTokens || path !== "/me") notifySessionExpired();
-    return parseError(response);
+    if (!retryResponse.ok) throw await parseError(retryResponse);
+    if (retryResponse.status === 204) return undefined as T;
+    return (await retryResponse.json()) as T;
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const hadStoredTokens = Boolean(getStoredAccessToken() || getStoredRefreshToken());
-    const response = await fetch(buildUrl(path, options.query), createFetchOptions(options));
+    const hasKnownSession = Boolean(getStoredAccessToken() || getStoredRefreshToken() || hasStoredSessionHint());
+    let response: Response;
+    try {
+        response = await fetch(buildUrl(path, options.query), createFetchOptions(options));
+    } catch (error) {
+        throw networkError(error);
+    }
 
     if (response.status === 401) {
-        const unauthorizedError = await handleUnauthorized(path, response, hadStoredTokens);
-        if (!unauthorizedError) {
-            const retryResponse = await fetch(buildUrl(path, options.query), createFetchOptions(options));
-            if (!retryResponse.ok) throw await parseError(retryResponse);
-            if (retryResponse.status === 204) return undefined as T;
-            return (await retryResponse.json()) as T;
+        if (shouldAttemptRefresh(path, options, hasKnownSession)) {
+            const refreshed = await refreshSession();
+            if (refreshed) return retryRequest<T>(path, options);
         }
-        throw unauthorizedError;
+
+        const shouldExpireSession = options.auth !== "none" && (hasKnownSession || options.auth === "required");
+        if (shouldExpireSession) clearAuthTokens();
+        if (!options.suppressSessionExpired && shouldExpireSession) notifySessionExpired();
+        if (options.returnNullOnUnauthorized) return null as T;
+        throw await parseError(response);
     }
 
     if (!response.ok) throw await parseError(response);

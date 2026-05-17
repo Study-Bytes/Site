@@ -18,6 +18,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+    vi.restoreAllMocks();
     await mockBff.logout();
     cleanup();
     vi.unstubAllGlobals();

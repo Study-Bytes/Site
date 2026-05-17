@@ -5,6 +5,10 @@ import type { UserRole } from "../api/bffContracts";
 import { LoadingState } from "../components/ui/LoadingState";
 import { PageContainer } from "../layouts/PageContainer";
 
+function returnPath(location: ReturnType<typeof useLocation>) {
+    return `${location.pathname}${location.search}${location.hash}`;
+}
+
 export function RequireRole({ roles, children }: { roles: UserRole[]; children: ReactNode }) {
     const auth = useAuth();
     const location = useLocation();
@@ -17,7 +21,7 @@ export function RequireRole({ roles, children }: { roles: UserRole[]; children: 
         );
     }
 
-    if (!auth.user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    if (!auth.user) return <Navigate to="/login" state={{ from: returnPath(location) }} replace />;
     if (!roles.includes(auth.user.role)) return <Navigate to="/403" replace />;
     return <>{children}</>;
 }

@@ -65,6 +65,25 @@ Use this checklist before connecting a new BFF version or deploying the Site.
 - [ ] Teacher course editor is usable on mobile width.
 - [ ] Teacher item editor is usable on mobile width.
 
+
+## Auth/public behavior matrix
+
+- [ ] Anonymous user can open `/`.
+- [ ] Anonymous user can open `/courses`.
+- [ ] Anonymous user can open `/courses/{courseId}`.
+- [ ] Anonymous `/me -> 401` does not block public pages.
+- [ ] Anonymous user clicking Start course is redirected to Login with return path.
+- [ ] Anonymous user opening `/my-learning` is redirected to Login.
+- [ ] Anonymous user opening `/teacher/courses` is redirected to Login.
+- [ ] STUDENT can open `/my-learning` and learning pages.
+- [ ] STUDENT opening `/teacher/courses` sees Access Denied.
+- [ ] TEACHER can open teacher routes.
+- [ ] TEACHER opening `/admin/teacher-requests` sees Access Denied.
+- [ ] ADMIN can open `/admin/teacher-requests`.
+- [ ] Expired session attempts refresh once, then redirects to Login if refresh fails.
+- [ ] `400`, `401`, `403`, `404`, `409`, `500`, and network/BFF errors are displayed consistently.
+- [ ] Navbar search navigates to `/courses?search=...`.
+
 ## Build checks
 
 - [ ] `npm run lint` passes.

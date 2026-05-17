@@ -166,6 +166,7 @@ export default function App() {
                 <Route path="/400" element={<PageSuspense><ErrorStatusPage status={400} /></PageSuspense>} />
                 <Route path="/401" element={<PageSuspense><ErrorStatusPage status={401} /></PageSuspense>} />
                 <Route path="/403" element={<PageSuspense><AccessDeniedPage /></PageSuspense>} />
+                <Route path="/404" element={<PageSuspense><NotFoundPage /></PageSuspense>} />
                 <Route path="/409" element={<PageSuspense><ErrorStatusPage status={409} /></PageSuspense>} />
                 <Route path="/500" element={<PageSuspense><ErrorStatusPage status={500} /></PageSuspense>} />
                 <Route path="/maintenance" element={<PageSuspense><ErrorStatusPage status="maintenance" /></PageSuspense>} />
