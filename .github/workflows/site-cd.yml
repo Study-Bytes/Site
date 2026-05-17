@@ -87,17 +87,21 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_DEPLOY_BASE_PATH: ${{ secrets.VPS_DEPLOY_BASE_PATH }}
           STUDYBYTES_BACKEND_NETWORK: ${{ secrets.STUDYBYTES_BACKEND_NETWORK }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           SITE_DEPLOY_PATH="${VPS_DEPLOY_BASE_PATH%/}/site"
+          GIT_REMOTE_URL="https://github.com/${REPOSITORY}.git"
 
           ssh -i ~/.ssh/site_deploy_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
             "set -euo pipefail
              SITE_DEPLOY_PATH='$SITE_DEPLOY_PATH'
+             GIT_REMOTE_URL='$GIT_REMOTE_URL'
              STUDYBYTES_BACKEND_NETWORK='$STUDYBYTES_BACKEND_NETWORK'
              export STUDYBYTES_BACKEND_NETWORK
 
              cd \"\$SITE_DEPLOY_PATH\"
              git config --global --add safe.directory \"\$SITE_DEPLOY_PATH\"
+             git remote set-url origin \"\$GIT_REMOTE_URL\"
 
              test -f .env || (echo '.env is missing on VPS. Create it before deployment.' && exit 1)
              grep -q '^VITE_USE_MOCK_BFF=false' .env || (echo 'VITE_USE_MOCK_BFF=false must be set in production .env' && exit 1)

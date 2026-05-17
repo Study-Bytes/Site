@@ -693,11 +693,13 @@ VITE_BFF_BASE_URL=
 VITE_BFF_API_PREFIX=/api/v1
 VITE_USE_MOCK_BFF=false
 STUDYBYTES_BACKEND_NETWORK=studybytes-backend
+SITE_HOST_BIND=127.0.0.1
+SITE_HOST_PORT=3000
 ```
 
 If BFF is routed through the same public domain by Nginx, keep `VITE_BFF_BASE_URL` empty. If BFF is on a separate public origin, set it to that origin.
 
-The Site container exposes port `3000` only inside Docker networks. Nginx should route frontend paths to the Site container and `/api/v1/**` to BFF.
+The Site container publishes `127.0.0.1:3000->3000` for host-level Nginx. Nginx should route frontend paths to `127.0.0.1:3000` and `/api/v1/**` to BFF.
 
 Full deployment documentation is available in:
 
