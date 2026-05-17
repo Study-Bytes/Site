@@ -2,8 +2,9 @@ openapi: 3.0.3
 info:
   title: StudyBytes Site-BFF API
   version: 1.0.0
-  description: Frontend-facing BFF contract for the StudyBytes Site MVP. Site calls only this API under /api/v1; internal
-    microservice routes are hidden behind the BFF.
+  description: Frontend-facing BFF contract for the StudyBytes Site MVP. Site calls
+    only this API under /api/v1; internal microservice routes are hidden behind the
+    BFF.
 servers:
 - url: http://localhost:8080/api/v1
   description: Local BFF
@@ -18,6 +19,9 @@ tags:
 - name: Teacher courses
 - name: Teacher modules/items
 - name: Teacher item editor
+- name: Localization
+- name: Teacher requests
+- name: Admin teacher requests
 paths:
   /auth/register:
     post:
@@ -1276,6 +1280,236 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /i18n/default-locale:
+    get:
+      tags:
+      - Localization
+      summary: Get default locale hint
+      operationId: getDefaultLocale
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultLocaleResponse'
+  /me/settings:
+    get:
+      tags:
+      - Profile
+      summary: Get account settings
+      operationId: getAccountSettings
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      tags:
+      - Profile
+      summary: Update account settings
+      operationId: updateAccountSettings
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/register-teacher-request:
+    post:
+      tags:
+      - Auth
+      - Teacher requests
+      summary: Register user and create teacher access request
+      operationId: registerTeacherRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTeacherRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterTeacherRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /teacher-requests:
+    post:
+      tags:
+      - Teacher requests
+      summary: Create teacher access request for current user
+      operationId: createTeacherRequest
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherRequestCreateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherAccessRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /teacher-requests/me:
+    get:
+      tags:
+      - Teacher requests
+      summary: Get current user teacher access request
+      operationId: getMyTeacherRequest
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                nullable: true
+                allOf:
+                - $ref: '#/components/schemas/TeacherAccessRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/teacher-requests:
+    get:
+      tags:
+      - Admin teacher requests
+      summary: List teacher access requests
+      operationId: listTeacherRequests
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeacherAccessRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /admin/teacher-requests/{requestId}/approve:
+    post:
+      tags:
+      - Admin teacher requests
+      summary: Approve teacher access request
+      operationId: approveTeacherRequest
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      parameters:
+      - name: requestId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherRequestReviewRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherAccessRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/teacher-requests/{requestId}/reject:
+    post:
+      tags:
+      - Admin teacher requests
+      summary: Reject teacher access request
+      operationId: rejectTeacherRequest
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      parameters:
+      - name: requestId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherRequestReviewRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherAccessRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     BearerAuth:
@@ -1429,6 +1663,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ApiValidationError'
+        code:
+          type: string
+        requestId:
+          type: string
       required:
       - status
       - error
@@ -1457,6 +1695,9 @@ components:
           nullable: true
         bio:
           type: string
+          nullable: true
+        preferredLocale:
+          $ref: '#/components/schemas/Locale'
           nullable: true
       required:
       - id
@@ -1573,7 +1814,8 @@ components:
           example: Java Core
         shortDescription:
           type: string
-          example: Learn Java fundamentals through structured lessons and practice tasks.
+          example: Learn Java fundamentals through structured lessons and practice
+            tasks.
         difficulty:
           $ref: '#/components/schemas/CourseDifficulty'
         accessType:
@@ -1773,8 +2015,9 @@ components:
         correct:
           type: boolean
           nullable: true
-          description: Only teacher/editor or post-submit feedback may include this. Normal public/student item payloads must
-            not expose correct answers before submission.
+          description: Only teacher/editor or post-submit feedback may include this.
+            Normal public/student item payloads must not expose correct answers before
+            submission.
           example: false
         explanation:
           type: string
@@ -1850,7 +2093,8 @@ components:
       - type: array
         items:
           $ref: '#/components/schemas/CourseCatalogItem'
-      description: Preferred shape is PageCourseCatalogItem. Plain array is accepted only as temporary early-BFF compatibility.
+      description: Preferred shape is PageCourseCatalogItem. Plain array is accepted
+        only as temporary early-BFF compatibility.
     EnrollmentSummary:
       type: object
       properties:
@@ -2541,8 +2785,9 @@ components:
         correct:
           type: boolean
           nullable: true
-          description: Only teacher/editor or post-submit feedback may include this. Normal public/student item payloads must
-            not expose correct answers before submission.
+          description: Only teacher/editor or post-submit feedback may include this.
+            Normal public/student item payloads must not expose correct answers before
+            submission.
           example: false
         explanation:
           type: string
@@ -2552,3 +2797,143 @@ components:
       - orderIndex
       - label
       - text
+    Locale:
+      type: string
+      enum:
+      - ru
+      - en
+    LocaleSource:
+      type: string
+      enum:
+      - ACCOUNT_SETTING
+      - ACCEPT_LANGUAGE
+      - GEO_IP
+      - FALLBACK
+    DefaultLocaleResponse:
+      type: object
+      required:
+      - locale
+      - source
+      properties:
+        locale:
+          $ref: '#/components/schemas/Locale'
+        source:
+          $ref: '#/components/schemas/LocaleSource'
+    UpdateSettingsRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        preferredLocale:
+          $ref: '#/components/schemas/Locale'
+    TeacherRequestStatus:
+      type: string
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      - CANCELLED
+    TeacherRequestCreateRequest:
+      type: object
+      required:
+      - motivation
+      - experience
+      - preferredTopics
+      properties:
+        motivation:
+          type: string
+        experience:
+          type: string
+        portfolioUrl:
+          type: string
+          nullable: true
+        preferredTopics:
+          type: array
+          items:
+            type: string
+    RegisterTeacherRequest:
+      allOf:
+      - $ref: '#/components/schemas/RegisterRequest'
+      - $ref: '#/components/schemas/TeacherRequestCreateRequest'
+    TeacherAccessRequest:
+      type: object
+      required:
+      - id
+      - userId
+      - status
+      - motivation
+      - experience
+      - preferredTopics
+      - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/TeacherRequestStatus'
+        motivation:
+          type: string
+        experience:
+          type: string
+        portfolioUrl:
+          type: string
+          nullable: true
+        preferredTopics:
+          type: array
+          items:
+            type: string
+        reviewComment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        reviewedByUserId:
+          type: integer
+          format: int64
+          nullable: true
+        user:
+          $ref: '#/components/schemas/CurrentUser'
+    TeacherRequestReviewRequest:
+      type: object
+      properties:
+        reviewComment:
+          type: string
+          nullable: true
+    RegisterTeacherRequestResponse:
+      type: object
+      required:
+      - user
+      - teacherRequest
+      properties:
+        user:
+          $ref: '#/components/schemas/CurrentUser'
+        teacherRequest:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            status:
+              $ref: '#/components/schemas/TeacherRequestStatus'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: integer

@@ -706,3 +706,19 @@ Full deployment documentation is available in:
 ```text
 docs/DEPLOYMENT.md
 ```
+
+## Final Site product-readiness features
+
+This version adds the final Site readiness layer:
+
+- RU/EN localization with a language switcher;
+- default locale selection from account setting, browser/BFF hint, and fallback;
+- account settings with `preferredLocale`;
+- teacher access request flow for students and new registrations;
+- admin teacher request review page;
+- richer error screens for 400/401/403/404/409/500/maintenance states;
+- static teacher course templates for draft course creation;
+- teacher course editor preview action;
+- BFF OpenAPI additions for localization, settings, and teacher requests.
+
+Production auth should use BFF-managed `HttpOnly` cookies where possible. Token-based auth is still supported in the API client for MVP compatibility.
