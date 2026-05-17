@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { AppErrorBoundary } from "./components/system/AppErrorBoundary";
 import "./index.css";
 
 import { BrowserRouter } from "react-router-dom";
@@ -17,7 +18,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <ColorModeProvider>
             <BrowserRouter>
                 <AuthProvider>
-                    <App />
+                    <AppErrorBoundary>
+                        <App />
+                    </AppErrorBoundary>
                 </AuthProvider>
             </BrowserRouter>
         </ColorModeProvider>

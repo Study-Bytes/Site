@@ -9,6 +9,7 @@ export type AuthContextValue = {
     register: (input: RegisterRequest) => Promise<void>;
     logout: () => Promise<void>;
     reloadSession: () => Promise<void>;
+    setCurrentUser: (user: CurrentUser | null) => void;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

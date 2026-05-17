@@ -1,37 +1,56 @@
+import { lazy, Suspense } from "react";
+import type { ReactNode } from "react";
 import { Route, Routes } from "react-router-dom";
+import { LoadingState } from "./components/ui/LoadingState";
 import { AppShell } from "./layouts/AppShell";
-import Home from "./pages/Home";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import CourseDetailsPage from "./pages/courses/CourseDetailsPage";
-import CoursesPage from "./pages/courses/CoursesPage";
-import LearningCoursePage from "./pages/learning/LearningCoursePage";
-import LearningItemPage from "./pages/learning/LearningItemPage";
-import MyLearningPage from "./pages/learning/MyLearningPage";
-import ProfilePage from "./pages/ProfilePage";
-import AccessDeniedPage from "./pages/system/AccessDeniedPage";
-import NotFoundPage from "./pages/system/NotFoundPage";
-import TeacherCourseEditPage from "./pages/teacher/TeacherCourseEditPage";
-import TeacherCourseNewPage from "./pages/teacher/TeacherCourseNewPage";
-import TeacherCoursesPage from "./pages/teacher/TeacherCoursesPage";
-import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
-import TeacherItemEditorPage from "./pages/teacher/TeacherItemEditorPage";
+import { PageContainer } from "./layouts/PageContainer";
 import { AnonymousOnly } from "./routes/AnonymousOnly";
 import { RequireAuth } from "./routes/RequireAuth";
 import { RequireRole } from "./routes/RequireRole";
+
+const Home = lazy(() => import("./pages/Home"));
+const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
+const CourseDetailsPage = lazy(() => import("./pages/courses/CourseDetailsPage"));
+const CoursesPage = lazy(() => import("./pages/courses/CoursesPage"));
+const LearningCoursePage = lazy(() => import("./pages/learning/LearningCoursePage"));
+const LearningItemPage = lazy(() => import("./pages/learning/LearningItemPage"));
+const MyLearningPage = lazy(() => import("./pages/learning/MyLearningPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const AccessDeniedPage = lazy(() => import("./pages/system/AccessDeniedPage"));
+const NotFoundPage = lazy(() => import("./pages/system/NotFoundPage"));
+const TeacherCourseEditPage = lazy(() => import("./pages/teacher/TeacherCourseEditPage"));
+const TeacherCourseNewPage = lazy(() => import("./pages/teacher/TeacherCourseNewPage"));
+const TeacherCoursesPage = lazy(() => import("./pages/teacher/TeacherCoursesPage"));
+const TeacherDashboardPage = lazy(() => import("./pages/teacher/TeacherDashboardPage"));
+const TeacherItemEditorPage = lazy(() => import("./pages/teacher/TeacherItemEditorPage"));
+
+function PageSuspense({ children }: { children: ReactNode }) {
+    return (
+        <Suspense
+            fallback={
+                <PageContainer>
+                    <LoadingState rows={3} />
+                </PageContainer>
+            }
+        >
+            {children}
+        </Suspense>
+    );
+}
 
 export default function App() {
     return (
         <Routes>
             <Route element={<AppShell />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/courses" element={<CoursesPage />} />
-                <Route path="/courses/:courseId" element={<CourseDetailsPage />} />
+                <Route path="/" element={<PageSuspense><Home /></PageSuspense>} />
+                <Route path="/courses" element={<PageSuspense><CoursesPage /></PageSuspense>} />
+                <Route path="/courses/:courseId" element={<PageSuspense><CourseDetailsPage /></PageSuspense>} />
                 <Route
                     path="/login"
                     element={
                         <AnonymousOnly>
-                            <LoginPage />
+                            <PageSuspense><LoginPage /></PageSuspense>
                         </AnonymousOnly>
                     }
                 />
@@ -39,7 +58,7 @@ export default function App() {
                     path="/register"
                     element={
                         <AnonymousOnly>
-                            <RegisterPage />
+                            <PageSuspense><RegisterPage /></PageSuspense>
                         </AnonymousOnly>
                     }
                 />
@@ -47,7 +66,7 @@ export default function App() {
                     path="/profile"
                     element={
                         <RequireAuth>
-                            <ProfilePage />
+                            <PageSuspense><ProfilePage /></PageSuspense>
                         </RequireAuth>
                     }
                 />
@@ -55,7 +74,7 @@ export default function App() {
                     path="/my-learning"
                     element={
                         <RequireAuth>
-                            <MyLearningPage />
+                            <PageSuspense><MyLearningPage /></PageSuspense>
                         </RequireAuth>
                     }
                 />
@@ -63,7 +82,7 @@ export default function App() {
                     path="/learn/:courseId"
                     element={
                         <RequireAuth>
-                            <LearningCoursePage />
+                            <PageSuspense><LearningCoursePage /></PageSuspense>
                         </RequireAuth>
                     }
                 />
@@ -71,7 +90,7 @@ export default function App() {
                     path="/learn/:courseId/items/:itemId"
                     element={
                         <RequireAuth>
-                            <LearningItemPage />
+                            <PageSuspense><LearningItemPage /></PageSuspense>
                         </RequireAuth>
                     }
                 />
@@ -79,7 +98,7 @@ export default function App() {
                     path="/teacher"
                     element={
                         <RequireRole roles={["TEACHER", "ADMIN"]}>
-                            <TeacherDashboardPage />
+                            <PageSuspense><TeacherDashboardPage /></PageSuspense>
                         </RequireRole>
                     }
                 />
@@ -87,7 +106,7 @@ export default function App() {
                     path="/teacher/courses"
                     element={
                         <RequireRole roles={["TEACHER", "ADMIN"]}>
-                            <TeacherCoursesPage />
+                            <PageSuspense><TeacherCoursesPage /></PageSuspense>
                         </RequireRole>
                     }
                 />
@@ -95,7 +114,7 @@ export default function App() {
                     path="/teacher/courses/new"
                     element={
                         <RequireRole roles={["TEACHER", "ADMIN"]}>
-                            <TeacherCourseNewPage />
+                            <PageSuspense><TeacherCourseNewPage /></PageSuspense>
                         </RequireRole>
                     }
                 />
@@ -103,7 +122,7 @@ export default function App() {
                     path="/teacher/courses/:courseId/edit"
                     element={
                         <RequireRole roles={["TEACHER", "ADMIN"]}>
-                            <TeacherCourseEditPage />
+                            <PageSuspense><TeacherCourseEditPage /></PageSuspense>
                         </RequireRole>
                     }
                 />
@@ -111,12 +130,12 @@ export default function App() {
                     path="/teacher/courses/:courseId/edit/items/:itemId"
                     element={
                         <RequireRole roles={["TEACHER", "ADMIN"]}>
-                            <TeacherItemEditorPage />
+                            <PageSuspense><TeacherItemEditorPage /></PageSuspense>
                         </RequireRole>
                     }
                 />
-                <Route path="/403" element={<AccessDeniedPage />} />
-                <Route path="*" element={<NotFoundPage />} />
+                <Route path="/403" element={<PageSuspense><AccessDeniedPage /></PageSuspense>} />
+                <Route path="*" element={<PageSuspense><NotFoundPage /></PageSuspense>} />
             </Route>
         </Routes>
     );
