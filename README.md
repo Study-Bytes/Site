@@ -151,7 +151,8 @@ The teacher flow now uses the shared `teacherApi` service and the versioned BFF 
 - `/teacher/courses/:courseId/edit` loads and saves course metadata through `GET/PUT /api/v1/teacher/courses/{courseId}`.
 - Course metadata form includes title, slug, short description, description, difficulty, access type, enrollment toggle, cover image URL and estimated minutes.
 - BFF validation errors are displayed through `ValidationErrorPanel`.
-- Module and item structure is visible in the editor, while full add/edit/reorder structure management remains a separate next task.
+- Course structure editing supports module and item create/edit/delete/reorder actions.
+- `/teacher/courses/:courseId/edit/items/:itemId` loads and saves item metadata, content blocks, hints, test cases, quiz options and CODING/SQL execution settings.
 
 Teacher pages must not call CourseService admin endpoints directly. Local development uses the mock BFF adapter through the same `teacherApi` methods.
 
@@ -608,3 +609,54 @@ docker build \
   --build-arg VITE_USE_MOCK_BFF=false \
   -t studybytes-site .
 ```
+
+## Production readiness and real BFF integration
+
+The Site is prepared to switch from mock BFF mode to the real BFF by environment only:
+
+```env
+VITE_USE_MOCK_BFF=false
+VITE_BFF_BASE_URL=https://studybytes.example.com
+VITE_BFF_API_PREFIX=/api/v1
+```
+
+The frontend still uses the same service modules in both modes. Do not add direct microservice URLs to the Site.
+
+### Quality commands
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npm run check
+```
+
+`npm run check` runs lint, typecheck, tests, and production build.
+
+### Session handling
+
+The API client handles `401 Unauthorized` responses centrally:
+
+- tries `POST /api/v1/auth/refresh` when possible;
+- retries the original request after successful refresh;
+- clears stored tokens after refresh failure;
+- emits a session-expired event so authenticated pages return to the login flow.
+
+The BFF may use either token-based auth or httpOnly cookies. The Site sends `credentials: include` and also supports `Authorization: Bearer <accessToken>` when tokens are returned by BFF.
+
+### Profile endpoints
+
+The Profile page is wired to the BFF profile contract:
+
+```http
+PUT /api/v1/me/profile
+PUT /api/v1/me/password
+```
+
+If the current BFF does not implement these endpoints yet, it should return a clear `404` or `501`; the Site displays the error through the profile UI.
+
+### QA and deployment docs
+
+- Manual QA checklist: `docs/QA_CHECKLIST.md`
+- Site deployment notes: `docs/DEPLOYMENT.md`
