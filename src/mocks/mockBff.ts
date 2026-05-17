@@ -5,6 +5,7 @@ import type {
     ContentBlockUpsertRequest,
     CourseCatalogItem,
     CourseCatalogQuery,
+    DefaultLocaleResponse,
     CourseDetails,
     CourseItemPreview,
     CourseItemUpsertRequest,
@@ -16,6 +17,7 @@ import type {
     HintUpsertRequest,
     LearningCourse,
     LearningItem,
+    Locale,
     LoginRequest,
     ModuleUpsertRequest,
     QuizOptionUpsertRequest,
@@ -28,7 +30,12 @@ import type {
     TeacherCourseDetails,
     TeacherCourseQuery,
     TeacherCourseSummary,
+    TeacherAccessRequest,
     TeacherItemDetails,
+    TeacherRequestCreateRequest,
+    TeacherRequestReviewRequest,
+    RegisterTeacherRequest,
+    RegisterTeacherRequestResponse,
     TestCaseUpsertRequest,
     UpdateProfileRequest,
 } from "../api/bffContracts";
@@ -44,6 +51,7 @@ const mockAccounts: MockAccount[] = [
         status: "ACTIVE",
         avatarUrl: null,
         bio: "Learns programming through StudyBytes.",
+        preferredLocale: "ru",
         password: "password123",
     },
     {
@@ -54,6 +62,7 @@ const mockAccounts: MockAccount[] = [
         status: "ACTIVE",
         avatarUrl: null,
         bio: "Creates Java and SQL courses.",
+        preferredLocale: "ru",
         password: "password123",
     },
     {
@@ -64,12 +73,32 @@ const mockAccounts: MockAccount[] = [
         status: "ACTIVE",
         avatarUrl: null,
         bio: "Platform administrator.",
+        preferredLocale: "en",
         password: "password123",
     },
 ];
 
 const currentUserKey = "studybytes_mock_current_user";
 const enrolledCoursesKey = "studybytes_mock_enrolled_courses";
+
+
+
+let teacherRequests: TeacherAccessRequest[] = [
+    {
+        id: 3001,
+        userId: 1,
+        status: "PENDING",
+        motivation: "I want to create beginner Java lessons for classmates.",
+        experience: "Completed Java Core and helped peers with labs.",
+        portfolioUrl: "https://github.com/student-demo",
+        preferredTopics: ["Java", "Algorithms"],
+        reviewComment: null,
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        reviewedAt: null,
+        reviewedByUserId: null,
+        user: { id: 1, email: "student@studybytes.dev", fullName: "Student Demo", role: "STUDENT", status: "ACTIVE" },
+    },
+];
 
 const itemDetails: Record<number, TeacherItemDetails> = {
     5001: {
@@ -444,6 +473,7 @@ export const mockBff = {
             status: "ACTIVE",
             avatarUrl: null,
             bio: null,
+            preferredLocale: "ru",
             password: request.password,
         };
         mockAccounts.push(account);
@@ -470,7 +500,8 @@ export const mockBff = {
         account.fullName = request.fullName;
         account.avatarUrl = request.avatarUrl ?? null;
         account.bio = request.bio ?? null;
-        const updated: CurrentUser = { id: account.id, email: account.email, fullName: account.fullName, role: account.role, status: account.status, avatarUrl: account.avatarUrl, bio: account.bio };
+        if (request.preferredLocale) account.preferredLocale = request.preferredLocale;
+        const updated: CurrentUser = { id: account.id, email: account.email, fullName: account.fullName, role: account.role, status: account.status, avatarUrl: account.avatarUrl, bio: account.bio, preferredLocale: account.preferredLocale };
         persistSession(updated);
         return delay(updated);
     },
@@ -479,6 +510,94 @@ export const mockBff = {
         void _request;
         requireUser();
         return delay(undefined);
+    },
+
+    async getDefaultLocale(): Promise<DefaultLocaleResponse> {
+        const user = sessionUser;
+        if (user?.preferredLocale) return delay({ locale: user.preferredLocale, source: "ACCOUNT_SETTING" });
+        const browserLocale = navigator.language.toLowerCase().startsWith("en") ? "en" : "ru";
+        return delay({ locale: browserLocale as Locale, source: "ACCEPT_LANGUAGE" });
+    },
+
+    async updatePreferredLocale(locale: Locale): Promise<void> {
+        if (sessionUser) {
+            const account = mockAccounts.find((item) => item.id === sessionUser?.id);
+            if (account) {
+                account.preferredLocale = locale;
+                persistSession({ ...sessionUser, preferredLocale: locale });
+            }
+        }
+        return delay(undefined);
+    },
+
+    async createTeacherRequest(request: TeacherRequestCreateRequest): Promise<TeacherAccessRequest> {
+        const user = requireUser();
+        const existing = teacherRequests.find((entry) => entry.userId === user.id && entry.status === "PENDING");
+        if (existing) throw new ApiError("Teacher request is already pending", 409);
+        const entry: TeacherAccessRequest = {
+            id: nextId(teacherRequests.map((item) => item.id)),
+            userId: user.id,
+            status: "PENDING",
+            motivation: request.motivation,
+            experience: request.experience,
+            portfolioUrl: request.portfolioUrl ?? null,
+            preferredTopics: request.preferredTopics,
+            reviewComment: null,
+            createdAt: new Date().toISOString(),
+            reviewedAt: null,
+            reviewedByUserId: null,
+            user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role, status: user.status ?? "ACTIVE" },
+        };
+        teacherRequests = [entry, ...teacherRequests];
+        return delay(entry);
+    },
+
+    async getMyTeacherRequest(): Promise<TeacherAccessRequest | null> {
+        const user = requireUser();
+        return delay(teacherRequests.find((entry) => entry.userId === user.id) ?? null);
+    },
+
+    async listTeacherRequests(): Promise<TeacherAccessRequest[]> {
+        const user = requireUser();
+        if (user.role !== "ADMIN") throw new ApiError("Admin access required", 403);
+        return delay(teacherRequests);
+    },
+
+    async approveTeacherRequest(requestId: number, input: TeacherRequestReviewRequest): Promise<TeacherAccessRequest> {
+        const admin = requireUser();
+        if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
+        const entry = teacherRequests.find((item) => item.id === requestId);
+        if (!entry) throw new ApiError("Teacher request not found", 404);
+        entry.status = "APPROVED";
+        entry.reviewComment = input.reviewComment ?? null;
+        entry.reviewedAt = new Date().toISOString();
+        entry.reviewedByUserId = admin.id;
+        const account = mockAccounts.find((item) => item.id === entry.userId);
+        if (account) account.role = "TEACHER";
+        return delay(entry);
+    },
+
+    async rejectTeacherRequest(requestId: number, input: TeacherRequestReviewRequest): Promise<TeacherAccessRequest> {
+        const admin = requireUser();
+        if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
+        const entry = teacherRequests.find((item) => item.id === requestId);
+        if (!entry) throw new ApiError("Teacher request not found", 404);
+        entry.status = "REJECTED";
+        entry.reviewComment = input.reviewComment ?? null;
+        entry.reviewedAt = new Date().toISOString();
+        entry.reviewedByUserId = admin.id;
+        return delay(entry);
+    },
+
+    async registerTeacherRequest(request: RegisterTeacherRequest): Promise<RegisterTeacherRequestResponse> {
+        const auth = await this.register({ fullName: request.fullName, email: request.email, password: request.password, role: "STUDENT" });
+        const teacherRequest = await this.createTeacherRequest({
+            motivation: request.motivation,
+            experience: request.experience,
+            portfolioUrl: request.portfolioUrl,
+            preferredTopics: request.preferredTopics,
+        });
+        return delay({ ...auth, teacherRequest: { id: teacherRequest.id, status: teacherRequest.status } });
     },
 
     async getCourses(query?: CourseCatalogQuery): Promise<CourseCatalogItem[]> {

@@ -34,10 +34,13 @@ import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import type { UserRole } from "../api/bffContracts";
 import { useAuth } from "../auth/useAuth";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useI18n } from "../i18n/useI18n";
 import { useColorMode } from "../theme/colorModeContext";
 import { getStudyBytesColors } from "../theme/theme";
 
@@ -55,7 +58,9 @@ const navItems: NavItem[] = [
     { label: "Courses", to: "/courses", icon: <MenuBookOutlinedIcon /> },
     { label: "My Learning", to: "/my-learning", icon: <SchoolOutlinedIcon /> },
     { label: "Profile", to: "/profile", icon: <PersonOutlineRoundedIcon /> },
+    { label: "Teacher Request", to: "/teacher-request", icon: <AssignmentTurnedInOutlinedIcon />, roles: ["STUDENT"] },
     { label: "Teacher Cabinet", to: "/teacher/courses", icon: <AdminPanelSettingsOutlinedIcon />, roles: ["TEACHER", "ADMIN"] },
+    { label: "Teacher Requests", to: "/admin/teacher-requests", icon: <AssignmentTurnedInOutlinedIcon />, roles: ["ADMIN"] },
 ];
 
 function canShow(item: NavItem, role: UserRole | null) {
@@ -68,6 +73,19 @@ function isActivePath(pathname: string, item: NavItem) {
     if (item.to === "/my-learning") return pathname.startsWith("/my-learning") || pathname.startsWith("/learn");
     if (item.to === "/teacher/courses") return pathname.startsWith("/teacher");
     return pathname === item.to || pathname.startsWith(`${item.to}/`);
+}
+
+function navLabel(label: string, t: ReturnType<typeof useI18n>["t"]) {
+    const map: Record<string, Parameters<typeof t>[0]> = {
+        Dashboard: "nav.dashboard",
+        Courses: "nav.courses",
+        "My Learning": "nav.myLearning",
+        Profile: "nav.profile",
+        "Teacher Cabinet": "nav.teacherCabinet",
+        "Teacher Request": "nav.teacherRequest",
+        "Teacher Requests": "nav.adminRequests",
+    };
+    return map[label] ? t(map[label]) : label;
 }
 
 function Brand({ compact = false }: { compact?: boolean }) {
@@ -101,11 +119,13 @@ function Brand({ compact = false }: { compact?: boolean }) {
     );
 }
 
-function SearchBox({ placeholder = "Search courses, skills..." }: { placeholder?: string }) {
+function SearchBox({ placeholder }: { placeholder?: string }) {
+    const { t } = useI18n();
+    const resolvedPlaceholder = placeholder ?? t("nav.searchPlaceholder");
     return (
         <TextField
             size="small"
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             InputProps={{
                 startAdornment: (
                     <InputAdornment position="start">
@@ -125,6 +145,7 @@ function SearchBox({ placeholder = "Search courses, skills..." }: { placeholder?
 }
 
 function AccountMenu() {
+    const { t } = useI18n();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -142,10 +163,10 @@ function AccountMenu() {
         return (
             <Stack direction="row" spacing={1} sx={{ display: { xs: "none", sm: "flex" } }}>
                 <Button component={RouterLink} to="/login" variant="text">
-                    Login
+                    {t("nav.login")}
                 </Button>
                 <Button component={RouterLink} to="/register" variant="contained">
-                    Register
+                    {t("nav.register")}
                 </Button>
             </Stack>
         );
@@ -160,13 +181,16 @@ function AccountMenu() {
             </IconButton>
             <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
                 <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
-                    Profile
+                    {t("nav.profile")}
+                </MenuItem>
+                <MenuItem component={RouterLink} to="/teacher-request" onClick={handleMenuClose} sx={{ display: user.role === "STUDENT" ? "flex" : "none" }}>
+                    {t("nav.teacherRequest")}
                 </MenuItem>
                 <MenuItem disabled>{user.role}</MenuItem>
                 <Divider />
                 <MenuItem onClick={handleLogout}>
                     <LogoutRoundedIcon fontSize="small" sx={{ mr: 1 }} />
-                    Logout
+                    {t("nav.logout")}
                 </MenuItem>
             </Menu>
         </>
@@ -178,6 +202,7 @@ function UtilityActions() {
 
     return (
         <Stack direction="row" spacing={1} alignItems="center">
+            <LanguageSwitcher compact />
             <IconButton onClick={toggleMode} aria-label={mode === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
                 {mode === "dark" ? <LightModeRoundedIcon /> : <DarkModeRoundedIcon />}
             </IconButton>
@@ -224,6 +249,7 @@ function MarketingNavbar() {
 
 function AppSidebar({ visibleItems }: { visibleItems: NavItem[] }) {
     const location = useLocation();
+    const { t } = useI18n();
 
     return (
         <Box
@@ -270,14 +296,14 @@ function AppSidebar({ visibleItems }: { visibleItems: NavItem[] }) {
                             }}
                         >
                             <ListItemIcon sx={{ minWidth: 42, color: "inherit" }}>{item.icon}</ListItemIcon>
-                            <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: active ? 900 : 500 }} />
+                            <ListItemText primary={navLabel(item.label, t)} primaryTypographyProps={{ fontWeight: active ? 900 : 500 }} />
                         </ListItemButton>
                     );
                 })}
             </Stack>
             <Box sx={{ px: 3, mt: 3 }}>
-                <Button fullWidth variant="contained">
-                    Upgrade Pro
+                <Button fullWidth component={RouterLink} to="/teacher/courses/new" variant="contained">
+                    {t("nav.createCourse")}
                 </Button>
             </Box>
         </Box>
@@ -329,7 +355,8 @@ function MobileTopbar() {
                 <IconButton aria-label="Search">
                     <SearchRoundedIcon />
                 </IconButton>
-                <IconButton onClick={toggleMode} aria-label={mode === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
+                <LanguageSwitcher compact />
+            <IconButton onClick={toggleMode} aria-label={mode === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
                     {mode === "dark" ? <LightModeRoundedIcon /> : <DarkModeRoundedIcon />}
                 </IconButton>
                 <IconButton aria-label="Notifications">
@@ -343,6 +370,7 @@ function MobileTopbar() {
 
 function MobileBottomNav({ visibleItems }: { visibleItems: NavItem[] }) {
     const location = useLocation();
+    const { t } = useI18n();
     const items = visibleItems.filter((item) => item.to !== "/teacher/courses").slice(0, 4);
     const activeValue = items.find((item) => isActivePath(location.pathname, item))?.to ?? false;
 
@@ -361,7 +389,7 @@ function MobileBottomNav({ visibleItems }: { visibleItems: NavItem[] }) {
         >
             <BottomNavigation value={activeValue} showLabels sx={{ bgcolor: "background.paper" }}>
                 {items.map((item) => (
-                    <BottomNavigationAction key={item.to} component={RouterLink} to={item.to} label={item.label.replace("My ", "")} value={item.to} icon={item.icon} />
+                    <BottomNavigationAction key={item.to} component={RouterLink} to={item.to} label={navLabel(item.label, t).replace("My ", "").replace("Моё ", "")} value={item.to} icon={item.icon} />
                 ))}
             </BottomNavigation>
         </Paper>

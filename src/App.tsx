@@ -17,10 +17,14 @@ const LearningCoursePage = lazy(() => import("./pages/learning/LearningCoursePag
 const LearningItemPage = lazy(() => import("./pages/learning/LearningItemPage"));
 const MyLearningPage = lazy(() => import("./pages/learning/MyLearningPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const TeacherRequestPage = lazy(() => import("./pages/TeacherRequestPage"));
+const AdminTeacherRequestsPage = lazy(() => import("./pages/admin/AdminTeacherRequestsPage"));
+const ErrorStatusPage = lazy(() => import("./pages/system/ErrorStatusPage"));
 const AccessDeniedPage = lazy(() => import("./pages/system/AccessDeniedPage"));
 const NotFoundPage = lazy(() => import("./pages/system/NotFoundPage"));
 const TeacherCourseEditPage = lazy(() => import("./pages/teacher/TeacherCourseEditPage"));
 const TeacherCourseNewPage = lazy(() => import("./pages/teacher/TeacherCourseNewPage"));
+const TeacherCourseBlankPage = lazy(() => import("./pages/teacher/TeacherCourseBlankPage"));
 const TeacherCoursesPage = lazy(() => import("./pages/teacher/TeacherCoursesPage"));
 const TeacherDashboardPage = lazy(() => import("./pages/teacher/TeacherDashboardPage"));
 const TeacherItemEditorPage = lazy(() => import("./pages/teacher/TeacherItemEditorPage"));
@@ -68,6 +72,23 @@ export default function App() {
                         <RequireAuth>
                             <PageSuspense><ProfilePage /></PageSuspense>
                         </RequireAuth>
+                    }
+                />
+
+                <Route
+                    path="/teacher-request"
+                    element={
+                        <RequireAuth>
+                            <PageSuspense><TeacherRequestPage /></PageSuspense>
+                        </RequireAuth>
+                    }
+                />
+                <Route
+                    path="/admin/teacher-requests"
+                    element={
+                        <RequireRole roles={["ADMIN"]}>
+                            <PageSuspense><AdminTeacherRequestsPage /></PageSuspense>
+                        </RequireRole>
                     }
                 />
                 <Route
@@ -119,6 +140,14 @@ export default function App() {
                     }
                 />
                 <Route
+                    path="/teacher/courses/new/blank"
+                    element={
+                        <RequireRole roles={["TEACHER", "ADMIN"]}>
+                            <PageSuspense><TeacherCourseBlankPage /></PageSuspense>
+                        </RequireRole>
+                    }
+                />
+                <Route
                     path="/teacher/courses/:courseId/edit"
                     element={
                         <RequireRole roles={["TEACHER", "ADMIN"]}>
@@ -134,7 +163,12 @@ export default function App() {
                         </RequireRole>
                     }
                 />
+                <Route path="/400" element={<PageSuspense><ErrorStatusPage status={400} /></PageSuspense>} />
+                <Route path="/401" element={<PageSuspense><ErrorStatusPage status={401} /></PageSuspense>} />
                 <Route path="/403" element={<PageSuspense><AccessDeniedPage /></PageSuspense>} />
+                <Route path="/409" element={<PageSuspense><ErrorStatusPage status={409} /></PageSuspense>} />
+                <Route path="/500" element={<PageSuspense><ErrorStatusPage status={500} /></PageSuspense>} />
+                <Route path="/maintenance" element={<PageSuspense><ErrorStatusPage status="maintenance" /></PageSuspense>} />
                 <Route path="*" element={<PageSuspense><NotFoundPage /></PageSuspense>} />
             </Route>
         </Routes>

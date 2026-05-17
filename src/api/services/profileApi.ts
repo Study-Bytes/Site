@@ -11,7 +11,7 @@ export const profileApi = {
 
     updateProfile(input: UpdateProfileRequest): Promise<CurrentUser> {
         if (env.useMockBff) return mockBff.updateProfile(input);
-        return request<CurrentUser>("/me/profile", { method: "PUT", body: input });
+        return request<CurrentUser>("/me/settings", { method: "PUT", body: input });
     },
 
     changePassword(input: ChangePasswordRequest): Promise<void> {

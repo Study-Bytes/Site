@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Alert, Avatar, Box, Button, Chip, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Avatar, Box, Button, Chip, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { ApiError, getErrorMessage } from "../api/apiError";
-import type { ApiValidationError } from "../api/bffContracts";
+import type { ApiValidationError, Locale } from "../api/bffContracts";
 import { profileApi } from "../api/services";
 import { useAuth } from "../auth/useAuth";
+import { useI18n } from "../i18n/useI18n";
 import { FormSectionCard } from "../components/ui/FormSectionCard";
 import { ValidationErrorPanel } from "../components/ui/ValidationErrorPanel";
 import { PageContainer } from "../layouts/PageContainer";
@@ -15,10 +16,12 @@ function extractValidationErrors(error: unknown): ApiValidationError[] {
 
 export default function ProfilePage() {
     const auth = useAuth();
+    const { locale, setLocale, t } = useI18n();
     const navigate = useNavigate();
     const [fullName, setFullName] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
     const [bio, setBio] = useState("");
+    const [preferredLocale, setPreferredLocale] = useState<Locale>(locale);
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -34,7 +37,8 @@ export default function ProfilePage() {
         setFullName(auth.user.fullName ?? "");
         setAvatarUrl(auth.user.avatarUrl ?? "");
         setBio(auth.user.bio ?? "");
-    }, [auth.user]);
+        setPreferredLocale(auth.user.preferredLocale ?? locale);
+    }, [auth.user, locale]);
 
     if (!auth.user) return null;
 
@@ -59,9 +63,11 @@ export default function ProfilePage() {
                 fullName: fullName.trim(),
                 avatarUrl: avatarUrl.trim() || null,
                 bio: bio.trim() || null,
+                preferredLocale,
             });
             auth.setCurrentUser(updatedUser);
-            setProfileSuccess("Profile was updated successfully.");
+            await setLocale(preferredLocale, false);
+            setProfileSuccess(t("profile.updated"));
         } catch (error) {
             setProfileValidationErrors(extractValidationErrors(error));
             setProfileError(getErrorMessage(error, "Failed to update profile"));
@@ -96,8 +102,8 @@ export default function ProfilePage() {
         <PageContainer>
             <Stack spacing={3}>
                 <Box>
-                    <Typography variant="h2">Profile</Typography>
-                    <Typography sx={{ color: "text.secondary", mt: 1 }}>Current user model is received through BFF `/api/v1/me`.</Typography>
+                    <Typography variant="h2">{t("profile.title")}</Typography>
+                    <Typography sx={{ color: "text.secondary", mt: 1 }}>{t("profile.subtitle")}</Typography>
                 </Box>
 
                 <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 2 }}>
@@ -113,7 +119,7 @@ export default function ProfilePage() {
                     </Stack>
                 </Paper>
 
-                <FormSectionCard title="Account details" description="Profile fields are saved through BFF profile endpoints.">
+                <FormSectionCard title={t("profile.accountDetails")} description={t("profile.accountDescription")}>
                     <Stack spacing={2}>
                         {profileError ? <Alert severity="error">{profileError}</Alert> : null}
                         {profileSuccess ? <Alert severity="success">{profileSuccess}</Alert> : null}
@@ -122,13 +128,17 @@ export default function ProfilePage() {
                         <TextField label="Email" value={auth.user.email} disabled />
                         <TextField label="Avatar URL" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} />
                         <TextField label="Bio" value={bio} onChange={(event) => setBio(event.target.value)} multiline minRows={3} />
+                        <TextField select label={t("profile.language")} value={preferredLocale} onChange={(event) => setPreferredLocale(event.target.value as Locale)} helperText={t("profile.languageDescription")}>
+                            <MenuItem value="ru">{t("language.ru")}</MenuItem>
+                            <MenuItem value="en">{t("language.en")}</MenuItem>
+                        </TextField>
                         <Button variant="outlined" sx={{ alignSelf: "flex-start" }} onClick={handleProfileSave} disabled={isSavingProfile}>
                             {isSavingProfile ? "Saving..." : "Save changes"}
                         </Button>
                     </Stack>
                 </FormSectionCard>
 
-                <FormSectionCard title="Security" description="Password changes use the BFF profile contract when the endpoint is enabled.">
+                <FormSectionCard title={t("profile.security")} description="Password changes use the BFF profile contract when the endpoint is enabled.">
                     <Stack spacing={2}>
                         {passwordError ? <Alert severity="error">{passwordError}</Alert> : null}
                         {passwordSuccess ? <Alert severity="success">{passwordSuccess}</Alert> : null}
@@ -140,9 +150,12 @@ export default function ProfilePage() {
                     </Stack>
                 </FormSectionCard>
 
-                <Button variant="contained" color="error" onClick={handleLogout} sx={{ alignSelf: "flex-start" }}>
-                    Logout
-                </Button>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                    {auth.user.role === "STUDENT" ? <Button variant="outlined" onClick={() => navigate("/teacher-request")}>{t("nav.teacherRequest")}</Button> : null}
+                    <Button variant="contained" color="error" onClick={handleLogout} sx={{ alignSelf: "flex-start" }}>
+                        {t("nav.logout")}
+                    </Button>
+                </Stack>
             </Stack>
         </PageContainer>
     );

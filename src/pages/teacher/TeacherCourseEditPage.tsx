@@ -30,6 +30,7 @@ import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import PublishRoundedIcon from "@mui/icons-material/PublishRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
@@ -668,6 +669,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                             <>
                                 <Button variant="outlined" startIcon={<PublishRoundedIcon />} onClick={() => void runCourseAction("publish")} disabled={isSaving || action !== null || course.status === "PUBLISHED"}>
                                     Publish Course
+                                </Button>
+                                <Button variant="outlined" component={RouterLink} to={`/courses/${course.id}`} startIcon={<VisibilityRoundedIcon />}>
+                                    Preview as student
                                 </Button>
                                 <Button variant="outlined" color="error" startIcon={<ArchiveRoundedIcon />} onClick={() => void runCourseAction("archive")} disabled={isSaving || action !== null || course.status === "ARCHIVED"}>
                                     Archive Course

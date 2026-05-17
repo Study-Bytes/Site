@@ -1,5 +1,8 @@
 export type UserRole = "STUDENT" | "TEACHER" | "ADMIN";
 export type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
+export type Locale = "ru" | "en";
+export type LocaleSource = "ACCOUNT_SETTING" | "ACCEPT_LANGUAGE" | "GEO_IP" | "FALLBACK";
+export type TeacherRequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
 export type CurrentUser = {
     id: number;
@@ -9,6 +12,7 @@ export type CurrentUser = {
     status?: UserStatus;
     avatarUrl?: string | null;
     bio?: string | null;
+    preferredLocale?: Locale | null;
 };
 
 export type LoginRequest = {
@@ -39,6 +43,15 @@ export type UpdateProfileRequest = {
     fullName: string;
     avatarUrl?: string | null;
     bio?: string | null;
+    preferredLocale?: Locale | null;
+};
+
+
+export type UpdateSettingsRequest = UpdateProfileRequest;
+
+export type DefaultLocaleResponse = {
+    locale: Locale;
+    source: LocaleSource;
 };
 
 export type ChangePasswordRequest = {
@@ -63,8 +76,10 @@ export type ApiValidationError = {
 
 export type ApiErrorResponse = {
     status: number;
-    error: string;
+    code?: string;
+    error?: string;
     message: string;
+    requestId?: string;
     validationErrors?: ApiValidationError[];
 };
 
@@ -317,3 +332,41 @@ export type ContentBlockUpsertRequest = Omit<ContentBlockDto, "id">;
 export type HintUpsertRequest = Omit<HintDto, "id">;
 export type TestCaseUpsertRequest = Omit<TestCaseDto, "id">;
 export type QuizOptionUpsertRequest = Omit<QuizOptionDto, "id" | "selected">;
+
+
+export type TeacherRequestCreateRequest = {
+    motivation: string;
+    experience: string;
+    portfolioUrl?: string | null;
+    preferredTopics: string[];
+};
+
+export type RegisterTeacherRequest = RegisterRequest & TeacherRequestCreateRequest;
+
+export type TeacherAccessRequest = {
+    id: number;
+    userId: number;
+    status: TeacherRequestStatus;
+    motivation: string;
+    experience: string;
+    portfolioUrl: string | null;
+    preferredTopics: string[];
+    reviewComment: string | null;
+    createdAt: string;
+    reviewedAt: string | null;
+    reviewedByUserId?: number | null;
+    user?: Pick<CurrentUser, "id" | "email" | "fullName" | "role" | "status">;
+};
+
+export type TeacherRequestReviewRequest = {
+    reviewComment?: string | null;
+};
+
+export type RegisterTeacherRequestResponse = {
+    user: CurrentUser;
+    teacherRequest: Pick<TeacherAccessRequest, "id" | "status">;
+    accessToken?: string;
+    refreshToken?: string;
+    tokenType?: "Bearer" | string;
+    expiresIn?: number;
+};
