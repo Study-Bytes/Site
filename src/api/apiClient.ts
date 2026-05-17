@@ -1,6 +1,6 @@
 import { env } from "../config/env";
 import { ApiError } from "./apiError";
-import type { ApiValidationError, AuthResponse } from "./bffContracts";
+import type { ApiErrorResponse, ApiValidationError, AuthResponse } from "./bffContracts";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -55,16 +55,20 @@ function buildUrl(path: string, query?: QueryParams) {
 async function parseError(response: Response): Promise<ApiError> {
     let message = `Request failed with status ${response.status}`;
     let validationErrors: ApiValidationError[] = [];
+    let code: string | undefined;
+    let requestId: string | undefined;
 
     try {
-        const payload = await response.json();
+        const payload = (await response.json()) as Partial<ApiErrorResponse>;
         if (typeof payload?.message === "string") message = payload.message;
+        if (typeof payload?.code === "string") code = payload.code;
+        if (typeof payload?.requestId === "string") requestId = payload.requestId;
         if (Array.isArray(payload?.validationErrors)) validationErrors = payload.validationErrors;
     } catch {
         // keep default message
     }
 
-    return new ApiError(message, response.status, validationErrors);
+    return new ApiError(message, response.status, validationErrors, code, requestId);
 }
 
 function createHeaders() {

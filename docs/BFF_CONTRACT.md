@@ -200,3 +200,98 @@ For the current MVP, token-based auth is acceptable. Later, BFF can migrate to h
 - Hidden tests and expected outputs must never be returned by normal student learning item endpoints.
 - Execution must go through BFF/LearningService. Site must not know `CodeExecutorService` URL.
 - Teacher endpoints must require `TEACHER` or `ADMIN`.
+
+## Final product-readiness additions
+
+The Site now expects these extra BFF capabilities in addition to the existing public, learning, and teacher editor contract.
+
+### Auth and cookies
+
+Production BFF auth should prefer cookie-based sessions:
+
+- access/refresh tokens are stored by the BFF in `HttpOnly`, `Secure`, `SameSite=Lax` cookies;
+- the Site sends requests with `credentials: include`;
+- the Site keeps token-based compatibility only for temporary MVP use;
+- `POST /api/v1/auth/refresh` refreshes the server-side/cookie session;
+- `POST /api/v1/auth/logout` clears auth cookies.
+
+If BFF enables CSRF protection for cookie-based unsafe methods, add:
+
+```http
+GET /api/v1/auth/csrf
+```
+
+and require `X-CSRF-Token` on unsafe requests.
+
+### Localization
+
+```http
+GET /api/v1/i18n/default-locale
+```
+
+Response:
+
+```json
+{
+  "locale": "ru",
+  "source": "ACCOUNT_SETTING"
+}
+```
+
+Supported `source` values: `ACCOUNT_SETTING`, `ACCEPT_LANGUAGE`, `GEO_IP`, `FALLBACK`.
+
+### Account settings
+
+```http
+GET /api/v1/me/settings
+PUT /api/v1/me/settings
+```
+
+Request:
+
+```json
+{
+  "fullName": "Roman Aksenov",
+  "avatarUrl": null,
+  "bio": "Java teacher",
+  "preferredLocale": "ru"
+}
+```
+
+### Teacher access requests
+
+```http
+POST /api/v1/teacher-requests
+GET  /api/v1/teacher-requests/me
+GET  /api/v1/admin/teacher-requests
+POST /api/v1/admin/teacher-requests/{requestId}/approve
+POST /api/v1/admin/teacher-requests/{requestId}/reject
+POST /api/v1/auth/register-teacher-request
+```
+
+Create request body:
+
+```json
+{
+  "motivation": "I want to create Java courses.",
+  "experience": "3 years of Java backend experience.",
+  "portfolioUrl": "https://example.com",
+  "preferredTopics": ["Java", "Spring Boot"]
+}
+```
+
+### Standard error shape
+
+All BFF errors should use one format:
+
+```json
+{
+  "status": 400,
+  "code": "VALIDATION_ERROR",
+  "message": "Validation failed",
+  "requestId": "req-123",
+  "validationErrors": [
+    { "field": "title", "message": "Title is required" }
+  ]
+}
+```

@@ -71,3 +71,20 @@ Use this checklist before connecting a new BFF version or deploying the Site.
 - [ ] `npm run typecheck` passes.
 - [ ] `npm run test` passes.
 - [ ] `npm run build` passes.
+
+## Final readiness QA additions
+
+- [ ] Switch language RU -> EN -> RU from Navbar.
+- [ ] Verify anonymous selected language is saved in browser storage.
+- [ ] Verify authenticated selected language is saved through account settings.
+- [ ] Verify Profile page updates full name, avatar URL, bio, and preferred language.
+- [ ] Register as student.
+- [ ] Register with teacher access request.
+- [ ] Submit teacher access request from Profile/Teacher Request page.
+- [ ] Log in as admin and approve/reject teacher request.
+- [ ] Verify approved user receives teacher access after BFF role update.
+- [ ] Verify /400, /401, /403, /404, /409, /500, and /maintenance screens.
+- [ ] Create course from blank draft.
+- [ ] Create course from each static course template.
+- [ ] Verify template-created course contains modules, items, content blocks, hints, tests/options where expected.
+- [ ] Verify Teacher Course Editor Preview as student link.
