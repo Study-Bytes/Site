@@ -61,9 +61,13 @@ sudo mkdir -p /opt/studybytes
 sudo chown -R "$USER:$USER" /opt/studybytes
 
 cd /opt/studybytes
-git clone git@github.com:Study-Bytes/Site.git site
+git clone https://github.com/Study-Bytes/Site.git site
 cd /opt/studybytes/site
 ```
+
+The Site repository is public, so the VPS does not need a GitHub SSH deploy key for `git fetch`. The CD workflow normalizes `origin` to the public HTTPS URL before pulling.
+
+`VPS_SSH_KEY` is only for GitHub Actions connecting to the VPS over SSH.
 
 Create the external Docker network if it does not already exist:
 
@@ -200,6 +204,7 @@ Then it deploys over SSH:
 cd "${VPS_DEPLOY_BASE_PATH}/site"
 git config --global --add safe.directory "${VPS_DEPLOY_BASE_PATH}/site"
 test -f .env
+git remote set-url origin https://github.com/Study-Bytes/Site.git
 git fetch origin main
 git checkout main
 git pull --ff-only origin main
@@ -219,6 +224,7 @@ If GitHub Actions is unavailable, deploy manually:
 
 ```bash
 cd /opt/studybytes/site
+git remote set-url origin https://github.com/Study-Bytes/Site.git
 git fetch origin main
 git checkout main
 git pull --ff-only origin main
