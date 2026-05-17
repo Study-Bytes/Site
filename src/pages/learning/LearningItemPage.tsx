@@ -38,6 +38,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
 import { ItemTypeBadge } from "../../components/ui/ItemTypeBadge";
 import { LoadingState } from "../../components/ui/LoadingState";
+import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { studyBytesColors } from "../../theme/theme";
 
@@ -53,6 +54,8 @@ function statusColor(status: SubmissionStatus) {
 }
 
 function ContentBlock({ block }: { block: ContentBlockDto }) {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const title = block.title ?? block.blockType;
 
     if (block.blockType === "IMAGE" && block.url) {
@@ -74,7 +77,7 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
                     <Typography sx={{ fontWeight: 950 }}>{title}</Typography>
                     {block.url ? (
                         <Button component="a" href={block.url} target="_blank" rel="noreferrer" variant="outlined" sx={{ alignSelf: "flex-start" }}>
-                            Open {block.blockType.toLowerCase()}
+                            {isRu ? "Открыть материал" : `Open ${block.blockType.toLowerCase()}`}
                         </Button>
                     ) : null}
                     {block.textContent ? <Typography sx={{ color: "text.secondary" }}>{block.textContent}</Typography> : null}
@@ -116,10 +119,10 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
             <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5 }}>
                 <Stack spacing={1}>
                     <Typography sx={{ fontWeight: 950 }}>{title}</Typography>
-                    <Typography sx={{ color: "text.secondary" }}>{block.textContent ?? "Download or review the attached file."}</Typography>
+                    <Typography sx={{ color: "text.secondary" }}>{block.textContent ?? (isRu ? "Откройте прикрепленный файл." : "Download or review the attached file.")}</Typography>
                     {block.url ? (
                         <Button component="a" href={block.url} target="_blank" rel="noreferrer" variant="outlined" sx={{ alignSelf: "flex-start" }}>
-                            Open file
+                            {isRu ? "Открыть файл" : "Open file"}
                         </Button>
                     ) : null}
                 </Stack>
@@ -130,7 +133,7 @@ function ContentBlock({ block }: { block: ContentBlockDto }) {
     return (
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5 }}>
             <Typography sx={{ fontWeight: 950 }}>{title}</Typography>
-            <Typography sx={{ color: "text.secondary", mt: 1, whiteSpace: "pre-wrap", lineHeight: 1.7 }}>{block.textContent ?? block.url ?? "No content."}</Typography>
+            <Typography sx={{ color: "text.secondary", mt: 1, whiteSpace: "pre-wrap", lineHeight: 1.7 }}>{block.textContent ?? block.url ?? (isRu ? "Материал не заполнен." : "No content.")}</Typography>
         </Paper>
     );
 }
@@ -171,13 +174,16 @@ function QuizOptionCard({ option, selected, showFeedback, onToggle }: { option: 
 }
 
 function TestResultRow({ test }: { test: TestResultDto }) {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
+
     return (
         <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1.25, borderColor: test.passed ? "rgba(46,125,50,0.32)" : "rgba(186,26,26,0.32)" }}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ sm: "center" }}>
                 <Chip
                     size="small"
                     icon={test.passed ? <CheckCircleRoundedIcon /> : <CloseRoundedIcon />}
-                    label={test.passed ? "Passed" : "Failed"}
+                    label={test.passed ? (isRu ? "Пройден" : "Passed") : (isRu ? "Ошибка" : "Failed")}
                     color={test.passed ? "success" : "error"}
                     variant="outlined"
                     sx={{ fontWeight: 900 }}
@@ -185,7 +191,7 @@ function TestResultRow({ test }: { test: TestResultDto }) {
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <Typography sx={{ fontWeight: 900 }}>{test.testKey}</Typography>
                     {test.message ? <Typography variant="body2" sx={{ color: "text.secondary" }}>{test.message}</Typography> : null}
-                    {test.actualOutput ? <Typography variant="body2" sx={{ color: "text.secondary" }}>Output: {test.actualOutput}</Typography> : null}
+                    {test.actualOutput ? <Typography variant="body2" sx={{ color: "text.secondary" }}>{isRu ? "Вывод" : "Output"}: {test.actualOutput}</Typography> : null}
                 </Box>
                 <Typography variant="body2" sx={{ color: "text.secondary" }}>
                     {test.durationMs ?? "-"} ms · {test.memoryMb ?? "-"} MB
@@ -196,18 +202,21 @@ function TestResultRow({ test }: { test: TestResultDto }) {
 }
 
 function SubmissionResultPanel({ result }: { result: SubmissionResult }) {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
+
     return (
         <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
             <Stack spacing={2}>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ sm: "center" }}>
                     <Typography variant="h5" sx={{ flexGrow: 1 }}>
-                        Latest result
+                        {isRu ? "Последний результат" : "Latest result"}
                     </Typography>
                     <Chip label={result.status} color={statusColor(result.status)} sx={{ fontWeight: 950 }} />
                 </Stack>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    <Chip label={`Score: ${result.score ?? "n/a"}`} variant="outlined" sx={{ fontWeight: 900 }} />
-                    <Chip label={`Tests: ${result.passedTests}/${result.totalTests}`} variant="outlined" sx={{ fontWeight: 900 }} />
+                    <Chip label={`${isRu ? "Балл" : "Score"}: ${result.score ?? "n/a"}`} variant="outlined" sx={{ fontWeight: 900 }} />
+                    <Chip label={`${isRu ? "Тесты" : "Tests"}: ${result.passedTests}/${result.totalTests}`} variant="outlined" sx={{ fontWeight: 900 }} />
                     <Chip label={new Date(result.createdAt).toLocaleString()} variant="outlined" sx={{ fontWeight: 900 }} />
                 </Stack>
                 {(result.stdout || result.stderr) ? (
@@ -235,19 +244,22 @@ function SubmissionResultPanel({ result }: { result: SubmissionResult }) {
 }
 
 function SubmissionHistory({ history }: { history: SubmissionHistoryItem[] }) {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
+
     if (history.length === 0) return null;
 
     return (
         <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
             <Stack spacing={1.4}>
                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
-                    Attempt history
+                    {isRu ? "История попыток" : "Attempt history"}
                 </Typography>
                 {history.map((item) => (
                     <Stack key={item.id} direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                         <Chip size="small" label={item.status} color={statusColor(item.status)} variant="outlined" sx={{ fontWeight: 900 }} />
                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                            {item.passedTests}/{item.totalTests} tests · score {item.score ?? "n/a"}
+                            {item.passedTests}/{item.totalTests} {isRu ? "тестов" : "tests"} · {isRu ? "балл" : "score"} {item.score ?? "n/a"}
                         </Typography>
                     </Stack>
                 ))}
@@ -257,6 +269,8 @@ function SubmissionHistory({ history }: { history: SubmissionHistoryItem[] }) {
 }
 
 export default function LearningItemPage() {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const { courseId, itemId } = useParams();
     const parsedCourseId = parseId(courseId);
     const parsedItemId = parseId(itemId);
@@ -266,9 +280,10 @@ export default function LearningItemPage() {
     const [result, setResult] = useState<SubmissionResult | null>(null);
     const [history, setHistory] = useState<SubmissionHistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [pendingAction, setPendingAction] = useState<"run" | "submit" | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
+    const isSubmitting = pendingAction !== null;
 
     const itemType = learningItem?.item.itemType;
     const isExecutable = itemType === "CODING" || itemType === "SQL";
@@ -277,7 +292,7 @@ export default function LearningItemPage() {
 
     const loadItem = useCallback(async () => {
         if (!parsedCourseId || !parsedItemId) {
-            setError("Invalid course or item id");
+            setError(isRu ? "Некорректный адрес курса или урока" : "Invalid course or item id");
             setIsLoading(false);
             return;
         }
@@ -294,11 +309,11 @@ export default function LearningItemPage() {
             setResult(null);
             setHistory(submissions);
         } catch (requestError) {
-            setError(getErrorMessage(requestError, "Failed to load learning item"));
+            setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить урок" : "Failed to load learning item"));
         } finally {
             setIsLoading(false);
         }
-    }, [parsedCourseId, parsedItemId]);
+    }, [isRu, parsedCourseId, parsedItemId]);
 
     useEffect(() => {
         void loadItem();
@@ -312,7 +327,7 @@ export default function LearningItemPage() {
 
     const runOrSubmit = async (submit: boolean) => {
         if (!parsedCourseId || !parsedItemId) return;
-        setIsSubmitting(true);
+        setPendingAction(submit ? "submit" : "run");
         setActionError(null);
         try {
             const response = submit
@@ -321,9 +336,9 @@ export default function LearningItemPage() {
             setResult(response);
             setHistory((previous) => [{ id: response.id, itemId: response.itemId, status: response.status, score: response.score, passedTests: response.passedTests, totalTests: response.totalTests, createdAt: response.createdAt }, ...previous]);
         } catch (requestError) {
-            setActionError(getErrorMessage(requestError, submit ? "Submit failed" : "Run failed"));
+            setActionError(getErrorMessage(requestError, submit ? (isRu ? "Не удалось отправить решение" : "Submit failed") : (isRu ? "Не удалось запустить проверку" : "Run failed")));
         } finally {
-            setIsSubmitting(false);
+            setPendingAction(null);
         }
     };
 
@@ -350,7 +365,7 @@ export default function LearningItemPage() {
                     >
                         <Stack spacing={2.4}>
                             <Button component={RouterLink} to={`/learn/${learningItem.course.id}`} variant="text" startIcon={<ArrowBackRoundedIcon />} sx={{ alignSelf: "flex-start" }}>
-                                Course map
+                                {isRu ? "Карта курса" : "Course map"}
                             </Button>
                             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                                 <ItemTypeBadge itemType={learningItem.item.itemType} />
@@ -360,7 +375,7 @@ export default function LearningItemPage() {
                             <Box>
                                 <Typography variant="h2">{learningItem.item.title}</Typography>
                                 <Typography sx={{ color: "text.secondary", mt: 1.2 }}>
-                                    {learningItem.course.title} · Attempts: {learningItem.progress.attemptsCount} · Last score: {learningItem.progress.lastScore ?? "n/a"}
+                                    {learningItem.course.title} · {isRu ? "Попыток" : "Attempts"}: {learningItem.progress.attemptsCount} · {isRu ? "Последний балл" : "Last score"}: {learningItem.progress.lastScore ?? "n/a"}
                                 </Typography>
                             </Box>
                         </Stack>
@@ -371,8 +386,8 @@ export default function LearningItemPage() {
                             <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
                                 <Stack spacing={2.2}>
                                     <Box>
-                                        <Typography variant="h5">Instructions</Typography>
-                                        <Typography sx={{ color: "text.secondary", mt: 1, whiteSpace: "pre-wrap", lineHeight: 1.7 }}>{learningItem.item.statement ?? "No statement provided."}</Typography>
+                                        <Typography variant="h5">{isRu ? "Инструкция" : "Instructions"}</Typography>
+                                        <Typography sx={{ color: "text.secondary", mt: 1, whiteSpace: "pre-wrap", lineHeight: 1.7 }}>{learningItem.item.statement ?? (isRu ? "Описание урока пока не заполнено." : "No statement provided.")}</Typography>
                                     </Box>
 
                                     {learningItem.item.contentBlocks.length > 0 ? (
@@ -388,7 +403,7 @@ export default function LearningItemPage() {
                                             <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
                                                 <Stack direction="row" spacing={1} alignItems="center">
                                                     <HelpOutlineRoundedIcon color="primary" />
-                                                    <Typography sx={{ fontWeight: 950 }}>Hints</Typography>
+                                                    <Typography sx={{ fontWeight: 950 }}>{isRu ? "Подсказки" : "Hints"}</Typography>
                                                 </Stack>
                                             </AccordionSummary>
                                             <AccordionDetails>
@@ -407,18 +422,19 @@ export default function LearningItemPage() {
                                 <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
                                     <Stack spacing={2}>
                                         <Box>
-                                            <Typography variant="h5">Choose answer</Typography>
-                                            <Typography sx={{ color: "text.secondary", mt: 0.6 }}>Select one or more options and submit your answer.</Typography>
+                                            <Typography variant="h5">{isRu ? "Выбор ответа" : "Choose answer"}</Typography>
+                                            <Typography sx={{ color: "text.secondary", mt: 0.6 }}>{isRu ? "Выберите один или несколько вариантов и отправьте ответ." : "Select one or more options and submit your answer."}</Typography>
                                         </Box>
-                                        {learningItem.item.options.length === 0 ? <EmptyState title="No options" description="This quiz has no options yet." /> : null}
+                                        {learningItem.item.options.length === 0 ? <EmptyState title={isRu ? "Нет вариантов" : "No options"} description={isRu ? "У этого квиза пока нет вариантов ответа." : "This quiz has no options yet."} /> : null}
                                         <Stack spacing={1.2}>
                                             {learningItem.item.options.map((option) => (
                                                 <QuizOptionCard key={option.id} option={option} selected={selectedOptionIds.includes(option.id)} showFeedback={Boolean(result)} onToggle={toggleOption} />
                                             ))}
                                         </Stack>
                                         {actionError ? <Alert severity="error">{actionError}</Alert> : null}
+                                        {pendingAction === "submit" ? <Alert severity="info">{isRu ? "Отправляем ответ и ждём результат проверки..." : "Submitting answer and waiting for the result..."}</Alert> : null}
                                         <Button variant="contained" startIcon={<SendRoundedIcon />} disabled={isSubmitting || selectedOptionIds.length === 0} onClick={() => void runOrSubmit(true)}>
-                                            Submit answer
+                                            {isRu ? "Отправить ответ" : "Submit answer"}
                                         </Button>
                                     </Stack>
                                 </Paper>
@@ -427,8 +443,8 @@ export default function LearningItemPage() {
                             {isContentOnly ? (
                                 <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
                                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between" alignItems={{ sm: "center" }}>
-                                        <Typography sx={{ color: "text.secondary" }}>This item is content-only. Use navigation to continue after reading.</Typography>
-                                        <Chip label="No execution required" color="primary" variant="outlined" sx={{ fontWeight: 900 }} />
+                                        <Typography sx={{ color: "text.secondary" }}>{isRu ? "Это теоретический урок. После чтения переходите к следующему шагу." : "This item is content-only. Use navigation to continue after reading."}</Typography>
+                                        <Chip label={isRu ? "Проверка не требуется" : "No execution required"} color="primary" variant="outlined" sx={{ fontWeight: 900 }} />
                                     </Stack>
                                 </Paper>
                             ) : null}
@@ -442,9 +458,9 @@ export default function LearningItemPage() {
                                     <Stack spacing={2}>
                                         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
                                             <Box>
-                                                <Typography variant="h5">Workspace</Typography>
+                                                <Typography variant="h5">{isRu ? "Рабочая область" : "Workspace"}</Typography>
                                                 <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                                    {itemType === "SQL" ? "Write SQL and run checks." : "Write code and run checks."}
+                                                    {itemType === "SQL" ? (isRu ? "Напишите SQL и запустите проверку." : "Write SQL and run checks.") : (isRu ? "Напишите код и запустите проверку." : "Write code and run checks.")}
                                                 </Typography>
                                             </Box>
                                             {learningItem.item.language ? <Chip label={learningItem.item.language} color="primary" variant="outlined" sx={{ fontWeight: 900 }} /> : null}
@@ -470,12 +486,19 @@ export default function LearningItemPage() {
                                         />
                                         {actionError ? <Alert severity="error">{actionError}</Alert> : null}
                                         {isSubmitting ? <LinearProgress /> : null}
+                                        {pendingAction ? (
+                                            <Alert severity="info">
+                                                {pendingAction === "run"
+                                                    ? (isRu ? "Запускаем код и ждём ответ от системы проверки..." : "Running code and waiting for the checker response...")
+                                                    : (isRu ? "Отправляем решение и ждём итоговый результат..." : "Submitting solution and waiting for the final result...")}
+                                            </Alert>
+                                        ) : null}
                                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                                             <Button variant="outlined" startIcon={<PlayArrowRoundedIcon />} disabled={isSubmitting} onClick={() => void runOrSubmit(false)} fullWidth>
-                                                Run
+                                                {isRu ? "Запустить" : "Run"}
                                             </Button>
                                             <Button variant="contained" startIcon={<SendRoundedIcon />} disabled={isSubmitting} onClick={() => void runOrSubmit(true)} fullWidth>
-                                                Submit
+                                                {isRu ? "Отправить" : "Submit"}
                                             </Button>
                                         </Stack>
                                     </Stack>
@@ -492,18 +515,18 @@ export default function LearningItemPage() {
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between">
                         {learningItem.navigation.previousItemId ? (
                             <Button component={RouterLink} to={`/learn/${learningItem.course.id}/items/${learningItem.navigation.previousItemId}`} variant="outlined" startIcon={<ArrowBackRoundedIcon />}>
-                                Previous
+                                {isRu ? "Назад" : "Previous"}
                             </Button>
                         ) : (
                             <Box />
                         )}
                         {learningItem.navigation.nextItemId ? (
                             <Button component={RouterLink} to={`/learn/${learningItem.course.id}/items/${learningItem.navigation.nextItemId}`} variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
-                                Next item
+                                {isRu ? "Следующий урок" : "Next item"}
                             </Button>
                         ) : (
                             <Button component={RouterLink} to={`/learn/${learningItem.course.id}`} variant="contained">
-                                Back to course
+                                {isRu ? "К курсу" : "Back to course"}
                             </Button>
                         )}
                     </Stack>

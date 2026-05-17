@@ -14,10 +14,13 @@ import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
 import { LoadingState } from "../../components/ui/LoadingState";
+import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration } from "../../utils/courseFormat";
 
 function LearningCourseCard({ enrollment }: { enrollment: EnrollmentSummary }) {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const continuePath = enrollment.nextItemId ? `/learn/${enrollment.course.id}/items/${enrollment.nextItemId}` : `/learn/${enrollment.course.id}`;
     const isCompleted = enrollment.status === "COMPLETED";
 
@@ -60,7 +63,7 @@ function LearningCourseCard({ enrollment }: { enrollment: EnrollmentSummary }) {
                 <Stack spacing={1}>
                     <Stack direction="row" justifyContent="space-between" spacing={2}>
                         <Typography variant="body2" sx={{ fontWeight: 900 }}>
-                            {enrollment.progressPercent}% complete
+                            {enrollment.progressPercent}% {isRu ? "пройдено" : "complete"}
                         </Typography>
                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
                             {formatDuration(enrollment.course.estimatedMinutes)}
@@ -71,10 +74,10 @@ function LearningCourseCard({ enrollment }: { enrollment: EnrollmentSummary }) {
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                     <Button component={RouterLink} to={`/learn/${enrollment.course.id}`} variant="outlined" fullWidth>
-                        Course map
+                        {isRu ? "Карта курса" : "Course map"}
                     </Button>
                     <Button component={RouterLink} to={continuePath} variant="contained" endIcon={<ArrowForwardRoundedIcon />} fullWidth>
-                        {isCompleted ? "Review" : "Continue"}
+                        {isCompleted ? (isRu ? "Повторить" : "Review") : (isRu ? "Продолжить" : "Continue")}
                     </Button>
                 </Stack>
             </Stack>
@@ -83,6 +86,8 @@ function LearningCourseCard({ enrollment }: { enrollment: EnrollmentSummary }) {
 }
 
 export default function MyLearningPage() {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const { user } = useAuth();
     const [items, setItems] = useState<EnrollmentSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -94,11 +99,11 @@ export default function MyLearningPage() {
         try {
             setItems(await learningApi.getMyCourses());
         } catch (requestError) {
-            setError(getErrorMessage(requestError, "Failed to load learning dashboard"));
+            setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить обучение" : "Failed to load learning dashboard"));
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [isRu]);
 
     useEffect(() => {
         void loadItems();
@@ -131,22 +136,22 @@ export default function MyLearningPage() {
                             <Stack direction="row" spacing={1} alignItems="center" sx={{ color: "primary.main" }}>
                                 <AutoStoriesRoundedIcon />
                                 <Typography variant="overline" sx={{ fontWeight: 950 }}>
-                                    My Learning
+                                    {isRu ? "Моё обучение" : "My Learning"}
                                 </Typography>
                             </Stack>
                             <Box>
-                                <Typography variant="h2">Continue building skill, {user?.fullName?.split(" ")[0] ?? "student"}.</Typography>
+                                <Typography variant="h2">{isRu ? `Продолжай обучение, ${user?.fullName?.split(" ")[0] ?? "студент"}.` : `Continue building skill, ${user?.fullName?.split(" ")[0] ?? "student"}.`}</Typography>
                                 <Typography sx={{ color: "text.secondary", mt: 1.5, lineHeight: 1.7, maxWidth: 760 }}>
-                                    Track enrolled courses, resume from the next item and review completed material from one workspace.
+                                    {isRu ? "Здесь собраны записанные курсы, следующий урок и уже пройденные материалы." : "Track enrolled courses, resume from the next item and review completed material from one workspace."}
                                 </Typography>
                             </Box>
                             {continueEnrollment ? (
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                                     <Button component={RouterLink} to={`/learn/${continueEnrollment.course.id}${continueEnrollment.nextItemId ? `/items/${continueEnrollment.nextItemId}` : ""}`} variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
-                                        Continue {continueEnrollment.course.title}
+                                        {isRu ? `Продолжить ${continueEnrollment.course.title}` : `Continue ${continueEnrollment.course.title}`}
                                     </Button>
                                     <Button component={RouterLink} to="/courses" variant="outlined">
-                                        Browse more courses
+                                        {isRu ? "Найти ещё курсы" : "Browse more courses"}
                                     </Button>
                                 </Stack>
                             ) : null}
@@ -162,25 +167,25 @@ export default function MyLearningPage() {
                         >
                             <Stack spacing={2}>
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
-                                    Learning summary
+                                    {isRu ? "Сводка обучения" : "Learning summary"}
                                 </Typography>
                                 <Stack spacing={1.2}>
                                     <Stack direction="row" justifyContent="space-between">
-                                        <Typography sx={{ color: "text.secondary" }}>Enrolled</Typography>
+                                        <Typography sx={{ color: "text.secondary" }}>{isRu ? "Записано" : "Enrolled"}</Typography>
                                         <Typography sx={{ fontWeight: 950 }}>{items.length}</Typography>
                                     </Stack>
                                     <Stack direction="row" justifyContent="space-between">
-                                        <Typography sx={{ color: "text.secondary" }}>In progress</Typography>
+                                        <Typography sx={{ color: "text.secondary" }}>{isRu ? "В процессе" : "In progress"}</Typography>
                                         <Typography sx={{ fontWeight: 950 }}>{inProgress.length}</Typography>
                                     </Stack>
                                     <Stack direction="row" justifyContent="space-between">
-                                        <Typography sx={{ color: "text.secondary" }}>Completed</Typography>
+                                        <Typography sx={{ color: "text.secondary" }}>{isRu ? "Завершено" : "Completed"}</Typography>
                                         <Typography sx={{ fontWeight: 950 }}>{completed.length}</Typography>
                                     </Stack>
                                 </Stack>
                                 <Box>
                                     <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.7 }}>
-                                        Average progress
+                                        {isRu ? "Средний прогресс" : "Average progress"}
                                     </Typography>
                                     <LinearProgress variant="determinate" value={averageProgress} sx={{ height: 9, borderRadius: 999 }} />
                                 </Box>
@@ -193,11 +198,11 @@ export default function MyLearningPage() {
                 {error ? <ErrorState message={error} onRetry={loadItems} /> : null}
                 {!isLoading && !error && items.length === 0 ? (
                     <EmptyState
-                        title="No enrolled courses"
-                        description="Open the catalog and enroll in a course to start learning."
+                        title={isRu ? "Нет записей на курсы" : "No enrolled courses"}
+                        description={isRu ? "Открой каталог и запишись на курс, чтобы начать обучение." : "Open the catalog and enroll in a course to start learning."}
                         action={
                             <Button component={RouterLink} to="/courses" variant="contained">
-                                Browse courses
+                                {isRu ? "Смотреть курсы" : "Browse courses"}
                             </Button>
                         }
                     />
@@ -205,7 +210,7 @@ export default function MyLearningPage() {
 
                 {!isLoading && !error && inProgress.length > 0 ? (
                     <Stack spacing={2.2}>
-                        <Typography variant="h3">In progress</Typography>
+                        <Typography variant="h3">{isRu ? "В процессе" : "In progress"}</Typography>
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 2.5 }}>
                             {inProgress.map((item) => (
                                 <LearningCourseCard key={item.course.id} enrollment={item} />
@@ -216,7 +221,7 @@ export default function MyLearningPage() {
 
                 {!isLoading && !error && completed.length > 0 ? (
                     <Stack spacing={2.2}>
-                        <Typography variant="h3">Completed</Typography>
+                        <Typography variant="h3">{isRu ? "Завершено" : "Completed"}</Typography>
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 2.5 }}>
                             {completed.map((item) => (
                                 <LearningCourseCard key={item.course.id} enrollment={item} />

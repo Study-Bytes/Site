@@ -76,7 +76,7 @@ describe("StudyBytes role-based behavior", () => {
     it("renders student learning page for authenticated student", async () => {
         await loginAs("STUDENT");
         renderRoute("/my-learning");
-        expect(await screen.findByText(/Continue building skill/i, {}, findOptions)).toBeInTheDocument();
+        expect(await screen.findByText(/Continue building skill|Продолжай обучение/i, {}, findOptions)).toBeInTheDocument();
         expect((await screen.findAllByText(/Java Core/i, {}, findOptions)).length).toBeGreaterThan(0);
     });
 
@@ -138,6 +138,12 @@ describe("StudyBytes final QA states", () => {
         renderRoute("/400?requestId=req-test", "ru");
         expect(await screen.findByText(/Ошибка валидации/i, {}, findOptions)).toBeInTheDocument();
         expect(await screen.findByText(/requestId: req-test/i, {}, findOptions)).toBeInTheDocument();
+    });
+
+    it("renders the Russian personal data policy", async () => {
+        renderRoute("/privacy", "ru");
+        expect(await screen.findByRole("heading", { name: /Политика обработки персональных данных/i }, findOptions)).toBeInTheDocument();
+        expect((await screen.findAllByText(/152-ФЗ/i, {}, findOptions)).length).toBeGreaterThan(0);
     });
 
     it("changes language through the switcher", async () => {

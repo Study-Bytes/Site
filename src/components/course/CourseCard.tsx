@@ -5,11 +5,14 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import { Link as RouterLink } from "react-router-dom";
 import type { CourseCatalogItem } from "../../api/bffContracts";
+import { useI18n } from "../../i18n/useI18n";
 import { formatDuration } from "../../utils/courseFormat";
 import { DifficultyBadge } from "../ui/DifficultyBadge";
 
 export function CourseCard({ course, compact = false }: { course: CourseCatalogItem; compact?: boolean }) {
-    const accessLabel = course.accessType === "PUBLIC" ? "Free Access" : course.accessType;
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
+    const accessLabel = course.accessType === "PUBLIC" ? (isRu ? "Открытый курс" : "Public course") : course.accessType;
 
     return (
         <Card
@@ -84,7 +87,7 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                     <Stack direction="row" spacing={0.8} alignItems="center" sx={{ color: course.enrollmentEnabled ? "primary.main" : "text.secondary" }}>
                         {course.enrollmentEnabled ? <PlayCircleOutlineRoundedIcon sx={{ fontSize: 17 }} /> : <LockOutlinedIcon sx={{ fontSize: 17 }} />}
                         <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                            {course.enrollmentEnabled ? "Open Enrollment" : "Enrollment Closed"}
+                            {course.enrollmentEnabled ? (isRu ? "Запись открыта" : "Enrollment open") : (isRu ? "Запись закрыта" : "Enrollment closed")}
                         </Typography>
                     </Stack>
 
@@ -95,7 +98,7 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                         endIcon={<ArrowForwardRoundedIcon />}
                         sx={{ fontWeight: 950, alignSelf: "flex-end", px: 0 }}
                     >
-                        {course.enrollmentEnabled ? "Start" : "Details"}
+                        {isRu ? "Смотреть курс" : "View course"}
                     </Button>
                 </Stack>
             </CardContent>

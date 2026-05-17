@@ -103,7 +103,7 @@ function CourseCta({ course }: { course: CourseDetails }) {
             await learningApi.enrollCourse(course.id);
             await navigate(`/learn/${course.id}`);
         } catch (error) {
-            setEnrollError(getErrorMessage(error, "Failed to enroll in this course"));
+            setEnrollError(getErrorMessage(error, isRu ? "Не удалось записаться на курс" : "Failed to enroll in this course"));
         } finally {
             setIsEnrolling(false);
         }
@@ -322,7 +322,7 @@ export default function CourseDetailsPage() {
                                     {isRu ? "Начать обучение" : "Start learning"}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                    {isRu ? "Войди, чтобы записаться на курс, отслеживать прогресс и продолжать с нужного урока." : "Sign in to enroll, track progress and continue from the next item."}
+                                    {isRu ? "Смотреть программу курса можно без регистрации. Войди, чтобы записаться, сохранять прогресс и решать задания." : "You can view the course program without registration. Sign in to enroll, save progress and solve assignments."}
                                 </Typography>
                                 <CourseCta course={course} />
                                 <Divider />
