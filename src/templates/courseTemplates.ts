@@ -33,13 +33,13 @@ const baseExecutable = {
 export const courseTemplates: CourseTemplate[] = [
     {
         id: "programming-fundamentals",
-        title: "Programming fundamentals",
-        description: "Theory, quiz and coding tasks for a first programming course.",
+        title: "Основы программирования",
+        description: "Готовый маршрут для первого курса: теория, короткие проверки и практические задания.",
         course: {
-            title: "Programming Fundamentals",
+            title: "Основы программирования",
             slug: "programming-fundamentals-draft",
-            shortDescription: "A balanced course with theory, quizzes and coding practice.",
-            description: "Use this template to explain basic concepts and add practice after each module.",
+            shortDescription: "Базовый курс с теорией, квизами и практикой написания кода.",
+            description: "Шаблон помогает выстроить курс от простых понятий к первым самостоятельным задачам. В каждом модуле есть объяснение, проверка понимания и практика.",
             difficulty: "BEGINNER",
             accessType: "PUBLIC",
             enrollmentEnabled: true,
@@ -48,24 +48,24 @@ export const courseTemplates: CourseTemplate[] = [
         },
         modules: [
             {
-                title: "Getting started",
+                title: "Старт в программировании",
                 orderIndex: 0,
                 items: [
                     {
-                        item: { title: "What is a program?", itemType: "THEORY", statement: "Introduce input, processing and output.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
-                        contentBlocks: [{ blockType: "TEXT", orderIndex: 0, title: "Core idea", textContent: "A program is a sequence of instructions executed by a computer.", url: null, language: null, metadataJson: null }],
-                        hints: [{ orderIndex: 0, text: "Use a real-world analogy before moving to code." }],
+                        item: { title: "Что такое программа", itemType: "THEORY", statement: "Объясните идею ввода, обработки и вывода данных.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
+                        contentBlocks: [{ blockType: "TEXT", orderIndex: 0, title: "Главная идея", textContent: "Программа - это последовательность команд, которые компьютер выполняет в заданном порядке. Обычно программа получает входные данные, обрабатывает их и возвращает результат.", url: null, language: null, metadataJson: null }],
+                        hints: [{ orderIndex: 0, text: "Начните с бытового примера: рецепт, инструкция или маршрут." }],
                     },
                     {
-                        item: { title: "Concept check", itemType: "QUIZ", statement: "Which part stores values during program execution?", orderIndex: 1, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
+                        item: { title: "Проверка понимания", itemType: "QUIZ", statement: "Что используется для хранения значения во время выполнения программы?", orderIndex: 1, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
                         options: [
-                            { orderIndex: 0, label: "A", text: "Variable", correct: true, explanation: "Variables store values." },
-                            { orderIndex: 1, label: "B", text: "Comment", correct: false, explanation: "Comments are ignored by the runtime." },
+                            { orderIndex: 0, label: "A", text: "Переменная", correct: true, explanation: "Переменная хранит значение, к которому программа может обратиться позже." },
+                            { orderIndex: 1, label: "B", text: "Комментарий", correct: false, explanation: "Комментарий помогает читать код, но не хранит данные во время выполнения." },
                         ],
                     },
                     {
-                        item: { title: "Print hello", itemType: "CODING", statement: "Print Hello, StudyBytes!", orderIndex: 2, language: "python", starterCode: "print(\"\")", solutionCode: "print(\"Hello, StudyBytes!\")", timeLimitMs: 2000, memoryLimitMb: 256, outputLimitKb: 64, ...baseExecutable },
-                        testCases: [{ testKey: "sample-1", orderIndex: 0, visibility: "OPEN", inputData: null, expectedOutput: "Hello, StudyBytes!" }],
+                        item: { title: "Первый вывод", itemType: "CODING", statement: "Выведите строку Привет, StudyBytes!", orderIndex: 2, language: "python", starterCode: "print(\"\")", solutionCode: "print(\"Привет, StudyBytes!\")", timeLimitMs: 2000, memoryLimitMb: 256, outputLimitKb: 64, ...baseExecutable },
+                        testCases: [{ testKey: "sample-1", orderIndex: 0, visibility: "OPEN", inputData: null, expectedOutput: "Привет, StudyBytes!" }],
                     },
                 ],
             },
@@ -73,13 +73,13 @@ export const courseTemplates: CourseTemplate[] = [
     },
     {
         id: "sql-practice",
-        title: "SQL practice module",
-        description: "Ready structure for a database practice course.",
+        title: "Практика SQL",
+        description: "Структура для курса по базам данных: SELECT, WHERE и первые фильтры.",
         course: {
-            title: "SQL Practice",
+            title: "Практика SQL",
             slug: "sql-practice-draft",
-            shortDescription: "Practice SELECT, WHERE and simple filters.",
-            description: "Use this template for SQL exercises with open and hidden checks.",
+            shortDescription: "Практика SELECT, WHERE и простых условий.",
+            description: "Шаблон подходит для курса с SQL-задачами, открытыми примерами и скрытыми проверками.",
             difficulty: "INTERMEDIATE",
             accessType: "PUBLIC",
             enrollmentEnabled: true,
@@ -88,16 +88,16 @@ export const courseTemplates: CourseTemplate[] = [
         },
         modules: [
             {
-                title: "Filtering rows",
+                title: "Фильтрация строк",
                 orderIndex: 0,
                 items: [
                     {
-                        item: { title: "SELECT basics", itemType: "THEORY", statement: "Explain SELECT and WHERE.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
-                        contentBlocks: [{ blockType: "CODE", orderIndex: 0, title: "Example", textContent: "SELECT * FROM users WHERE status = 'ACTIVE';", url: null, language: "sql", metadataJson: null }],
+                        item: { title: "Основы SELECT", itemType: "THEORY", statement: "Объясните SELECT и WHERE на простом примере.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
+                        contentBlocks: [{ blockType: "CODE", orderIndex: 0, title: "Пример запроса", textContent: "SELECT * FROM users WHERE status = 'ACTIVE';", url: null, language: "sql", metadataJson: null }],
                     },
                     {
-                        item: { title: "Active users query", itemType: "SQL", statement: "Select active users from users table.", orderIndex: 1, language: "postgresql", starterCode: "SELECT *\nFROM users\nWHERE ...;", solutionCode: "SELECT *\nFROM users\nWHERE status = 'ACTIVE';", timeLimitMs: 2000, memoryLimitMb: 256, outputLimitKb: 128, ...baseExecutable },
-                        hints: [{ orderIndex: 0, text: "Filter by status." }],
+                        item: { title: "Активные пользователи", itemType: "SQL", statement: "Выберите активных пользователей из таблицы users.", orderIndex: 1, language: "postgresql", starterCode: "SELECT *\nFROM users\nWHERE ...;", solutionCode: "SELECT *\nFROM users\nWHERE status = 'ACTIVE';", timeLimitMs: 2000, memoryLimitMb: 256, outputLimitKb: 128, ...baseExecutable },
+                        hints: [{ orderIndex: 0, text: "Нужно отфильтровать строки по полю status." }],
                         testCases: [{ testKey: "sample-sql", orderIndex: 0, visibility: "OPEN", inputData: null, expectedOutput: "active users" }],
                     },
                 ],
@@ -106,13 +106,13 @@ export const courseTemplates: CourseTemplate[] = [
     },
     {
         id: "quiz-theory",
-        title: "Quiz-based theory module",
-        description: "Short theory blocks followed by quiz checks.",
+        title: "Теория с квизами",
+        description: "Короткие теоретические блоки с проверкой понимания после каждого шага.",
         course: {
-            title: "Theory and Quiz Draft",
+            title: "Теория и квизы",
             slug: "theory-quiz-draft",
-            shortDescription: "Explain concepts and check understanding with quizzes.",
-            description: "Use this template for non-coding modules or introductory lessons.",
+            shortDescription: "Объяснение понятий и проверка через вопросы.",
+            description: "Используйте шаблон для вводных уроков, где важно проверить понимание без программирования.",
             difficulty: "BEGINNER",
             accessType: "PUBLIC",
             enrollmentEnabled: true,
@@ -121,18 +121,18 @@ export const courseTemplates: CourseTemplate[] = [
         },
         modules: [
             {
-                title: "Concepts",
+                title: "Ключевые понятия",
                 orderIndex: 0,
                 items: [
                     {
-                        item: { title: "Theory lesson", itemType: "THEORY", statement: "Explain the concept with examples.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
-                        contentBlocks: [{ blockType: "TEXT", orderIndex: 0, title: "Explanation", textContent: "Replace this text with a concise explanation and examples.", url: null, language: null, metadataJson: null }],
+                        item: { title: "Теоретический урок", itemType: "THEORY", statement: "Объясните понятие на примерах.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
+                        contentBlocks: [{ blockType: "TEXT", orderIndex: 0, title: "Объяснение", textContent: "Замените этот текст коротким объяснением, примером и типичной ошибкой.", url: null, language: null, metadataJson: null }],
                     },
                     {
-                        item: { title: "Knowledge check", itemType: "QUIZ", statement: "Choose the correct answer.", orderIndex: 1, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
+                        item: { title: "Проверка знаний", itemType: "QUIZ", statement: "Выберите правильный ответ.", orderIndex: 1, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
                         options: [
-                            { orderIndex: 0, label: "A", text: "Correct answer", correct: true, explanation: "Explain why this is correct." },
-                            { orderIndex: 1, label: "B", text: "Distractor", correct: false, explanation: "Explain the misconception." },
+                            { orderIndex: 0, label: "A", text: "Правильный ответ", correct: true, explanation: "Объясните, почему это верно." },
+                            { orderIndex: 1, label: "B", text: "Похожий, но неверный ответ", correct: false, explanation: "Покажите, в чём ошибка рассуждения." },
                         ],
                     },
                 ],
@@ -141,13 +141,13 @@ export const courseTemplates: CourseTemplate[] = [
     },
     {
         id: "coding-practice",
-        title: "Coding practice module",
-        description: "Focused practice course with starter code, hints and visible tests.",
+        title: "Практика кода",
+        description: "Практический курс с заготовками кода, подсказками и открытыми тестами.",
         course: {
-            title: "Coding Practice Draft",
+            title: "Практика программирования",
             slug: "coding-practice-draft",
-            shortDescription: "A practice-first structure for executable programming tasks.",
-            description: "Use this template for courses where most learning happens through coding exercises.",
+            shortDescription: "Курс, где основное обучение происходит через решение задач.",
+            description: "Шаблон подходит для практических курсов: короткая теория, задание, подсказка и набор проверок.",
             difficulty: "INTERMEDIATE",
             accessType: "PUBLIC",
             enrollmentEnabled: true,
@@ -156,16 +156,16 @@ export const courseTemplates: CourseTemplate[] = [
         },
         modules: [
             {
-                title: "Functions and conditions",
+                title: "Функции и условия",
                 orderIndex: 0,
                 items: [
                     {
-                        item: { title: "Function checklist", itemType: "THEORY", statement: "Explain how inputs, return values and edge cases work.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
-                        contentBlocks: [{ blockType: "TEXT", orderIndex: 0, title: "Before coding", textContent: "Define the function contract before writing tests or implementation.", url: null, language: null, metadataJson: null }],
+                        item: { title: "Перед задачей", itemType: "THEORY", statement: "Объясните входные данные, результат и крайние случаи.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
+                        contentBlocks: [{ blockType: "TEXT", orderIndex: 0, title: "Что важно перед кодом", textContent: "Сначала опишите контракт функции: какие данные приходят на вход, что нужно вернуть и какие случаи проверить.", url: null, language: null, metadataJson: null }],
                     },
                     {
-                        item: { title: "Even number checker", itemType: "CODING", statement: "Implement is_even(n) and return true for even numbers.", orderIndex: 1, language: "python", starterCode: "def is_even(n):\n    pass", solutionCode: "def is_even(n):\n    return n % 2 == 0", timeLimitMs: 2000, memoryLimitMb: 256, outputLimitKb: 64, ...baseExecutable },
-                        hints: [{ orderIndex: 0, text: "Use the remainder operator." }],
+                        item: { title: "Проверка чётности", itemType: "CODING", statement: "Реализуйте функцию is_even(n), которая возвращает true для чётных чисел.", orderIndex: 1, language: "python", starterCode: "def is_even(n):\n    pass", solutionCode: "def is_even(n):\n    return n % 2 == 0", timeLimitMs: 2000, memoryLimitMb: 256, outputLimitKb: 64, ...baseExecutable },
+                        hints: [{ orderIndex: 0, text: "Используйте остаток от деления на 2." }],
                         testCases: [
                             { testKey: "open-even", orderIndex: 0, visibility: "OPEN", inputData: "2", expectedOutput: "true" },
                             { testKey: "hidden-odd", orderIndex: 1, visibility: "HIDDEN", inputData: "7", expectedOutput: "false" },
@@ -177,13 +177,13 @@ export const courseTemplates: CourseTemplate[] = [
     },
     {
         id: "mixed-course",
-        title: "Mixed theory, quiz and coding",
-        description: "A balanced course skeleton with explanation, quiz checkpoint and practice.",
+        title: "Смешанный курс",
+        description: "Скелет курса с объяснением, квизом и практической задачей в каждом модуле.",
         course: {
-            title: "Mixed Course Draft",
+            title: "Смешанный курс",
             slug: "mixed-course-draft",
-            shortDescription: "Theory, quiz and executable practice in one course structure.",
-            description: "Use this template when every module should contain concept explanation, knowledge check and a task.",
+            shortDescription: "Теория, проверка знаний и практика в одной структуре.",
+            description: "Шаблон подходит, если каждый модуль должен вести студента по циклу: понять идею, ответить на вопрос, применить в задаче.",
             difficulty: "BEGINNER",
             accessType: "PUBLIC",
             enrollmentEnabled: true,
@@ -192,24 +192,24 @@ export const courseTemplates: CourseTemplate[] = [
         },
         modules: [
             {
-                title: "One concept loop",
+                title: "Один учебный цикл",
                 orderIndex: 0,
                 items: [
                     {
-                        item: { title: "Concept explanation", itemType: "THEORY", statement: "Explain one concept with an example.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
-                        contentBlocks: [{ blockType: "TEXT", orderIndex: 0, title: "Explanation", textContent: "Replace this with a short explanation, an example and common mistakes.", url: null, language: null, metadataJson: null }],
+                        item: { title: "Объяснение понятия", itemType: "THEORY", statement: "Объясните одно понятие на примере.", orderIndex: 0, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
+                        contentBlocks: [{ blockType: "TEXT", orderIndex: 0, title: "Объяснение", textContent: "Замените этот блок коротким объяснением, примером и списком частых ошибок.", url: null, language: null, metadataJson: null }],
                     },
                     {
-                        item: { title: "Fast checkpoint", itemType: "QUIZ", statement: "Choose the statement that best describes the concept.", orderIndex: 1, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
+                        item: { title: "Быстрая проверка", itemType: "QUIZ", statement: "Выберите утверждение, которое лучше всего описывает понятие.", orderIndex: 1, language: null, starterCode: null, solutionCode: null, timeLimitMs: null, memoryLimitMb: null, outputLimitKb: null, ...baseExecutable },
                         options: [
-                            { orderIndex: 0, label: "A", text: "Correct concept statement", correct: true, explanation: "This is the intended definition." },
-                            { orderIndex: 1, label: "B", text: "Common misconception", correct: false, explanation: "Use the explanation to clarify this mistake." },
+                            { orderIndex: 0, label: "A", text: "Корректное определение", correct: true, explanation: "Это ожидаемая формулировка понятия." },
+                            { orderIndex: 1, label: "B", text: "Типичное заблуждение", correct: false, explanation: "Используйте объяснение, чтобы разобрать эту ошибку." },
                         ],
                     },
                     {
-                        item: { title: "Apply the concept", itemType: "CODING", statement: "Solve a small task that uses the concept.", orderIndex: 2, language: "python", starterCode: "# write your solution here", solutionCode: "# replace with reference solution", timeLimitMs: 2000, memoryLimitMb: 256, outputLimitKb: 64, ...baseExecutable },
-                        hints: [{ orderIndex: 0, text: "Start from the example above and change one thing at a time." }],
-                        testCases: [{ testKey: "sample", orderIndex: 0, visibility: "OPEN", inputData: null, expectedOutput: "expected output" }],
+                        item: { title: "Применение на практике", itemType: "CODING", statement: "Решите небольшую задачу, в которой используется изученное понятие.", orderIndex: 2, language: "python", starterCode: "# напишите решение здесь", solutionCode: "# замените на эталонное решение", timeLimitMs: 2000, memoryLimitMb: 256, outputLimitKb: 64, ...baseExecutable },
+                        hints: [{ orderIndex: 0, text: "Начните с примера из теории и меняйте решение по одному шагу." }],
+                        testCases: [{ testKey: "sample", orderIndex: 0, visibility: "OPEN", inputData: null, expectedOutput: "ожидаемый результат" }],
                     },
                 ],
             },

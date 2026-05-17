@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
     Alert,
     Box,
     Button,
@@ -27,8 +24,10 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
 import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import DragIndicatorRoundedIcon from "@mui/icons-material/DragIndicatorRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import MenuOpenRoundedIcon from "@mui/icons-material/MenuOpenRounded";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import RateReviewRoundedIcon from "@mui/icons-material/RateReviewRounded";
@@ -239,6 +238,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const [validationErrors, setValidationErrors] = useState<ApiValidationError[]>([]);
     const [moduleDialog, setModuleDialog] = useState<ModuleDialogState | null>(null);
     const [itemDialog, setItemDialog] = useState<ItemDialogState | null>(null);
+    const [isInspectorOpen, setInspectorOpen] = useState(() => localStorage.getItem("studybytes_course_editor_panel") !== "closed");
 
     const loadCourse = async () => {
         if (isCreate) return;
@@ -264,6 +264,10 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         void loadCourse();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [parsedCourseId, isCreate]);
+
+    useEffect(() => {
+        localStorage.setItem("studybytes_course_editor_panel", isInspectorOpen ? "open" : "closed");
+    }, [isInspectorOpen]);
 
     const updateField = <K extends keyof CourseUpsertRequest>(field: K, value: CourseUpsertRequest[K]) => {
         setForm((current) => ({ ...current, [field]: value }));
@@ -509,6 +513,14 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                             <StatusBadge status={course.status} />
                             <DifficultyBadge difficulty={course.difficulty} />
                             <AccessTypeBadge accessType={course.accessType} />
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={isInspectorOpen ? <MenuOpenRoundedIcon /> : <MenuRoundedIcon />}
+                                onClick={() => setInspectorOpen((current) => !current)}
+                            >
+                                {isInspectorOpen ? (isRu ? "Скрыть панель" : "Hide panel") : (isRu ? "Показать панель" : "Show panel")}
+                            </Button>
                         </Stack>
                     ) : null}
                 </Stack>
@@ -517,164 +529,234 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                 {error ? <Alert severity="error" onClose={() => setError(null)}>{error}</Alert> : null}
                 {isEditingLocked ? (
                     <Alert severity="info">
-                        This course is waiting for admin moderation. Editing is locked until the course is approved or changes are requested.
+                        {isRu
+                            ? "Курс ожидает модерации администратора. Редактирование заблокировано до публикации или запроса правок."
+                            : "This course is waiting for admin moderation. Editing is locked until the course is approved or changes are requested."}
                     </Alert>
                 ) : null}
                 <ValidationErrorPanel errors={validationErrors} />
 
-                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: course ? "minmax(0, 1fr) 320px" : "1fr" }, gap: 3 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: course && isInspectorOpen ? "minmax(0, 1fr) 300px" : "1fr" }, gap: 2.5, alignItems: "start" }}>
                     <Stack spacing={3}>
                         <FormSectionCard
+                            id="course-details-section"
                             title={isRu ? "Описание курса" : "Course details"}
                             description={isRu ? "Эти данные видят студенты в каталоге и на странице курса." : "These fields are shown in the catalog and on the course details page."}
                         >
                             <Stack spacing={2}>
-                                <TextField label="Title" value={form.title} onChange={(event) => updateField("title", event.target.value)} required disabled={isEditingLocked} />
-                                <TextField label="Slug" value={form.slug} onChange={(event) => updateField("slug", event.target.value)} helperText="Lowercase URL slug, for example java-core" required disabled={isEditingLocked} />
-                                <TextField label="Short description" value={form.shortDescription} onChange={(event) => updateField("shortDescription", event.target.value)} required disabled={isEditingLocked} />
-                                <TextField label="Description" multiline minRows={5} value={form.description} onChange={(event) => updateField("description", event.target.value)} required disabled={isEditingLocked} />
+                                <TextField label={isRu ? "Название" : "Title"} value={form.title} onChange={(event) => updateField("title", event.target.value)} required disabled={isEditingLocked} />
+                                <TextField label="Slug" value={form.slug} onChange={(event) => updateField("slug", event.target.value)} helperText={isRu ? "URL-адрес латиницей, например java-core" : "Lowercase URL slug, for example java-core"} required disabled={isEditingLocked} />
+                                <TextField label={isRu ? "Краткое описание" : "Short description"} value={form.shortDescription} onChange={(event) => updateField("shortDescription", event.target.value)} required disabled={isEditingLocked} />
+                                <TextField label={isRu ? "Полное описание" : "Description"} multiline minRows={4} value={form.description} onChange={(event) => updateField("description", event.target.value)} required disabled={isEditingLocked} />
                                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                    <TextField select label="Difficulty" value={form.difficulty} onChange={(event) => updateField("difficulty", event.target.value as CourseDifficulty)} fullWidth disabled={isEditingLocked}>
-                                        <MenuItem value="BEGINNER">BEGINNER</MenuItem>
-                                        <MenuItem value="INTERMEDIATE">INTERMEDIATE</MenuItem>
-                                        <MenuItem value="ADVANCED">ADVANCED</MenuItem>
+                                    <TextField select label={isRu ? "Сложность" : "Difficulty"} value={form.difficulty} onChange={(event) => updateField("difficulty", event.target.value as CourseDifficulty)} fullWidth disabled={isEditingLocked}>
+                                        <MenuItem value="BEGINNER">{isRu ? "Начальный" : "BEGINNER"}</MenuItem>
+                                        <MenuItem value="INTERMEDIATE">{isRu ? "Средний" : "INTERMEDIATE"}</MenuItem>
+                                        <MenuItem value="ADVANCED">{isRu ? "Продвинутый" : "ADVANCED"}</MenuItem>
                                     </TextField>
-                                    <TextField select label="Access type" value={form.accessType} onChange={(event) => updateField("accessType", event.target.value as CourseAccessType)} fullWidth disabled={isEditingLocked}>
-                                        <MenuItem value="PUBLIC">PUBLIC</MenuItem>
-                                        <MenuItem value="UNLISTED">UNLISTED</MenuItem>
-                                        <MenuItem value="PRIVATE">PRIVATE</MenuItem>
+                                    <TextField select label={isRu ? "Доступ" : "Access type"} value={form.accessType} onChange={(event) => updateField("accessType", event.target.value as CourseAccessType)} fullWidth disabled={isEditingLocked}>
+                                        <MenuItem value="PUBLIC">{isRu ? "Публичный" : "PUBLIC"}</MenuItem>
+                                        <MenuItem value="UNLISTED">{isRu ? "По ссылке" : "UNLISTED"}</MenuItem>
+                                        <MenuItem value="PRIVATE">{isRu ? "Приватный" : "PRIVATE"}</MenuItem>
                                     </TextField>
                                 </Stack>
-                                <TextField label="Cover image URL" value={form.coverImageUrl ?? ""} onChange={(event) => updateField("coverImageUrl", event.target.value)} disabled={isEditingLocked} />
-                                <TextField label="Estimated minutes" type="number" value={form.estimatedMinutes ?? ""} onChange={(event) => updateField("estimatedMinutes", event.target.value === "" ? null : Number(event.target.value))} disabled={isEditingLocked} />
-                                <FormControlLabel control={<Switch checked={form.enrollmentEnabled} onChange={(event) => updateField("enrollmentEnabled", event.target.checked)} disabled={isEditingLocked} />} label="Enrollment enabled" />
+                                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                                    <TextField label={isRu ? "Обложка URL" : "Cover image URL"} value={form.coverImageUrl ?? ""} onChange={(event) => updateField("coverImageUrl", event.target.value)} disabled={isEditingLocked} fullWidth />
+                                    <TextField label={isRu ? "Длительность, минут" : "Estimated minutes"} type="number" value={form.estimatedMinutes ?? ""} onChange={(event) => updateField("estimatedMinutes", event.target.value === "" ? null : Number(event.target.value))} disabled={isEditingLocked} fullWidth />
+                                </Stack>
+                                <FormControlLabel control={<Switch checked={form.enrollmentEnabled} onChange={(event) => updateField("enrollmentEnabled", event.target.checked)} disabled={isEditingLocked} />} label={isRu ? "Запись на курс открыта" : "Enrollment enabled"} />
                             </Stack>
                         </FormSectionCard>
 
-                        <FormSectionCard title="Modules and items" description="Build the course structure, reorder modules/items, then open the full item editor for content, hints and tests.">
+                        <FormSectionCard
+                            id="course-structure-section"
+                            title={isRu ? "Структура курса" : "Course structure"}
+                            description={isRu ? "Собери последовательность модулей и уроков. Порядок можно менять стрелками, а содержание урока открывается отдельным редактором." : "Build a compact module sequence. Reorder with arrows and open item content in the full editor."}
+                        >
                             {!course ? (
-                                <EmptyState title="Create course first" description="Modules and items can be added after the course draft exists." />
+                                <EmptyState title={isRu ? "Сначала создай курс" : "Create course first"} description={isRu ? "Модули и уроки можно добавить после создания черновика." : "Modules and items can be added after the course draft exists."} />
                             ) : (
                                 <Stack spacing={2}>
-                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
-                                        <Typography sx={{ color: "text.secondary" }}>{course.modules.length} modules · {stats.items} items</Typography>
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between" alignItems={{ sm: "center" }}>
+                                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                            <Chip size="small" color="primary" variant="outlined" label={isRu ? `${course.modules.length} модулей` : `${course.modules.length} modules`} />
+                                            <Chip size="small" color="secondary" variant="outlined" label={isRu ? `${stats.items} уроков` : `${stats.items} items`} />
+                                            <Chip size="small" label={isRu ? "Порядок сверху вниз" : "Top-down sequence"} />
+                                        </Stack>
                                         <Button
                                             variant="contained"
                                             startIcon={<AddRoundedIcon />}
                                             disabled={isEditingLocked}
                                             onClick={() => setModuleDialog({ mode: "create", draft: { title: "", orderIndex: course.modules.length } })}
                                         >
-                                            Add module
+                                            {isRu ? "Добавить модуль" : "Add module"}
                                         </Button>
                                     </Stack>
 
                                     {course.modules.length === 0 ? (
-                                        <EmptyState title="No modules yet" description="Create the first module to start adding lessons and tasks." />
+                                        <EmptyState title={isRu ? "Модулей пока нет" : "No modules yet"} description={isRu ? "Создай первый модуль, затем добавь теорию, квиз или практическое задание." : "Create the first module to start adding lessons and tasks."} />
                                     ) : (
-                                        sortedModules(course).map((module, moduleIndex) => {
-                                            const items = sortedItems(module);
-                                            return (
-                                                <Accordion key={module.id} defaultExpanded variant="outlined" sx={{ borderRadius: 1.25, "&:before": { display: "none" } }}>
-                                                    <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
-                                                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} sx={{ width: "100%", pr: 1 }}>
-                                                            <Box sx={{ flexGrow: 1 }}>
-                                                                <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-                                                                    <Typography sx={{ fontWeight: 900 }}>{module.title}</Typography>
-                                                                    <Chip size="small" label={`${items.length} items`} />
-                                                                    <Chip size="small" label={`#${module.orderIndex}`} />
-                                                                </Stack>
-                                                            </Box>
-                                                        </Stack>
-                                                    </AccordionSummary>
-                                                    <AccordionDetails>
+                                        <Stack spacing={1.25}>
+                                            {sortedModules(course).map((module, moduleIndex) => {
+                                                const items = sortedItems(module);
+                                                return (
+                                                    <Paper
+                                                        key={module.id}
+                                                        variant="outlined"
+                                                        sx={{
+                                                            p: { xs: 1.5, md: 2 },
+                                                            borderRadius: 1.5,
+                                                            borderColor: moduleIndex === 0 ? "primary.main" : "divider",
+                                                            bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(31,31,40,0.72)" : "rgba(255,255,255,0.86)",
+                                                        }}
+                                                    >
                                                         <Stack spacing={1.5}>
-                                                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
-                                                                <Stack direction="row" spacing={0.5}>
-                                                                    <Tooltip title="Move module up">
-                                                                        <span><IconButton disabled={isEditingLocked || moduleIndex === 0 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
-                                                                    </Tooltip>
-                                                                    <Tooltip title="Move module down">
-                                                                        <span><IconButton disabled={isEditingLocked || moduleIndex === course.modules.length - 1 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
-                                                                    </Tooltip>
+                                                            <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ md: "center" }}>
+                                                                <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                                    <Box
+                                                                        sx={{
+                                                                            width: 34,
+                                                                            height: 34,
+                                                                            borderRadius: "50%",
+                                                                            display: "grid",
+                                                                            placeItems: "center",
+                                                                            bgcolor: "primary.main",
+                                                                            color: "primary.contrastText",
+                                                                            fontWeight: 950,
+                                                                            flexShrink: 0,
+                                                                        }}
+                                                                    >
+                                                                        {moduleIndex + 1}
+                                                                    </Box>
+                                                                    <Box sx={{ minWidth: 0 }}>
+                                                                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                                            <Typography sx={{ fontWeight: 950, fontSize: 17 }}>{module.title}</Typography>
+                                                                            <Chip size="small" label={isRu ? `${items.length} уроков` : `${items.length} items`} />
+                                                                        </Stack>
+                                                                        <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.25 }}>
+                                                                            {isRu ? `Модуль ${moduleIndex + 1} в учебной последовательности` : `Module ${moduleIndex + 1} in the learning sequence`}
+                                                                        </Typography>
+                                                                    </Box>
                                                                 </Stack>
-                                                                <Stack direction="row" spacing={1}>
-                                                                    <Button variant="outlined" size="small" startIcon={<EditRoundedIcon />} disabled={isEditingLocked} onClick={() => setModuleDialog({ mode: "edit", moduleId: module.id, draft: { title: module.title, orderIndex: module.orderIndex } })}>
-                                                                        Edit module
+                                                                <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                                    <Tooltip title={isRu ? "Выше" : "Move module up"}>
+                                                                        <span><IconButton size="small" disabled={isEditingLocked || moduleIndex === 0 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
+                                                                    </Tooltip>
+                                                                    <Tooltip title={isRu ? "Ниже" : "Move module down"}>
+                                                                        <span><IconButton size="small" disabled={isEditingLocked || moduleIndex === course.modules.length - 1 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
+                                                                    </Tooltip>
+                                                                    <Tooltip title={isRu ? "Порядок" : "Sequence"}>
+                                                                        <DragIndicatorRoundedIcon sx={{ color: "text.disabled" }} />
+                                                                    </Tooltip>
+                                                                    <Button variant="text" size="small" startIcon={<EditRoundedIcon />} disabled={isEditingLocked} onClick={() => setModuleDialog({ mode: "edit", moduleId: module.id, draft: { title: module.title, orderIndex: module.orderIndex } })}>
+                                                                        {isRu ? "Модуль" : "Module"}
                                                                     </Button>
-                                                                    <Button variant="outlined" size="small" color="error" startIcon={<DeleteRoundedIcon />} disabled={isEditingLocked} onClick={() => void deleteModule(module.id)}>
-                                                                        Delete
+                                                                    <Button variant="text" size="small" color="error" startIcon={<DeleteRoundedIcon />} disabled={isEditingLocked} onClick={() => void deleteModule(module.id)}>
+                                                                        {isRu ? "Удалить" : "Delete"}
                                                                     </Button>
                                                                 </Stack>
                                                             </Stack>
 
                                                             {items.length === 0 ? (
-                                                                <EmptyState title="No items in this module" description="Add theory, quiz, coding, SQL or file items." />
+                                                                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1.25, borderStyle: "dashed" }}>
+                                                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} justifyContent="space-between">
+                                                                        <Typography sx={{ color: "text.secondary" }}>{isRu ? "В модуле пока нет уроков." : "No items in this module yet."}</Typography>
+                                                                        <Button size="small" variant="outlined" startIcon={<AddRoundedIcon />} disabled={isEditingLocked} onClick={() => openCreateItemDialog(module)}>
+                                                                            {isRu ? "Добавить урок" : "Add item"}
+                                                                        </Button>
+                                                                    </Stack>
+                                                                </Paper>
                                                             ) : (
-                                                                <Stack spacing={1.25}>
+                                                                <Stack spacing={0.75}>
                                                                     {items.map((item, itemIndex) => (
-                                                                        <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1.25 }}>
-                                                                            <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} alignItems={{ md: "center" }}>
-                                                                                <Box sx={{ flexGrow: 1 }}>
-                                                                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                                                                        <ItemTypeBadge itemType={item.itemType} />
-                                                                                        <Typography sx={{ fontWeight: 900 }}>{item.title}</Typography>
-                                                                                        <Chip size="small" label={`#${item.orderIndex}`} />
-                                                                                    </Stack>
-                                                                                </Box>
-                                                                                <Stack direction="row" spacing={0.5}>
-                                                                                    <Tooltip title="Move item up">
-                                                                                        <span><IconButton disabled={isEditingLocked || itemIndex === 0 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
+                                                                        <Paper key={item.id} variant="outlined" sx={{ px: 1.25, py: 1, borderRadius: 1.25 }}>
+                                                                            <Stack direction={{ xs: "column", md: "row" }} spacing={1} alignItems={{ md: "center" }}>
+                                                                                <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                                                    <Chip size="small" label={`${moduleIndex + 1}.${itemIndex + 1}`} sx={{ fontWeight: 900 }} />
+                                                                                    <ItemTypeBadge itemType={item.itemType} />
+                                                                                    <Typography sx={{ fontWeight: 850, overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</Typography>
+                                                                                </Stack>
+                                                                                <Stack direction="row" spacing={0.25} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                                                    <Tooltip title={isRu ? "Выше" : "Move item up"}>
+                                                                                        <span><IconButton size="small" disabled={isEditingLocked || itemIndex === 0 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
                                                                                     </Tooltip>
-                                                                                    <Tooltip title="Move item down">
-                                                                                        <span><IconButton disabled={isEditingLocked || itemIndex === items.length - 1 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
+                                                                                    <Tooltip title={isRu ? "Ниже" : "Move item down"}>
+                                                                                        <span><IconButton size="small" disabled={isEditingLocked || itemIndex === items.length - 1 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
                                                                                     </Tooltip>
-                                                                                    <Tooltip title="Quick edit metadata">
-                                                                                        <span><IconButton disabled={isEditingLocked || action === `load-item-${item.id}`} onClick={() => void openEditItemDialog(module.id, item)}><EditRoundedIcon /></IconButton></span>
+                                                                                    <Tooltip title={isRu ? "Быстро изменить" : "Quick edit metadata"}>
+                                                                                        <span><IconButton size="small" disabled={isEditingLocked || action === `load-item-${item.id}`} onClick={() => void openEditItemDialog(module.id, item)}><EditRoundedIcon /></IconButton></span>
                                                                                     </Tooltip>
-                                                                                    <Tooltip title="Open full item editor">
-                                                                                        <IconButton component={RouterLink} to={`/teacher/courses/${course.id}/edit/items/${item.id}`}><OpenInNewRoundedIcon /></IconButton>
+                                                                                    <Tooltip title={isRu ? "Открыть редактор урока" : "Open full item editor"}>
+                                                                                        <IconButton size="small" component={RouterLink} to={`/teacher/courses/${course.id}/edit/items/${item.id}`}><OpenInNewRoundedIcon /></IconButton>
                                                                                     </Tooltip>
-                                                                                    <Tooltip title="Delete item">
-                                                                                        <IconButton color="error" disabled={isEditingLocked} onClick={() => void deleteItem(item.id)}><DeleteRoundedIcon /></IconButton>
+                                                                                    <Tooltip title={isRu ? "Удалить урок" : "Delete item"}>
+                                                                                        <IconButton size="small" color="error" disabled={isEditingLocked} onClick={() => void deleteItem(item.id)}><DeleteRoundedIcon /></IconButton>
                                                                                     </Tooltip>
                                                                                 </Stack>
                                                                             </Stack>
                                                                         </Paper>
                                                                     ))}
+                                                                    <Button size="small" variant="outlined" startIcon={<AddRoundedIcon />} disabled={isEditingLocked} onClick={() => openCreateItemDialog(module)} sx={{ alignSelf: "flex-start" }}>
+                                                                        {isRu ? "Добавить урок в модуль" : "Add item to module"}
+                                                                    </Button>
                                                                 </Stack>
                                                             )}
-
-                                                            <Button variant="outlined" startIcon={<AddRoundedIcon />} disabled={isEditingLocked} onClick={() => openCreateItemDialog(module)}>
-                                                                Add item
-                                                            </Button>
                                                         </Stack>
-                                                    </AccordionDetails>
-                                                </Accordion>
-                                            );
-                                        })
+                                                    </Paper>
+                                                );
+                                            })}
+                                        </Stack>
                                     )}
                                 </Stack>
                             )}
                         </FormSectionCard>
                     </Stack>
 
-                    {course ? (
-                        <Stack spacing={2}>
-                            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-                                <Stack spacing={2}>
-                                    <Typography variant="h5">Course summary</Typography>
+                    {course && isInspectorOpen ? (
+                        <Stack spacing={2} sx={{ position: { lg: "sticky" }, top: { lg: 88 } }}>
+                            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                                <Stack spacing={1.5}>
+                                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                                        <Typography variant="h6">{isRu ? "Панель редактора" : "Editor panel"}</Typography>
+                                        <Tooltip title={isRu ? "Скрыть панель" : "Hide panel"}>
+                                            <IconButton size="small" onClick={() => setInspectorOpen(false)}>
+                                                <MenuOpenRoundedIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Stack>
+                                    <Stack spacing={0.75}>
+                                        <Button component="a" href="#course-details-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>
+                                            {isRu ? "Описание" : "Details"}
+                                        </Button>
+                                        <Button component="a" href="#course-structure-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>
+                                            {isRu ? "Структура" : "Structure"}
+                                        </Button>
+                                        <Button component="a" href="#course-moderation-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>
+                                            {isRu ? "Модерация" : "Moderation"}
+                                        </Button>
+                                    </Stack>
+                                </Stack>
+                            </Paper>
+
+                            <Paper id="course-moderation-section" variant="outlined" sx={{ p: 2, borderRadius: 2, scrollMarginTop: 96 }}>
+                                <Stack spacing={1.5}>
+                                    <Typography variant="h6">{isRu ? "Сводка курса" : "Course summary"}</Typography>
                                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                                         <StatusBadge status={course.status} />
-                                        <Chip size="small" label={`${stats.modules} modules`} />
-                                        <Chip size="small" label={`${stats.items} items`} />
+                                        <Chip size="small" label={isRu ? `${stats.modules} модулей` : `${stats.modules} modules`} />
+                                        <Chip size="small" label={isRu ? `${stats.items} уроков` : `${stats.items} items`} />
                                         <Chip size="small" label={formatDuration(course.estimatedMinutes)} />
                                     </Stack>
-                                    <Typography sx={{ color: "text.secondary" }}>Created {new Date(course.createdAt).toLocaleDateString()}</Typography>
-                                    <Typography sx={{ color: "text.secondary" }}>Updated {new Date(course.updatedAt).toLocaleDateString()}</Typography>
-                                    {course.publishedAt ? <Typography sx={{ color: "text.secondary" }}>Published {new Date(course.publishedAt).toLocaleDateString()}</Typography> : null}
-                                    {course.submittedForReviewAt ? <Typography sx={{ color: "text.secondary" }}>Submitted for review {new Date(course.submittedForReviewAt).toLocaleDateString()}</Typography> : null}
-                                    {course.reviewedAt ? <Typography sx={{ color: "text.secondary" }}>Reviewed {new Date(course.reviewedAt).toLocaleDateString()}</Typography> : null}
-                                    {course.reviewComment ? <Alert severity={course.status === "CHANGES_REQUESTED" ? "warning" : "info"}>Admin review: {course.reviewComment}</Alert> : null}
+                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                        {isRu ? "Создан" : "Created"} {new Date(course.createdAt).toLocaleDateString()}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                        {isRu ? "Обновлён" : "Updated"} {new Date(course.updatedAt).toLocaleDateString()}
+                                    </Typography>
+                                    {course.publishedAt ? <Typography variant="body2" sx={{ color: "text.secondary" }}>{isRu ? "Опубликован" : "Published"} {new Date(course.publishedAt).toLocaleDateString()}</Typography> : null}
+                                    {course.submittedForReviewAt ? <Typography variant="body2" sx={{ color: "text.secondary" }}>{isRu ? "Отправлен на модерацию" : "Submitted for review"} {new Date(course.submittedForReviewAt).toLocaleDateString()}</Typography> : null}
+                                    {course.reviewedAt ? <Typography variant="body2" sx={{ color: "text.secondary" }}>{isRu ? "Проверен" : "Reviewed"} {new Date(course.reviewedAt).toLocaleDateString()}</Typography> : null}
+                                    {course.reviewComment ? <Alert severity={course.status === "CHANGES_REQUESTED" ? "warning" : "info"}>{isRu ? "Комментарий администратора" : "Admin review"}: {course.reviewComment}</Alert> : null}
                                 </Stack>
                             </Paper>
                         </Stack>
@@ -684,18 +766,18 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                 <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, position: { md: "sticky" }, bottom: { md: 16 }, zIndex: 2, bgcolor: "background.paper" }}>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                         <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={submitForm} disabled={isSaving || action !== null || isEditingLocked}>
-                            {isCreate ? "Create course" : "Save metadata"}
+                            {isCreate ? (isRu ? "Создать курс" : "Create course") : (isRu ? "Сохранить описание" : "Save metadata")}
                         </Button>
                         {!isCreate && course ? (
                             <>
                                 <Button variant="outlined" startIcon={<RateReviewRoundedIcon />} onClick={() => void runCourseAction("submit")} disabled={isSaving || action !== null || course.status === "PENDING_REVIEW" || course.status === "PUBLISHED" || course.status === "ARCHIVED"}>
-                                    Submit for review
+                                    {isRu ? "Отправить на модерацию" : "Submit for review"}
                                 </Button>
                                 <Button variant="outlined" component={RouterLink} to={`/courses/${course.id}`} startIcon={<VisibilityRoundedIcon />}>
-                                    Preview as student
+                                    {isRu ? "Предпросмотр" : "Preview as student"}
                                 </Button>
                                 <Button variant="outlined" color="error" startIcon={<ArchiveRoundedIcon />} onClick={() => void runCourseAction("archive")} disabled={isSaving || action !== null || course.status === "ARCHIVED"}>
-                                    Archive Course
+                                    {isRu ? "В архив" : "Archive Course"}
                                 </Button>
                             </>
                         ) : null}
@@ -704,29 +786,29 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
             </Stack>
 
             <Dialog open={Boolean(moduleDialog)} onClose={() => setModuleDialog(null)} fullWidth maxWidth="sm">
-                <DialogTitle>{moduleDialog?.mode === "create" ? "Create module" : "Edit module"}</DialogTitle>
+                <DialogTitle>{moduleDialog?.mode === "create" ? (isRu ? "Создать модуль" : "Create module") : (isRu ? "Редактировать модуль" : "Edit module")}</DialogTitle>
                 <DialogContent>
                     {moduleDialog ? (
                         <Stack spacing={2} sx={{ pt: 1 }}>
-                            <TextField label="Title" value={moduleDialog.draft.title} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, title: event.target.value } })} required />
-                            <TextField label="Order index" type="number" value={moduleDialog.draft.orderIndex} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, orderIndex: Number(event.target.value) } })} />
+                            <TextField label={isRu ? "Название" : "Title"} value={moduleDialog.draft.title} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, title: event.target.value } })} required />
+                            <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={moduleDialog.draft.orderIndex} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, orderIndex: Number(event.target.value) } })} />
                         </Stack>
                     ) : null}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setModuleDialog(null)}>Cancel</Button>
-                    <Button variant="contained" onClick={() => void saveModule()} disabled={action === "module" || isEditingLocked}>Save module</Button>
+                    <Button onClick={() => setModuleDialog(null)}>{isRu ? "Отмена" : "Cancel"}</Button>
+                    <Button variant="contained" onClick={() => void saveModule()} disabled={action === "module" || isEditingLocked}>{isRu ? "Сохранить модуль" : "Save module"}</Button>
                 </DialogActions>
             </Dialog>
 
             <Dialog open={Boolean(itemDialog)} onClose={() => setItemDialog(null)} fullWidth maxWidth="md">
-                <DialogTitle>{itemDialog?.mode === "create" ? "Create item" : "Edit item metadata"}</DialogTitle>
+                <DialogTitle>{itemDialog?.mode === "create" ? (isRu ? "Создать урок" : "Create item") : (isRu ? "Редактировать урок" : "Edit item metadata")}</DialogTitle>
                 <DialogContent>
                     {itemDialog ? (
                         <Stack spacing={2} sx={{ pt: 1 }}>
                             <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                <TextField label="Title" value={itemDialog.draft.title} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, title: event.target.value } })} required fullWidth />
-                                <TextField select label="Item type" value={itemDialog.draft.itemType} onChange={(event) => {
+                                <TextField label={isRu ? "Название" : "Title"} value={itemDialog.draft.title} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, title: event.target.value } })} required fullWidth />
+                                <TextField select label={isRu ? "Тип урока" : "Item type"} value={itemDialog.draft.itemType} onChange={(event) => {
                                     const nextType = event.target.value as CourseItemType;
                                     setItemDialog({ ...itemDialog, draft: normalizeItemDraft({ ...itemDialog.draft, itemType: nextType }) });
                                 }} fullWidth>
@@ -737,8 +819,8 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                     <MenuItem value="FILE">FILE</MenuItem>
                                 </TextField>
                             </Stack>
-                            <TextField label="Order index" type="number" value={itemDialog.draft.orderIndex} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, orderIndex: Number(event.target.value) } })} />
-                            <TextField label="Statement" multiline minRows={4} value={itemDialog.draft.statement ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, statement: event.target.value } })} />
+                            <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={itemDialog.draft.orderIndex} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, orderIndex: Number(event.target.value) } })} />
+                            <TextField label={isRu ? "Условие / описание" : "Statement"} multiline minRows={4} value={itemDialog.draft.statement ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, statement: event.target.value } })} />
                             {itemDialog.draft.itemType === "CODING" || itemDialog.draft.itemType === "SQL" ? (
                                 <Stack spacing={2}>
                                     <TextField label={isRu ? "Язык" : "Language"} helperText={isRu ? "Например: java, python или sql." : "For example: java, python or sql."} value={itemDialog.draft.language ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, language: event.target.value } })} required />
@@ -753,8 +835,8 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                     ) : null}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setItemDialog(null)}>Cancel</Button>
-                    <Button variant="contained" onClick={() => void saveItem()} disabled={action === "item" || isEditingLocked}>Save item</Button>
+                    <Button onClick={() => setItemDialog(null)}>{isRu ? "Отмена" : "Cancel"}</Button>
+                    <Button variant="contained" onClick={() => void saveItem()} disabled={action === "item" || isEditingLocked}>{isRu ? "Сохранить урок" : "Save item"}</Button>
                 </DialogActions>
             </Dialog>
         </PageContainer>

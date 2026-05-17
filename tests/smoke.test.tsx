@@ -93,6 +93,20 @@ describe("StudyBytes role-based behavior", () => {
         expect((await screen.findAllByText(/Java Core/i, {}, findOptions)).length).toBeGreaterThan(0);
     });
 
+    it("renders Russian teacher course templates", async () => {
+        await loginAs("TEACHER");
+        renderRoute("/teacher/courses/new", "ru");
+        expect(await screen.findByText(/Студия преподавателя/i, {}, findOptions)).toBeInTheDocument();
+        expect((await screen.findAllByText(/Основы программирования/i, {}, findOptions)).length).toBeGreaterThan(0);
+    });
+
+    it("renders compact teacher course editor with collapsible panel", async () => {
+        await loginAs("TEACHER");
+        renderRoute("/teacher/courses/101/edit", "ru");
+        expect(await screen.findByText(/Структура курса/i, {}, findOptions)).toBeInTheDocument();
+        expect((await screen.findAllByRole("button", { name: /Скрыть панель/i }, findOptions)).length).toBeGreaterThan(0);
+    });
+
     it("renders admin moderation queue", async () => {
         await loginAs("ADMIN");
         renderRoute("/admin/courses/moderation");

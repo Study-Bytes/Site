@@ -7,6 +7,7 @@ import {
     Box,
     Button,
     Checkbox,
+    Chip,
     Divider,
     FormControlLabel,
     IconButton,
@@ -24,6 +25,8 @@ import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
 import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import MenuOpenRoundedIcon from "@mui/icons-material/MenuOpenRounded";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { ApiError, getErrorMessage } from "../../api/apiError";
@@ -179,6 +182,7 @@ export default function TeacherItemEditorPage() {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [validationErrors, setValidationErrors] = useState<ApiValidationError[]>([]);
+    const [isInspectorOpen, setInspectorOpen] = useState(() => localStorage.getItem("studybytes_item_editor_panel") !== "closed");
 
     const applyItem = (loaded: TeacherItemDetails) => {
         setItem(loaded);
@@ -211,6 +215,10 @@ export default function TeacherItemEditorPage() {
         void loadItem();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [parsedItemId]);
+
+    useEffect(() => {
+        localStorage.setItem("studybytes_item_editor_panel", isInspectorOpen ? "open" : "closed");
+    }, [isInspectorOpen]);
 
     const handleApiError = (requestError: unknown, fallback: string) => {
         if (requestError instanceof ApiError && requestError.validationErrors.length > 0) {
@@ -347,7 +355,17 @@ export default function TeacherItemEditorPage() {
                                 {isRu ? "Редактируй задание, материалы, подсказки, тесты и варианты ответа." : "Edit the task, materials, hints, tests and answer options."}
                             </Typography>
                         </Box>
-                        <ItemTypeBadge itemType={item.itemType} />
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                            <ItemTypeBadge itemType={item.itemType} />
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={isInspectorOpen ? <MenuOpenRoundedIcon /> : <MenuRoundedIcon />}
+                                onClick={() => setInspectorOpen((current) => !current)}
+                            >
+                                {isInspectorOpen ? (isRu ? "Скрыть панель" : "Hide panel") : (isRu ? "Показать панель" : "Show panel")}
+                            </Button>
+                        </Stack>
                     </Stack>
                 </Box>
 
@@ -355,34 +373,36 @@ export default function TeacherItemEditorPage() {
                 {error ? <Alert severity="error" onClose={() => setError(null)}>{error}</Alert> : null}
                 <ValidationErrorPanel errors={validationErrors} />
 
-                <FormSectionCard title={isRu ? "Основные настройки" : "Basic settings"} description={isRu ? "Общие параметры для всех типов уроков." : "Basic fields shared by all item types."}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: isInspectorOpen ? "minmax(0, 1fr) 280px" : "1fr" }, gap: 2.5, alignItems: "start" }}>
+                    <Stack spacing={3}>
+                <FormSectionCard id="item-basic-section" title={isRu ? "Основные настройки" : "Basic settings"} description={isRu ? "Общие параметры для всех типов уроков." : "Basic fields shared by all item types."}>
                     <Stack spacing={2}>
                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                            <TextField label="Title" value={form.title} onChange={(event) => updateForm("title", event.target.value)} required fullWidth />
-                            <TextField select label="Item type" value={form.itemType} onChange={(event) => updateForm("itemType", event.target.value as CourseItemType)} fullWidth>
+                            <TextField label={isRu ? "Название урока" : "Title"} value={form.title} onChange={(event) => updateForm("title", event.target.value)} required fullWidth />
+                            <TextField select label={isRu ? "Тип урока" : "Item type"} value={form.itemType} onChange={(event) => updateForm("itemType", event.target.value as CourseItemType)} fullWidth>
                                 <MenuItem value="THEORY">THEORY</MenuItem>
                                 <MenuItem value="QUIZ">QUIZ</MenuItem>
                                 <MenuItem value="CODING">CODING</MenuItem>
                                 <MenuItem value="SQL">SQL</MenuItem>
                                 <MenuItem value="FILE">FILE</MenuItem>
                             </TextField>
-                            <TextField label="Order index" type="number" value={form.orderIndex} onChange={(event) => updateForm("orderIndex", Number(event.target.value))} fullWidth />
+                            <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={form.orderIndex} onChange={(event) => updateForm("orderIndex", Number(event.target.value))} fullWidth />
                         </Stack>
-                        <TextField label="Statement" multiline minRows={5} value={form.statement ?? ""} onChange={(event) => updateForm("statement", event.target.value)} />
+                        <TextField label={isRu ? "Условие / описание для студента" : "Statement"} multiline minRows={5} value={form.statement ?? ""} onChange={(event) => updateForm("statement", event.target.value)} />
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                             <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveMetadata()} disabled={savingSection === "metadata"}>
-                                Save Item
+                                {isRu ? "Сохранить урок" : "Save Item"}
                             </Button>
                         </Stack>
                     </Stack>
                 </FormSectionCard>
 
                 {isExecutable ? (
-                    <FormSectionCard title={isRu ? "Настройки проверки" : "Execution settings"} description={isRu ? "Настрой язык, ограничения выполнения и код для проверки решения." : "Configure language, execution limits and solution-checking code."}>
+                    <FormSectionCard id="item-execution-section" title={isRu ? "Настройки проверки" : "Execution settings"} description={isRu ? "Настрой язык, ограничения выполнения и код для проверки решения." : "Configure language, execution limits and solution-checking code."}>
                         <Stack spacing={2}>
-                            <TextField label="Language" value={form.language ?? ""} onChange={(event) => updateForm("language", event.target.value)} required />
-                            <TextField label="Starter code" multiline minRows={8} value={form.starterCode ?? ""} onChange={(event) => updateForm("starterCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />
-                            <TextField label="Solution code" multiline minRows={8} value={form.solutionCode ?? ""} onChange={(event) => updateForm("solutionCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />
+                            <TextField label={isRu ? "Язык" : "Language"} value={form.language ?? ""} onChange={(event) => updateForm("language", event.target.value)} required />
+                            <TextField label={isRu ? "Стартовый код" : "Starter code"} multiline minRows={8} value={form.starterCode ?? ""} onChange={(event) => updateForm("starterCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />
+                            <TextField label={isRu ? "Эталонное решение" : "Solution code"} multiline minRows={8} value={form.solutionCode ?? ""} onChange={(event) => updateForm("solutionCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />
                             <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                                 <TextField label="timeLimitMs" type="number" value={form.timeLimitMs ?? 2000} onChange={(event) => updateForm("timeLimitMs", Number(event.target.value))} fullWidth />
                                 <TextField label="memoryLimitMb" type="number" value={form.memoryLimitMb ?? 256} onChange={(event) => updateForm("memoryLimitMb", Number(event.target.value))} fullWidth />
@@ -400,15 +420,15 @@ export default function TeacherItemEditorPage() {
                                 <FormControlLabel control={<Switch checked={form.trimTrailingWhitespaces} onChange={(event) => updateForm("trimTrailingWhitespaces", event.target.checked)} />} label="trimTrailingWhitespaces" />
                             </Stack>
                             <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveMetadata()} disabled={savingSection === "metadata"}>
-                                Save execution settings
+                                {isRu ? "Сохранить проверку" : "Save execution settings"}
                             </Button>
                         </Stack>
                     </FormSectionCard>
                 ) : null}
 
-                <FormSectionCard title="Content blocks" description="Theory, file, code, image, video, embed and document blocks shown to students.">
+                <FormSectionCard id="item-content-section" title={isRu ? "Материалы урока" : "Content blocks"} description={isRu ? "Текст, видео, изображения, код, embed и файлы, которые видит студент." : "Theory, file, code, image, video, embed and document blocks shown to students."}>
                     <Stack spacing={2}>
-                        {contentBlocks.length === 0 ? <Alert severity="info">No content blocks yet.</Alert> : null}
+                        {contentBlocks.length === 0 ? <Alert severity="info">{isRu ? "Материалов пока нет." : "No content blocks yet."}</Alert> : null}
                         {contentBlocks.map((block, index) => (
                             <Accordion key={block.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 1.25, "&:before": { display: "none" } }}>
                                 <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
@@ -417,7 +437,7 @@ export default function TeacherItemEditorPage() {
                                 <AccordionDetails>
                                     <Stack spacing={2}>
                                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                            <TextField select label="blockType" value={block.blockType} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, blockType: event.target.value as ContentBlockType } : entry))} fullWidth>
+                                            <TextField select label={isRu ? "Тип блока" : "blockType"} value={block.blockType} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, blockType: event.target.value as ContentBlockType } : entry))} fullWidth>
                                                 <MenuItem value="TEXT">TEXT</MenuItem>
                                                 <MenuItem value="VIDEO">VIDEO</MenuItem>
                                                 <MenuItem value="IMAGE">IMAGE</MenuItem>
@@ -425,10 +445,10 @@ export default function TeacherItemEditorPage() {
                                                 <MenuItem value="EMBED">EMBED</MenuItem>
                                                 <MenuItem value="FILE">FILE</MenuItem>
                                             </TextField>
-                                            <TextField label="orderIndex" type="number" value={block.orderIndex} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} fullWidth />
+                                            <TextField label={isRu ? "Порядок" : "orderIndex"} type="number" value={block.orderIndex} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} fullWidth />
                                         </Stack>
-                                        <TextField label="Title" value={block.title ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, title: event.target.value } : entry))} />
-                                        <TextField label="textContent" multiline minRows={4} value={block.textContent ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, textContent: event.target.value } : entry))} />
+                                        <TextField label={isRu ? "Заголовок" : "Title"} value={block.title ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, title: event.target.value } : entry))} />
+                                        <TextField label={isRu ? "Текст / код блока" : "textContent"} multiline minRows={4} value={block.textContent ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, textContent: event.target.value } : entry))} />
                                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                                             <TextField label="url" value={block.url ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, url: event.target.value } : entry))} fullWidth />
                                             <TextField label="language" value={block.language ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, language: event.target.value } : entry))} fullWidth />
@@ -445,23 +465,23 @@ export default function TeacherItemEditorPage() {
                         ))}
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                             <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setContentBlocks((current) => [...current, { id: newId(), blockType: "TEXT", orderIndex: current.length, title: "", textContent: "", url: null, language: null, metadataJson: null }])}>
-                                Add content block
+                                {isRu ? "Добавить материал" : "Add content block"}
                             </Button>
                             <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveContentBlocks()} disabled={savingSection === "contentBlocks"}>
-                                Save content blocks
+                                {isRu ? "Сохранить материалы" : "Save content blocks"}
                             </Button>
                         </Stack>
                     </Stack>
                 </FormSectionCard>
 
-                <FormSectionCard title="Hints" description="Optional hints that can be shown to students during practice.">
+                <FormSectionCard id="item-hints-section" title={isRu ? "Подсказки" : "Hints"} description={isRu ? "Дополнительные подсказки, которые помогают студенту во время практики." : "Optional hints that can be shown to students during practice."}>
                     <Stack spacing={2}>
                         {hints.map((hint, index) => (
                             <Paper key={hint.id} variant="outlined" sx={{ p: 2, borderRadius: 1.25 }}>
                                 <Stack spacing={2}>
                                     <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                        <TextField label="orderIndex" type="number" value={hint.orderIndex} onChange={(event) => setHints((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} sx={{ maxWidth: { md: 180 } }} />
-                                        <TextField label="Hint text" value={hint.text} onChange={(event) => setHints((current) => current.map((entry, i) => i === index ? { ...entry, text: event.target.value } : entry))} fullWidth />
+                                        <TextField label={isRu ? "Порядок" : "orderIndex"} type="number" value={hint.orderIndex} onChange={(event) => setHints((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} sx={{ maxWidth: { md: 180 } }} />
+                                        <TextField label={isRu ? "Текст подсказки" : "Hint text"} value={hint.text} onChange={(event) => setHints((current) => current.map((entry, i) => i === index ? { ...entry, text: event.target.value } : entry))} fullWidth />
                                     </Stack>
                                     <Stack direction="row" spacing={0.5}>
                                         <IconButton disabled={index === 0} onClick={() => setHints((current) => reindexHints(move(current, index, -1)))}><ArrowUpwardRoundedIcon /></IconButton>
@@ -473,26 +493,26 @@ export default function TeacherItemEditorPage() {
                         ))}
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                             <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setHints((current) => [...current, { id: newId(), orderIndex: current.length, text: "" }])}>
-                                Add hint
+                                {isRu ? "Добавить подсказку" : "Add hint"}
                             </Button>
                             <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveHints()} disabled={savingSection === "hints"}>
-                                Save hints
+                                {isRu ? "Сохранить подсказки" : "Save hints"}
                             </Button>
                         </Stack>
                     </Stack>
                 </FormSectionCard>
 
                 {isExecutable ? (
-                    <FormSectionCard title="Test cases" description="Open tests are visible to students; hidden tests are used only by execution checking.">
+                    <FormSectionCard id="item-tests-section" title={isRu ? "Тесты проверки" : "Test cases"} description={isRu ? "Открытые тесты видны студенту, скрытые используются только при проверке решения." : "Open tests are visible to students; hidden tests are used only by execution checking."}>
                         <Stack spacing={2}>
-                            {testCases.length === 0 ? <Alert severity="info">No test cases yet.</Alert> : null}
+                            {testCases.length === 0 ? <Alert severity="info">{isRu ? "Тестов пока нет." : "No test cases yet."}</Alert> : null}
                             {testCases.map((testCase, index) => (
                                 <Paper key={testCase.id} variant="outlined" sx={{ p: 2, borderRadius: 1.25 }}>
                                     <Stack spacing={2}>
                                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                                             <TextField label="testKey" value={testCase.testKey} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, testKey: event.target.value } : entry))} fullWidth />
-                                            <TextField label="orderIndex" type="number" value={testCase.orderIndex} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} fullWidth />
-                                            <TextField select label="visibility" value={testCase.visibility} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, visibility: event.target.value as TestCaseVisibility } : entry))} fullWidth>
+                                            <TextField label={isRu ? "Порядок" : "orderIndex"} type="number" value={testCase.orderIndex} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} fullWidth />
+                                            <TextField select label={isRu ? "Видимость" : "visibility"} value={testCase.visibility} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, visibility: event.target.value as TestCaseVisibility } : entry))} fullWidth>
                                                 <MenuItem value="OPEN">OPEN</MenuItem>
                                                 <MenuItem value="HIDDEN">HIDDEN</MenuItem>
                                             </TextField>
@@ -508,31 +528,31 @@ export default function TeacherItemEditorPage() {
                                 </Paper>
                             ))}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                                <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setTestCases((current) => [...current, { id: newId(), testKey: `sample-${current.length + 1}`, orderIndex: current.length, visibility: "OPEN", inputData: "", expectedOutput: "" }])}>
-                                    Add test case
-                                </Button>
-                                <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveTestCases()} disabled={savingSection === "testCases"}>
-                                    Save test cases
-                                </Button>
+                            <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setTestCases((current) => [...current, { id: newId(), testKey: `sample-${current.length + 1}`, orderIndex: current.length, visibility: "OPEN", inputData: "", expectedOutput: "" }])}>
+                                    {isRu ? "Добавить тест" : "Add test case"}
+                            </Button>
+                            <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveTestCases()} disabled={savingSection === "testCases"}>
+                                {isRu ? "Сохранить тесты" : "Save test cases"}
+                            </Button>
                             </Stack>
                         </Stack>
                     </FormSectionCard>
                 ) : null}
 
                 {isQuiz ? (
-                    <FormSectionCard title="Quiz options" description="At least one correct option is required before submitting a quiz course item for review.">
+                    <FormSectionCard id="item-options-section" title={isRu ? "Варианты ответа" : "Quiz options"} description={isRu ? "Перед отправкой курса на модерацию у квиза должен быть хотя бы один правильный вариант." : "At least one correct option is required before submitting a quiz course item for review."}>
                         <Stack spacing={2}>
-                            {options.length === 0 ? <Alert severity="info">No quiz options yet.</Alert> : null}
+                            {options.length === 0 ? <Alert severity="info">{isRu ? "Вариантов ответа пока нет." : "No quiz options yet."}</Alert> : null}
                             {options.map((option, index) => (
                                 <Paper key={option.id} variant="outlined" sx={{ p: 2, borderRadius: 1.25 }}>
                                     <Stack spacing={2}>
                                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                                             <TextField label="label" value={option.label ?? ""} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))} sx={{ maxWidth: { md: 160 } }} />
-                                            <TextField label="orderIndex" type="number" value={option.orderIndex} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} sx={{ maxWidth: { md: 160 } }} />
-                                            <FormControlLabel control={<Checkbox checked={Boolean(option.correct)} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, correct: event.target.checked } : entry))} />} label="correct" />
+                                            <TextField label={isRu ? "Порядок" : "orderIndex"} type="number" value={option.orderIndex} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} sx={{ maxWidth: { md: 160 } }} />
+                                            <FormControlLabel control={<Checkbox checked={Boolean(option.correct)} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, correct: event.target.checked } : entry))} />} label={isRu ? "правильный" : "correct"} />
                                         </Stack>
-                                        <TextField label="Option text" value={option.text} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, text: event.target.value } : entry))} />
-                                        <TextField label="Explanation" multiline minRows={2} value={option.explanation ?? ""} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, explanation: event.target.value } : entry))} />
+                                        <TextField label={isRu ? "Текст варианта" : "Option text"} value={option.text} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, text: event.target.value } : entry))} />
+                                        <TextField label={isRu ? "Объяснение" : "Explanation"} multiline minRows={2} value={option.explanation ?? ""} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, explanation: event.target.value } : entry))} />
                                         <Stack direction="row" spacing={0.5}>
                                             <IconButton disabled={index === 0} onClick={() => setOptions((current) => reindexOptions(move(current, index, -1)))}><ArrowUpwardRoundedIcon /></IconButton>
                                             <IconButton disabled={index === options.length - 1} onClick={() => setOptions((current) => reindexOptions(move(current, index, 1)))}><ArrowDownwardRoundedIcon /></IconButton>
@@ -542,24 +562,59 @@ export default function TeacherItemEditorPage() {
                                 </Paper>
                             ))}
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                                <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setOptions((current) => [...current, { id: newId(), orderIndex: current.length, label: String.fromCharCode(65 + current.length), text: "", correct: false, explanation: null }])}>
-                                    Add option
-                                </Button>
-                                <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveOptions()} disabled={savingSection === "options"}>
-                                    Save options
-                                </Button>
+                            <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setOptions((current) => [...current, { id: newId(), orderIndex: current.length, label: String.fromCharCode(65 + current.length), text: "", correct: false, explanation: null }])}>
+                                    {isRu ? "Добавить вариант" : "Add option"}
+                            </Button>
+                            <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveOptions()} disabled={savingSection === "options"}>
+                                {isRu ? "Сохранить варианты" : "Save options"}
+                            </Button>
                             </Stack>
                         </Stack>
                     </FormSectionCard>
                 ) : null}
 
                 {!isExecutable && !isQuiz ? (
-                    <Alert severity="info">This item type uses content blocks and hints. Execution tests and quiz options are hidden for THEORY/FILE items.</Alert>
+                    <Alert severity="info">
+                        {isRu
+                            ? "Этот тип урока использует материалы и подсказки. Тесты выполнения и варианты квиза скрыты."
+                            : "This item type uses content blocks and hints. Execution tests and quiz options are hidden for THEORY/FILE items."}
+                    </Alert>
                 ) : null}
+                    </Stack>
+
+                    {isInspectorOpen ? (
+                        <Stack spacing={2} sx={{ position: { lg: "sticky" }, top: { lg: 88 } }}>
+                            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                                <Stack spacing={1.5}>
+                                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                                        <Typography variant="h6">{isRu ? "Разделы урока" : "Item sections"}</Typography>
+                                        <Tooltip title={isRu ? "Скрыть панель" : "Hide panel"}>
+                                            <IconButton size="small" onClick={() => setInspectorOpen(false)}>
+                                                <MenuOpenRoundedIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Stack>
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                        <ItemTypeBadge itemType={form.itemType} />
+                                        <Chip size="small" label={isRu ? `Порядок ${form.orderIndex}` : `Order ${form.orderIndex}`} />
+                                    </Stack>
+                                    <Stack spacing={0.75}>
+                                        <Button component="a" href="#item-basic-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>{isRu ? "Основное" : "Basic"}</Button>
+                                        {isExecutable ? <Button component="a" href="#item-execution-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>{isRu ? "Проверка" : "Execution"}</Button> : null}
+                                        <Button component="a" href="#item-content-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>{isRu ? "Материалы" : "Content"}</Button>
+                                        <Button component="a" href="#item-hints-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>{isRu ? "Подсказки" : "Hints"}</Button>
+                                        {isExecutable ? <Button component="a" href="#item-tests-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>{isRu ? "Тесты" : "Tests"}</Button> : null}
+                                        {isQuiz ? <Button component="a" href="#item-options-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>{isRu ? "Ответы" : "Options"}</Button> : null}
+                                    </Stack>
+                                </Stack>
+                            </Paper>
+                        </Stack>
+                    ) : null}
+                </Box>
 
                 <Divider />
                 <Button component={RouterLink} to={`/teacher/courses/${parsedCourseId ?? ""}/edit`} variant="outlined" startIcon={<ArrowBackRoundedIcon />} sx={{ alignSelf: "flex-start" }}>
-                    Back to Course Editor
+                    {isRu ? "К редактору курса" : "Back to Course Editor"}
                 </Button>
             </Stack>
         </PageContainer>

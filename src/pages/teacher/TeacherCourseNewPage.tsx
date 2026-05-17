@@ -42,7 +42,8 @@ function templateIcon(templateId: string) {
 
 export default function TeacherCourseNewPage() {
     const navigate = useNavigate();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const isRu = locale === "ru";
     const [selectedTemplate, setSelectedTemplate] = useState<CourseTemplate | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -54,7 +55,7 @@ export default function TeacherCourseNewPage() {
             const course = await createFromTemplate(template);
             navigate(`/teacher/courses/${course.id}/edit`);
         } catch (apiError) {
-            setError(getErrorMessage(apiError, "Failed to create course from template"));
+            setError(getErrorMessage(apiError, isRu ? "Не удалось создать курс из шаблона" : "Failed to create course from template"));
         } finally {
             setIsCreating(false);
         }
@@ -78,7 +79,7 @@ export default function TeacherCourseNewPage() {
                     <Stack direction={{ xs: "column", md: "row" }} spacing={3} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }}>
                         <Box sx={{ maxWidth: 760 }}>
                             <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 950 }}>
-                                Teacher studio
+                                {isRu ? "Студия преподавателя" : "Teacher studio"}
                             </Typography>
                             <Typography variant="h2" sx={{ mt: 1 }}>{t("templates.title")}</Typography>
                             <Typography sx={{ color: "text.secondary", mt: 1.5, lineHeight: 1.65 }}>{t("templates.subtitle")}</Typography>
@@ -108,7 +109,7 @@ export default function TeacherCourseNewPage() {
                                 <ViewModuleRoundedIcon />
                             </Box>
                             <Box>
-                            <Typography variant="h5">{t("templates.blank")}</Typography>
+                                <Typography variant="h5">{t("templates.blank")}</Typography>
                                 <Typography sx={{ color: "text.secondary" }}>{t("templates.blankDescription")}</Typography>
                             </Box>
                         </Stack>
