@@ -21,6 +21,6 @@ export const coursesApi = {
 
     getCourseItemPreview(courseId: number, itemId: number): Promise<CourseItemPreview> {
         if (env.useMockBff) return mockBff.getCourseItemPreview(courseId, itemId);
-        return request<CourseItemPreview>(`/courses/${courseId}/items/${itemId}/preview`, { auth: "none" });
+        return request<CourseItemPreview>(`/course-items/${itemId}`, { auth: "none" });
     },
 };

@@ -34,7 +34,7 @@ Public BFF endpoints:
 ```http
 GET /api/v1/courses
 GET /api/v1/courses/{courseId}
-GET /api/v1/courses/{courseId}/items/{itemId}/preview
+GET /api/v1/course-items/{itemId}
 GET /api/v1/i18n/default-locale
 ```
 

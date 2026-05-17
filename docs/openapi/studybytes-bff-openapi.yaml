@@ -266,7 +266,7 @@ paths:
                 $ref: '#/components/schemas/CourseDetails'
         '404':
           $ref: '#/components/responses/NotFound'
-  /courses/{courseId}/items/{itemId}/preview:
+  /course-items/{itemId}:
     get:
       tags:
       - Public courses
@@ -274,12 +274,6 @@ paths:
       description: Public endpoint if previews are enabled. Must return student-safe preview content only.
       operationId: getCourseItemPreview
       parameters:
-      - name: courseId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
       - name: itemId
         in: path
         required: true

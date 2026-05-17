@@ -49,20 +49,18 @@ Available variables:
 ```env
 VITE_BFF_BASE_URL=http://localhost:8080
 VITE_BFF_API_PREFIX=/api/v1
-VITE_USE_MOCK_BFF=true
+VITE_USE_MOCK_BFF=false
 ```
 
 `VITE_BFF_BASE_URL` is the BFF origin. `VITE_BFF_API_PREFIX` is the versioned external Site-BFF API prefix. Service modules keep paths like `/courses` and `/teacher/courses`; the API client combines them into `/api/v1/courses` and `/api/v1/teacher/courses`.
 
-`VITE_USE_MOCK_BFF=true` enables the local mock BFF adapter. This lets frontend development continue before the real BFF endpoints are finished.
+The Site uses the real BFF by default. `VITE_USE_MOCK_BFF=true` must be set explicitly only for frontend-only local development without a running BFF.
 
-When `VITE_USE_MOCK_BFF` is not set, mock mode is enabled in Vite dev mode and disabled in production build.
-
-Set it to `false` when BFF is deployed:
+For same-origin production where Nginx proxies `/api/v1/**` to BFF, keep `VITE_BFF_BASE_URL` empty:
 
 ```env
 VITE_USE_MOCK_BFF=false
-VITE_BFF_BASE_URL=https://studybytes.example.com
+VITE_BFF_BASE_URL=
 VITE_BFF_API_PREFIX=/api/v1
 ```
 
@@ -291,7 +289,7 @@ PUT /api/v1/me/password
 ```http
 GET /api/v1/courses
 GET /api/v1/courses/{courseId}
-GET /api/v1/courses/{courseId}/items/{itemId}/preview
+GET /api/v1/course-items/{itemId}
 ```
 
 Supported catalog query params:
@@ -660,6 +658,7 @@ If the current BFF does not implement these endpoints yet, it should return a cl
 
 - Manual QA checklist: `docs/QA_CHECKLIST.md`
 - Auth/access matrix: `docs/AUTH_ACCESS_MATRIX.md`
+- Required BFF endpoints: `docs/SITE_BFF_REQUIRED_ENDPOINTS.md`
 - Site deployment notes: `docs/DEPLOYMENT.md`
 
 ## Site VPS deployment and CD

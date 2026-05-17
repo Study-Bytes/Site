@@ -83,7 +83,7 @@ Public endpoints must work without authentication:
 ```http
 GET /api/v1/courses
 GET /api/v1/courses/{courseId}
-GET /api/v1/courses/{courseId}/items/{itemId}/preview
+GET /api/v1/course-items/{itemId}
 GET /api/v1/i18n/default-locale
 ```
 
@@ -127,7 +127,7 @@ PUT /api/v1/me/password
 ```http
 GET /api/v1/courses
 GET /api/v1/courses/{courseId}
-GET /api/v1/courses/{courseId}/items/{itemId}/preview
+GET /api/v1/course-items/{itemId}
 ```
 
 `GET /api/v1/courses` is public and is used by Home featured courses and Course Catalog. It must not require authentication. Supported query parameters:
@@ -146,6 +146,8 @@ size
 Preferred response shape is `PageResponse<CourseCatalogItem>`. For early BFF development, the Site also accepts a plain `CourseCatalogItem[]` response and normalizes it in `coursesApi`.
 
 `GET /api/v1/courses/{courseId}` is public and is used by Course Details. It must not require authentication. It must return public course metadata, modules and item summaries only. Hidden tests, expected outputs and correct quiz answers must not be included.
+
+`GET /api/v1/course-items/{itemId}` is public only if item previews are enabled. It must return student-safe preview content only.
 
 ### Student learning
 

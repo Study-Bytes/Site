@@ -3,6 +3,10 @@ import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { mockBff } from "../src/mocks/mockBff";
 
+vi.stubEnv("VITE_USE_MOCK_BFF", "true");
+vi.stubEnv("VITE_BFF_API_PREFIX", "/api/v1");
+vi.stubEnv("VITE_BFF_BASE_URL", "");
+
 beforeEach(() => {
     localStorage.clear();
     vi.stubGlobal("matchMedia", (query: string) => ({
