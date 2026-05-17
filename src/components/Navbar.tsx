@@ -209,6 +209,8 @@ function AccountMenu() {
 function UtilityActions() {
     const { mode, toggleMode } = useColorMode();
     const { user } = useAuth();
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
 
     return (
         <Stack direction="row" spacing={1} alignItems="center">
@@ -216,7 +218,7 @@ function UtilityActions() {
             <IconButton onClick={toggleMode} aria-label={mode === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
                 {mode === "dark" ? <LightModeRoundedIcon /> : <DarkModeRoundedIcon />}
             </IconButton>
-            <IconButton component={RouterLink} to="/maintenance" aria-label="Help" sx={{ display: { xs: "none", sm: "inline-flex" } }}>
+            <IconButton component={RouterLink} to="/help" aria-label={isRu ? "Помощь" : "Help"} sx={{ display: { xs: "none", sm: "inline-flex" } }}>
                 <HelpOutlineRoundedIcon />
             </IconButton>
             {user ? (

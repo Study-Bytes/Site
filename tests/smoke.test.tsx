@@ -107,6 +107,12 @@ describe("StudyBytes role-based behavior", () => {
 });
 
 describe("StudyBytes final QA states", () => {
+    it("renders the public help page instead of maintenance", async () => {
+        renderRoute("/help", "ru");
+        expect(await screen.findByRole("heading", { name: /Помощь/i }, findOptions)).toBeInTheDocument();
+        expect(await screen.findByText(/Связаться с поддержкой/i, {}, findOptions)).toBeInTheDocument();
+    });
+
     it("renders registration role selection without admin self-registration", async () => {
         renderRoute("/register");
         expect((await screen.findAllByText(/Student/i, {}, findOptions)).length).toBeGreaterThan(0);

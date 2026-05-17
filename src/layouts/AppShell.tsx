@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 import { useAuth } from "../auth/useAuth";
 
 function isPublicRoute(pathname: string) {
-    return pathname === "/" || pathname === "/courses" || pathname.startsWith("/courses/") || pathname.startsWith("/400") || pathname.startsWith("/401") || pathname.startsWith("/403") || pathname.startsWith("/404") || pathname.startsWith("/409") || pathname.startsWith("/500") || pathname === "/maintenance";
+    return pathname === "/" || pathname === "/courses" || pathname.startsWith("/courses/") || pathname === "/help" || pathname.startsWith("/400") || pathname.startsWith("/401") || pathname.startsWith("/403") || pathname.startsWith("/404") || pathname.startsWith("/409") || pathname.startsWith("/500") || pathname === "/maintenance";
 }
 
 export function AppShell() {

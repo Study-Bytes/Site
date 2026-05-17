@@ -4,6 +4,10 @@ import { Route, Routes } from "react-router-dom";
 import { LoadingState } from "./components/ui/LoadingState";
 import { AppShell } from "./layouts/AppShell";
 import { PageContainer } from "./layouts/PageContainer";
+import AccessDeniedPage from "./pages/system/AccessDeniedPage";
+import ErrorStatusPage from "./pages/system/ErrorStatusPage";
+import HelpPage from "./pages/system/HelpPage";
+import NotFoundPage from "./pages/system/NotFoundPage";
 import { AnonymousOnly } from "./routes/AnonymousOnly";
 import { RequireAuth } from "./routes/RequireAuth";
 import { RequireRole } from "./routes/RequireRole";
@@ -19,13 +23,10 @@ const MyLearningPage = lazy(() => import("./pages/learning/MyLearningPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/legal/PrivacyPolicyPage"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
-const ErrorStatusPage = lazy(() => import("./pages/system/ErrorStatusPage"));
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
 const AdminCoursesPage = lazy(() => import("./pages/admin/AdminCoursesPage"));
 const AdminModerationQueuePage = lazy(() => import("./pages/admin/AdminModerationQueuePage"));
 const AdminCourseReviewPage = lazy(() => import("./pages/admin/AdminCourseReviewPage"));
-const AccessDeniedPage = lazy(() => import("./pages/system/AccessDeniedPage"));
-const NotFoundPage = lazy(() => import("./pages/system/NotFoundPage"));
 const TeacherCourseEditPage = lazy(() => import("./pages/teacher/TeacherCourseEditPage"));
 const TeacherCourseNewPage = lazy(() => import("./pages/teacher/TeacherCourseNewPage"));
 const TeacherCourseBlankPage = lazy(() => import("./pages/teacher/TeacherCourseBlankPage"));
@@ -56,6 +57,7 @@ export default function App() {
                 <Route path="/courses/:courseId" element={<PageSuspense><CourseDetailsPage /></PageSuspense>} />
                 <Route path="/privacy" element={<PageSuspense><PrivacyPolicyPage /></PageSuspense>} />
                 <Route path="/terms" element={<PageSuspense><TermsPage /></PageSuspense>} />
+                <Route path="/help" element={<HelpPage />} />
                 <Route
                     path="/login"
                     element={
@@ -185,14 +187,14 @@ export default function App() {
                         </RequireRole>
                     }
                 />
-                <Route path="/400" element={<PageSuspense><ErrorStatusPage status={400} /></PageSuspense>} />
-                <Route path="/401" element={<PageSuspense><ErrorStatusPage status={401} /></PageSuspense>} />
-                <Route path="/403" element={<PageSuspense><AccessDeniedPage /></PageSuspense>} />
-                <Route path="/404" element={<PageSuspense><NotFoundPage /></PageSuspense>} />
-                <Route path="/409" element={<PageSuspense><ErrorStatusPage status={409} /></PageSuspense>} />
-                <Route path="/500" element={<PageSuspense><ErrorStatusPage status={500} /></PageSuspense>} />
-                <Route path="/maintenance" element={<PageSuspense><ErrorStatusPage status="maintenance" /></PageSuspense>} />
-                <Route path="*" element={<PageSuspense><NotFoundPage /></PageSuspense>} />
+                <Route path="/400" element={<ErrorStatusPage status={400} />} />
+                <Route path="/401" element={<ErrorStatusPage status={401} />} />
+                <Route path="/403" element={<AccessDeniedPage />} />
+                <Route path="/404" element={<NotFoundPage />} />
+                <Route path="/409" element={<ErrorStatusPage status={409} />} />
+                <Route path="/500" element={<ErrorStatusPage status={500} />} />
+                <Route path="/maintenance" element={<ErrorStatusPage status="maintenance" />} />
+                <Route path="*" element={<NotFoundPage />} />
             </Route>
         </Routes>
     );
