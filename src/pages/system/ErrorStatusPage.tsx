@@ -1,5 +1,5 @@
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
@@ -20,8 +20,9 @@ const keys: Record<ErrorStatus, { title: Parameters<ReturnType<typeof useI18n>["
 
 export default function ErrorStatusPage({ status }: { status: ErrorStatus }) {
     const { t } = useI18n();
+    const location = useLocation();
     const config = keys[status];
-    const requestId = new URLSearchParams(window.location.search).get("requestId");
+    const requestId = new URLSearchParams(location.search).get("requestId");
 
     return (
         <PageContainer>

@@ -25,6 +25,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
 import { LoadingState } from "../../components/ui/LoadingState";
 import { PageContainer } from "../../layouts/PageContainer";
+import { useSearchParams } from "react-router-dom";
 
 type DifficultyFilter = CourseDifficulty | "ALL";
 type AccessFilter = CourseAccessType | "ALL";
@@ -72,10 +73,12 @@ function sortCourses(courses: CourseCatalogItem[], sort: SortOption) {
 }
 
 export default function CoursesPage() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const urlSearch = searchParams.get("search") ?? "";
     const [courses, setCourses] = useState<CourseCatalogItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [query, setQuery] = useState("");
+    const [query, setQuery] = useState(urlSearch);
     const [difficulty, setDifficulty] = useState<DifficultyFilter>("ALL");
     const [accessType, setAccessType] = useState<AccessFilter>("ALL");
     const [enrollment, setEnrollment] = useState<EnrollmentFilter>("ALL");
@@ -83,13 +86,26 @@ export default function CoursesPage() {
     const [sort, setSort] = useState<SortOption>("RELEVANCE");
     const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+    useEffect(() => {
+        setQuery(urlSearch);
+    }, [urlSearch]);
+
+    const setSearchQuery = (value: string) => {
+        setQuery(value);
+        const next = new URLSearchParams(searchParams);
+        if (value.trim()) next.set("search", value.trim());
+        else next.delete("search");
+        setSearchParams(next, { replace: true });
+    };
+
     const resetFilters = () => {
-        setQuery("");
+        setSearchQuery("");
         setDifficulty("ALL");
         setAccessType("ALL");
         setEnrollment("ALL");
         setDuration("ALL");
         setSort("RELEVANCE");
+        setSearchParams({}, { replace: true });
     };
 
     const loadCourses = useCallback(async () => {
@@ -129,7 +145,7 @@ export default function CoursesPage() {
         <Stack spacing={2.2}>
             <TextField
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search by title, topic or slug"
                 label="Search"
                 fullWidth
@@ -211,7 +227,7 @@ export default function CoursesPage() {
 
                     <TextField
                         value={query}
-                        onChange={(event) => setQuery(event.target.value)}
+                        onChange={(event) => setSearchQuery(event.target.value)}
                         placeholder="Search for courses, topics, or skills..."
                         fullWidth
                         sx={{ display: { xs: "block", md: "none" } }}
@@ -238,7 +254,7 @@ export default function CoursesPage() {
 
                         {activeFilterCount > 0 ? (
                             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                                {query.trim() ? <Chip label={`Search: ${query.trim()}`} onDelete={() => setQuery("")} /> : null}
+                                {query.trim() ? <Chip label={`Search: ${query.trim()}`} onDelete={() => setSearchQuery("")} /> : null}
                                 {difficulty !== "ALL" ? <Chip label={`Difficulty: ${difficulty}`} onDelete={() => setDifficulty("ALL")} /> : null}
                                 {accessType !== "ALL" ? <Chip label={`Access: ${accessType}`} onDelete={() => setAccessType("ALL")} /> : null}
                                 {enrollment !== "ALL" ? <Chip label={enrollment === "OPEN" ? "Enrollment open" : "Enrollment disabled"} onDelete={() => setEnrollment("ALL")} /> : null}

@@ -4,11 +4,15 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../auth/useAuth";
 
+function isPublicRoute(pathname: string) {
+    return pathname === "/" || pathname === "/courses" || pathname.startsWith("/courses/") || pathname.startsWith("/400") || pathname.startsWith("/401") || pathname.startsWith("/403") || pathname.startsWith("/404") || pathname.startsWith("/409") || pathname.startsWith("/500") || pathname === "/maintenance";
+}
+
 export function AppShell() {
     const location = useLocation();
     const { user } = useAuth();
     const isAuthRoute = location.pathname === "/login" || location.pathname === "/register";
-    const usesMarketingShell = isAuthRoute || (location.pathname === "/" && !user);
+    const usesMarketingShell = isAuthRoute || (!user && isPublicRoute(location.pathname));
 
     return (
         <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>

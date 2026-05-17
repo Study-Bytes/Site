@@ -30,7 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [reloadSession]);
 
     useEffect(() => {
-        const handleSessionExpired = () => setUser(null);
+        const handleSessionExpired = () => {
+            setUser(null);
+            setIsLoading(false);
+        };
         window.addEventListener(sessionExpiredEventName, handleSessionExpired);
         return () => window.removeEventListener(sessionExpiredEventName, handleSessionExpired);
     }, []);

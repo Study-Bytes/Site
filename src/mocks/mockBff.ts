@@ -327,7 +327,9 @@ let courses: TeacherCourseDetails[] = [
 let submissionSeq = 7000;
 let sessionUser: CurrentUser | null = loadSessionUser();
 
-function delay<T>(value: T, ms = 160): Promise<T> {
+const defaultMockDelayMs = import.meta.env.MODE === "test" ? 0 : 160;
+
+function delay<T>(value: T, ms = defaultMockDelayMs): Promise<T> {
     return new Promise((resolve) => window.setTimeout(() => resolve(structuredClone(value)), ms));
 }
 
@@ -450,6 +452,7 @@ function nextId(values: number[]) {
 
 export const mockBff = {
     async getMe(): Promise<CurrentUser | null> {
+        if (!sessionUser) throw new ApiError("Authentication required", 401, [], "UNAUTHORIZED");
         return delay(sessionUser);
     },
 

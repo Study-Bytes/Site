@@ -4,9 +4,9 @@ import { request } from "../apiClient";
 import type { ChangePasswordRequest, CurrentUser, UpdateProfileRequest } from "../bffContracts";
 
 export const profileApi = {
-    getMe(): Promise<CurrentUser | null> {
+    async getMe(): Promise<CurrentUser | null> {
         if (env.useMockBff) return mockBff.getMe();
-        return request<CurrentUser | null>("/me");
+        return request<CurrentUser | null>("/me", { auth: "optional", returnNullOnUnauthorized: true, skipRefresh: true, suppressSessionExpired: true });
     },
 
     updateProfile(input: UpdateProfileRequest): Promise<CurrentUser> {

@@ -13,7 +13,7 @@ export function LanguageSwitcher({ compact = false, persistAccount = false }: { 
     return (
         <FormControl size="small" sx={{ minWidth: compact ? 86 : 132 }}>
             {!compact ? <InputLabel id="language-switcher-label">{t("language.label")}</InputLabel> : null}
-            <Select labelId="language-switcher-label" value={locale} label={compact ? undefined : t("language.label")} onChange={handleChange}>
+            <Select labelId="language-switcher-label" inputProps={{ "aria-label": t("language.label") }} value={locale} label={compact ? undefined : t("language.label")} onChange={handleChange}>
                 <MenuItem value="ru">{compact ? "RU" : t("language.ru")}</MenuItem>
                 <MenuItem value="en">{compact ? "EN" : t("language.en")}</MenuItem>
             </Select>

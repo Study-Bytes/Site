@@ -24,6 +24,11 @@ export type TranslationKey =
     | "language.label"
     | "language.ru"
     | "language.en"
+    | "home.eyebrow"
+    | "home.heroTitle"
+    | "home.heroSubtitle"
+    | "home.browseCourses"
+    | "home.createAccount"
     | "profile.title"
     | "profile.subtitle"
     | "profile.accountDetails"
@@ -105,6 +110,11 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "language.label": "Язык",
         "language.ru": "Русский",
         "language.en": "English",
+        "home.eyebrow": "Интерактивное обучение программированию",
+        "home.heroTitle": "Учись программированию через структурированную практику, а не случайные туториалы.",
+        "home.heroSubtitle": "StudyBytes объединяет теорию, тесты, coding-задания, SQL-практику и отслеживание прогресса в одном чистом учебном рабочем пространстве.",
+        "home.browseCourses": "Смотреть курсы",
+        "home.createAccount": "Создать аккаунт",
         "profile.title": "Профиль",
         "profile.subtitle": "Профиль и настройки аккаунта загружаются через BFF.",
         "profile.accountDetails": "Данные аккаунта",
@@ -182,6 +192,11 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "language.label": "Language",
         "language.ru": "Russian",
         "language.en": "English",
+        "home.eyebrow": "Interactive programming education",
+        "home.heroTitle": "Learn programming through structured practice, not random tutorials.",
+        "home.heroSubtitle": "StudyBytes combines theory, quizzes, coding tasks, SQL practice and progress tracking in one clean learning workspace.",
+        "home.browseCourses": "Browse courses",
+        "home.createAccount": "Create account",
         "profile.title": "Profile",
         "profile.subtitle": "Profile and account settings are loaded through BFF.",
         "profile.accountDetails": "Account details",
