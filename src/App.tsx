@@ -17,9 +17,11 @@ const LearningCoursePage = lazy(() => import("./pages/learning/LearningCoursePag
 const LearningItemPage = lazy(() => import("./pages/learning/LearningItemPage"));
 const MyLearningPage = lazy(() => import("./pages/learning/MyLearningPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const TeacherRequestPage = lazy(() => import("./pages/TeacherRequestPage"));
-const AdminTeacherRequestsPage = lazy(() => import("./pages/admin/AdminTeacherRequestsPage"));
 const ErrorStatusPage = lazy(() => import("./pages/system/ErrorStatusPage"));
+const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
+const AdminCoursesPage = lazy(() => import("./pages/admin/AdminCoursesPage"));
+const AdminModerationQueuePage = lazy(() => import("./pages/admin/AdminModerationQueuePage"));
+const AdminCourseReviewPage = lazy(() => import("./pages/admin/AdminCourseReviewPage"));
 const AccessDeniedPage = lazy(() => import("./pages/system/AccessDeniedPage"));
 const NotFoundPage = lazy(() => import("./pages/system/NotFoundPage"));
 const TeacherCourseEditPage = lazy(() => import("./pages/teacher/TeacherCourseEditPage"));
@@ -76,22 +78,6 @@ export default function App() {
                 />
 
                 <Route
-                    path="/teacher-request"
-                    element={
-                        <RequireAuth>
-                            <PageSuspense><TeacherRequestPage /></PageSuspense>
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/teacher-requests"
-                    element={
-                        <RequireRole roles={["ADMIN"]}>
-                            <PageSuspense><AdminTeacherRequestsPage /></PageSuspense>
-                        </RequireRole>
-                    }
-                />
-                <Route
                     path="/my-learning"
                     element={
                         <RequireAuth>
@@ -113,6 +99,38 @@ export default function App() {
                         <RequireAuth>
                             <PageSuspense><LearningItemPage /></PageSuspense>
                         </RequireAuth>
+                    }
+                />
+                <Route
+                    path="/admin"
+                    element={
+                        <RequireRole roles={["ADMIN"]}>
+                            <PageSuspense><AdminDashboardPage /></PageSuspense>
+                        </RequireRole>
+                    }
+                />
+                <Route
+                    path="/admin/courses"
+                    element={
+                        <RequireRole roles={["ADMIN"]}>
+                            <PageSuspense><AdminCoursesPage /></PageSuspense>
+                        </RequireRole>
+                    }
+                />
+                <Route
+                    path="/admin/courses/moderation"
+                    element={
+                        <RequireRole roles={["ADMIN"]}>
+                            <PageSuspense><AdminModerationQueuePage /></PageSuspense>
+                        </RequireRole>
+                    }
+                />
+                <Route
+                    path="/admin/courses/:courseId/review"
+                    element={
+                        <RequireRole roles={["ADMIN"]}>
+                            <PageSuspense><AdminCourseReviewPage /></PageSuspense>
+                        </RequireRole>
                     }
                 />
                 <Route

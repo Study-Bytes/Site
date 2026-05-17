@@ -6,8 +6,8 @@ export type TranslationKey =
     | "nav.myLearning"
     | "nav.profile"
     | "nav.teacherCabinet"
-    | "nav.teacherRequest"
-    | "nav.adminRequests"
+    | "nav.adminPanel"
+    | "nav.courseModeration"
     | "nav.login"
     | "nav.register"
     | "nav.logout"
@@ -37,26 +37,6 @@ export type TranslationKey =
     | "profile.language"
     | "profile.languageDescription"
     | "profile.updated"
-    | "teacherRequest.title"
-    | "teacherRequest.subtitle"
-    | "teacherRequest.motivation"
-    | "teacherRequest.experience"
-    | "teacherRequest.portfolioUrl"
-    | "teacherRequest.preferredTopics"
-    | "teacherRequest.submit"
-    | "teacherRequest.statusTitle"
-    | "teacherRequest.pending"
-    | "teacherRequest.approved"
-    | "teacherRequest.rejected"
-    | "teacherRequest.cancelled"
-    | "teacherRequest.adminTitle"
-    | "teacherRequest.adminSubtitle"
-    | "teacherRequest.noRequestsTitle"
-    | "teacherRequest.noRequestsDescription"
-    | "teacherRequest.topics"
-    | "teacherRequest.approve"
-    | "teacherRequest.reject"
-    | "teacherRequest.reviewComment"
     | "errors.400.title"
     | "errors.400.description"
     | "errors.401.title"
@@ -92,8 +72,8 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "nav.myLearning": "Моё обучение",
         "nav.profile": "Профиль",
         "nav.teacherCabinet": "Кабинет преподавателя",
-        "nav.teacherRequest": "Стать преподавателем",
-        "nav.adminRequests": "Заявки преподавателей",
+        "nav.adminPanel": "Админ-панель",
+        "nav.courseModeration": "Модерация курсов",
         "nav.login": "Войти",
         "nav.register": "Регистрация",
         "nav.logout": "Выйти",
@@ -123,26 +103,6 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "profile.language": "Язык интерфейса",
         "profile.languageDescription": "Выбор сохраняется в настройках аккаунта. Для гостей — в браузере.",
         "profile.updated": "Профиль обновлён.",
-        "teacherRequest.title": "Заявка на роль преподавателя",
-        "teacherRequest.subtitle": "Опиши опыт и темы, по которым хочешь создавать курсы. Администратор проверит заявку.",
-        "teacherRequest.motivation": "Почему ты хочешь стать преподавателем?",
-        "teacherRequest.experience": "Опыт преподавания или разработки",
-        "teacherRequest.portfolioUrl": "Портфолио / GitHub / LinkedIn",
-        "teacherRequest.preferredTopics": "Темы через запятую",
-        "teacherRequest.submit": "Отправить заявку",
-        "teacherRequest.statusTitle": "Текущая заявка",
-        "teacherRequest.pending": "На рассмотрении",
-        "teacherRequest.approved": "Одобрена",
-        "teacherRequest.rejected": "Отклонена",
-        "teacherRequest.cancelled": "Отменена",
-        "teacherRequest.adminTitle": "Заявки преподавателей",
-        "teacherRequest.adminSubtitle": "Проверяй заявки, оставляй комментарии и выдавай доступ к кабинету преподавателя.",
-        "teacherRequest.noRequestsTitle": "Заявок пока нет",
-        "teacherRequest.noRequestsDescription": "Новые заявки на роль преподавателя появятся здесь.",
-        "teacherRequest.topics": "Темы",
-        "teacherRequest.approve": "Одобрить",
-        "teacherRequest.reject": "Отклонить",
-        "teacherRequest.reviewComment": "Комментарий проверки",
         "errors.400.title": "Ошибка валидации",
         "errors.400.description": "Проверь введённые данные и попробуй снова.",
         "errors.401.title": "Сессия истекла",
@@ -174,8 +134,8 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "nav.myLearning": "My Learning",
         "nav.profile": "Profile",
         "nav.teacherCabinet": "Teacher Cabinet",
-        "nav.teacherRequest": "Become a teacher",
-        "nav.adminRequests": "Teacher requests",
+        "nav.adminPanel": "Admin Panel",
+        "nav.courseModeration": "Course Moderation",
         "nav.login": "Login",
         "nav.register": "Register",
         "nav.logout": "Logout",
@@ -205,26 +165,6 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "profile.language": "Interface language",
         "profile.languageDescription": "The selected language is saved to account settings. Guests use browser storage.",
         "profile.updated": "Profile was updated successfully.",
-        "teacherRequest.title": "Teacher access request",
-        "teacherRequest.subtitle": "Describe your experience and topics. An administrator will review the request.",
-        "teacherRequest.motivation": "Why do you want to become a teacher?",
-        "teacherRequest.experience": "Teaching or development experience",
-        "teacherRequest.portfolioUrl": "Portfolio / GitHub / LinkedIn",
-        "teacherRequest.preferredTopics": "Topics separated by commas",
-        "teacherRequest.submit": "Submit request",
-        "teacherRequest.statusTitle": "Current request",
-        "teacherRequest.pending": "Pending",
-        "teacherRequest.approved": "Approved",
-        "teacherRequest.rejected": "Rejected",
-        "teacherRequest.cancelled": "Cancelled",
-        "teacherRequest.adminTitle": "Teacher requests",
-        "teacherRequest.adminSubtitle": "Review requests, leave comments and grant access to the teacher cabinet.",
-        "teacherRequest.noRequestsTitle": "No requests yet",
-        "teacherRequest.noRequestsDescription": "New teacher access requests will appear here.",
-        "teacherRequest.topics": "Topics",
-        "teacherRequest.approve": "Approve",
-        "teacherRequest.reject": "Reject",
-        "teacherRequest.reviewComment": "Review comment",
         "errors.400.title": "Validation error",
         "errors.400.description": "Check the submitted data and try again.",
         "errors.401.title": "Session expired",

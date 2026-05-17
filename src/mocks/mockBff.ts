@@ -30,12 +30,7 @@ import type {
     TeacherCourseDetails,
     TeacherCourseQuery,
     TeacherCourseSummary,
-    TeacherAccessRequest,
     TeacherItemDetails,
-    TeacherRequestCreateRequest,
-    TeacherRequestReviewRequest,
-    RegisterTeacherRequest,
-    RegisterTeacherRequestResponse,
     TestCaseUpsertRequest,
     UpdateProfileRequest,
 } from "../api/bffContracts";
@@ -80,25 +75,6 @@ const mockAccounts: MockAccount[] = [
 
 const currentUserKey = "studybytes_mock_current_user";
 const enrolledCoursesKey = "studybytes_mock_enrolled_courses";
-
-
-
-let teacherRequests: TeacherAccessRequest[] = [
-    {
-        id: 3001,
-        userId: 1,
-        status: "PENDING",
-        motivation: "I want to create beginner Java lessons for classmates.",
-        experience: "Completed Java Core and helped peers with labs.",
-        portfolioUrl: "https://github.com/student-demo",
-        preferredTopics: ["Java", "Algorithms"],
-        reviewComment: null,
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        reviewedAt: null,
-        reviewedByUserId: null,
-        user: { id: 1, email: "student@studybytes.dev", fullName: "Student Demo", role: "STUDENT", status: "ACTIVE" },
-    },
-];
 
 const itemDetails: Record<number, TeacherItemDetails> = {
     5001: {
@@ -263,6 +239,12 @@ let courses: TeacherCourseDetails[] = [
         createdAt: new Date(Date.now() - 86400000 * 20).toISOString(),
         updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
         publishedAt: new Date(Date.now() - 86400000 * 8).toISOString(),
+        submittedForReviewAt: new Date(Date.now() - 86400000 * 9).toISOString(),
+        reviewedAt: new Date(Date.now() - 86400000 * 8).toISOString(),
+        reviewedByUserId: 3,
+        reviewComment: null,
+        createdByUserEmail: "teacher@studybytes.dev",
+        createdByUserFullName: "Teacher Demo",
         modules: [
             {
                 id: 1001,
@@ -292,6 +274,12 @@ let courses: TeacherCourseDetails[] = [
         createdAt: new Date(Date.now() - 86400000 * 18).toISOString(),
         updatedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
         publishedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+        submittedForReviewAt: new Date(Date.now() - 86400000 * 8).toISOString(),
+        reviewedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+        reviewedByUserId: 3,
+        reviewComment: null,
+        createdByUserEmail: "teacher@studybytes.dev",
+        createdByUserFullName: "Teacher Demo",
         modules: [
             {
                 id: 1002,
@@ -315,8 +303,14 @@ let courses: TeacherCourseDetails[] = [
         enrollmentEnabled: false,
         coverImageUrl: "/course-net.jpg",
         estimatedMinutes: 510,
-        status: "DRAFT",
+        status: "CHANGES_REQUESTED",
         createdByUserId: 2,
+        createdByUserEmail: "teacher@studybytes.dev",
+        createdByUserFullName: "Teacher Demo",
+        submittedForReviewAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+        reviewedAt: new Date(Date.now() - 86400000).toISOString(),
+        reviewedByUserId: 3,
+        reviewComment: "Add at least one practice item before resubmitting.",
         createdAt: new Date(Date.now() - 86400000 * 6).toISOString(),
         updatedAt: new Date(Date.now() - 86400000).toISOString(),
         publishedAt: null,
@@ -476,7 +470,7 @@ export const mockBff = {
             status: "ACTIVE",
             avatarUrl: null,
             bio: null,
-            preferredLocale: "ru",
+            preferredLocale: request.preferredLocale ?? "ru",
             password: request.password,
         };
         mockAccounts.push(account);
@@ -533,82 +527,14 @@ export const mockBff = {
         return delay(undefined);
     },
 
-    async createTeacherRequest(request: TeacherRequestCreateRequest): Promise<TeacherAccessRequest> {
-        const user = requireUser();
-        const existing = teacherRequests.find((entry) => entry.userId === user.id && entry.status === "PENDING");
-        if (existing) throw new ApiError("Teacher request is already pending", 409);
-        const entry: TeacherAccessRequest = {
-            id: nextId(teacherRequests.map((item) => item.id)),
-            userId: user.id,
-            status: "PENDING",
-            motivation: request.motivation,
-            experience: request.experience,
-            portfolioUrl: request.portfolioUrl ?? null,
-            preferredTopics: request.preferredTopics,
-            reviewComment: null,
-            createdAt: new Date().toISOString(),
-            reviewedAt: null,
-            reviewedByUserId: null,
-            user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role, status: user.status ?? "ACTIVE" },
-        };
-        teacherRequests = [entry, ...teacherRequests];
-        return delay(entry);
-    },
-
-    async getMyTeacherRequest(): Promise<TeacherAccessRequest | null> {
-        const user = requireUser();
-        return delay(teacherRequests.find((entry) => entry.userId === user.id) ?? null);
-    },
-
-    async listTeacherRequests(): Promise<TeacherAccessRequest[]> {
-        const user = requireUser();
-        if (user.role !== "ADMIN") throw new ApiError("Admin access required", 403);
-        return delay(teacherRequests);
-    },
-
-    async approveTeacherRequest(requestId: number, input: TeacherRequestReviewRequest): Promise<TeacherAccessRequest> {
-        const admin = requireUser();
-        if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
-        const entry = teacherRequests.find((item) => item.id === requestId);
-        if (!entry) throw new ApiError("Teacher request not found", 404);
-        entry.status = "APPROVED";
-        entry.reviewComment = input.reviewComment ?? null;
-        entry.reviewedAt = new Date().toISOString();
-        entry.reviewedByUserId = admin.id;
-        const account = mockAccounts.find((item) => item.id === entry.userId);
-        if (account) account.role = "TEACHER";
-        return delay(entry);
-    },
-
-    async rejectTeacherRequest(requestId: number, input: TeacherRequestReviewRequest): Promise<TeacherAccessRequest> {
-        const admin = requireUser();
-        if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
-        const entry = teacherRequests.find((item) => item.id === requestId);
-        if (!entry) throw new ApiError("Teacher request not found", 404);
-        entry.status = "REJECTED";
-        entry.reviewComment = input.reviewComment ?? null;
-        entry.reviewedAt = new Date().toISOString();
-        entry.reviewedByUserId = admin.id;
-        return delay(entry);
-    },
-
-    async registerTeacherRequest(request: RegisterTeacherRequest): Promise<RegisterTeacherRequestResponse> {
-        const auth = await this.register({ fullName: request.fullName, email: request.email, password: request.password, role: "STUDENT" });
-        const teacherRequest = await this.createTeacherRequest({
-            motivation: request.motivation,
-            experience: request.experience,
-            portfolioUrl: request.portfolioUrl,
-            preferredTopics: request.preferredTopics,
-        });
-        return delay({ ...auth, teacherRequest: { id: teacherRequest.id, status: teacherRequest.status } });
-    },
-
     async getCourses(query?: CourseCatalogQuery): Promise<CourseCatalogItem[]> {
         return delay(courses.filter((course) => course.status === "PUBLISHED").filter((course) => courseMatchesQuery(course, query)).map(publicCourse));
     },
 
     async getCourse(courseId: number): Promise<CourseDetails> {
-        return delay(publicCourseDetails(findCourse(courseId)));
+        const course = findCourse(courseId);
+        if (course.status !== "PUBLISHED") throw new ApiError("Course not found", 404);
+        return delay(publicCourseDetails(course));
     },
 
     async getCourseItemPreview(courseId: number, itemId: number): Promise<CourseItemPreview> {
@@ -738,7 +664,7 @@ export const mockBff = {
             courses
                 .filter((course) => user.role === "ADMIN" || course.createdByUserId === user.id)
                 .filter((course) => courseMatchesQuery(course, query))
-                .map((course) => ({ ...publicCourse(course), status: course.status, updatedAt: course.updatedAt, createdByUserId: course.createdByUserId }))
+                .map((course) => ({ ...publicCourse(course), status: course.status, updatedAt: course.updatedAt, createdByUserId: course.createdByUserId, createdByUserEmail: course.createdByUserEmail ?? null, createdByUserFullName: course.createdByUserFullName ?? null, submittedForReviewAt: course.submittedForReviewAt ?? null, reviewedAt: course.reviewedAt ?? null, reviewedByUserId: course.reviewedByUserId ?? null, reviewComment: course.reviewComment ?? null }))
         );
     },
 
@@ -752,6 +678,12 @@ export const mockBff = {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             publishedAt: null,
+            submittedForReviewAt: null,
+            reviewedAt: null,
+            reviewedByUserId: null,
+            reviewComment: null,
+            createdByUserEmail: user.email,
+            createdByUserFullName: user.fullName,
             modules: [],
         };
         courses = [course, ...courses];
@@ -770,11 +702,15 @@ export const mockBff = {
         return delay(course);
     },
 
-    async publishTeacherCourse(courseId: number): Promise<TeacherCourseDetails> {
+    async submitTeacherCourseForReview(courseId: number): Promise<TeacherCourseDetails> {
         requireTeacher();
         const course = findCourse(courseId);
-        course.status = "PUBLISHED";
-        course.publishedAt = new Date().toISOString();
+        if (course.status !== "DRAFT" && course.status !== "CHANGES_REQUESTED") throw new ApiError("Course cannot be submitted from current status", 409);
+        course.status = "PENDING_REVIEW";
+        course.submittedForReviewAt = new Date().toISOString();
+        course.reviewedAt = null;
+        course.reviewedByUserId = null;
+        course.reviewComment = null;
         course.updatedAt = new Date().toISOString();
         return delay(course);
     },
@@ -783,6 +719,52 @@ export const mockBff = {
         requireTeacher();
         const course = findCourse(courseId);
         course.status = "ARCHIVED";
+        course.updatedAt = new Date().toISOString();
+        return delay(course);
+    },
+
+
+
+    async listAdminCourses(query?: TeacherCourseQuery): Promise<TeacherCourseSummary[]> {
+        const admin = requireUser();
+        if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
+        return delay(courses
+            .filter((course) => courseMatchesQuery(course, query))
+            .map((course) => ({ ...publicCourse(course), status: course.status, updatedAt: course.updatedAt, createdByUserId: course.createdByUserId, createdByUserEmail: course.createdByUserEmail ?? null, createdByUserFullName: course.createdByUserFullName ?? null, submittedForReviewAt: course.submittedForReviewAt ?? null, reviewedAt: course.reviewedAt ?? null, reviewedByUserId: course.reviewedByUserId ?? null, reviewComment: course.reviewComment ?? null }))
+        );
+    },
+
+    async listModerationQueue(query?: TeacherCourseQuery): Promise<TeacherCourseSummary[]> {
+        return this.listAdminCourses({ ...query, status: query?.status ?? "PENDING_REVIEW" });
+    },
+
+    async getCourseReview(courseId: number): Promise<TeacherCourseDetails> {
+        const admin = requireUser();
+        if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
+        return delay(findCourse(courseId));
+    },
+
+    async approveCourse(courseId: number): Promise<TeacherCourseDetails> {
+        const admin = requireUser();
+        if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
+        const course = findCourse(courseId);
+        course.status = "PUBLISHED";
+        course.publishedAt = new Date().toISOString();
+        course.reviewedAt = new Date().toISOString();
+        course.reviewedByUserId = admin.id;
+        course.reviewComment = null;
+        course.updatedAt = new Date().toISOString();
+        return delay(course);
+    },
+
+    async rejectCourse(courseId: number, input: { reviewComment?: string | null }): Promise<TeacherCourseDetails> {
+        const admin = requireUser();
+        if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
+        const course = findCourse(courseId);
+        course.status = "CHANGES_REQUESTED";
+        course.reviewedAt = new Date().toISOString();
+        course.reviewedByUserId = admin.id;
+        course.reviewComment = input.reviewComment?.trim() || "Changes requested";
         course.updatedAt = new Date().toISOString();
         return delay(course);
     },

@@ -2,7 +2,6 @@ export type UserRole = "STUDENT" | "TEACHER" | "ADMIN";
 export type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 export type Locale = "ru" | "en";
 export type LocaleSource = "ACCOUNT_SETTING" | "ACCEPT_LANGUAGE" | "GEO_IP" | "FALLBACK";
-export type TeacherRequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
 export type CurrentUser = {
     id: number;
@@ -25,6 +24,7 @@ export type RegisterRequest = {
     email: string;
     password: string;
     role?: Exclude<UserRole, "ADMIN">;
+    preferredLocale?: Locale | null;
 };
 
 export type AuthResponse = {
@@ -61,7 +61,7 @@ export type ChangePasswordRequest = {
 
 export type CourseDifficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type CourseAccessType = "PUBLIC" | "UNLISTED" | "PRIVATE";
-export type CourseStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+export type CourseStatus = "DRAFT" | "PENDING_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
 export type CourseItemType = "THEORY" | "QUIZ" | "CODING" | "SQL" | "FILE";
 export type ContentBlockType = "TEXT" | "VIDEO" | "IMAGE" | "CODE" | "EMBED" | "FILE";
 export type TestCaseVisibility = "OPEN" | "HIDDEN";
@@ -268,13 +268,25 @@ export type TeacherCourseSummary = CourseCatalogItem & {
     status: CourseStatus;
     updatedAt: string;
     createdByUserId?: number;
+    createdByUserEmail?: string | null;
+    createdByUserFullName?: string | null;
+    submittedForReviewAt?: string | null;
+    reviewedAt?: string | null;
+    reviewedByUserId?: number | null;
+    reviewComment?: string | null;
 };
 
 export type TeacherCourseDetails = CourseDetails & {
     createdByUserId: number;
+    createdByUserEmail?: string | null;
+    createdByUserFullName?: string | null;
     createdAt: string;
     updatedAt: string;
     publishedAt: string | null;
+    submittedForReviewAt?: string | null;
+    reviewedAt?: string | null;
+    reviewedByUserId?: number | null;
+    reviewComment?: string | null;
 };
 
 export type CourseUpsertRequest = {
@@ -333,40 +345,6 @@ export type HintUpsertRequest = Omit<HintDto, "id">;
 export type TestCaseUpsertRequest = Omit<TestCaseDto, "id">;
 export type QuizOptionUpsertRequest = Omit<QuizOptionDto, "id" | "selected">;
 
-
-export type TeacherRequestCreateRequest = {
-    motivation: string;
-    experience: string;
-    portfolioUrl?: string | null;
-    preferredTopics: string[];
-};
-
-export type RegisterTeacherRequest = RegisterRequest & TeacherRequestCreateRequest;
-
-export type TeacherAccessRequest = {
-    id: number;
-    userId: number;
-    status: TeacherRequestStatus;
-    motivation: string;
-    experience: string;
-    portfolioUrl: string | null;
-    preferredTopics: string[];
-    reviewComment: string | null;
-    createdAt: string;
-    reviewedAt: string | null;
-    reviewedByUserId?: number | null;
-    user?: Pick<CurrentUser, "id" | "email" | "fullName" | "role" | "status">;
-};
-
-export type TeacherRequestReviewRequest = {
+export type CourseModerationReviewRequest = {
     reviewComment?: string | null;
-};
-
-export type RegisterTeacherRequestResponse = {
-    user: CurrentUser;
-    teacherRequest: Pick<TeacherAccessRequest, "id" | "status">;
-    accessToken?: string;
-    refreshToken?: string;
-    tokenType?: "Bearer" | string;
-    expiresIn?: number;
 };

@@ -57,9 +57,9 @@ const navItems: NavItem[] = [
     { label: "Courses", to: "/courses", icon: <MenuBookOutlinedIcon /> },
     { label: "My Learning", to: "/my-learning", icon: <SchoolOutlinedIcon />, requiresAuth: true },
     { label: "Profile", to: "/profile", icon: <PersonOutlineRoundedIcon />, requiresAuth: true },
-    { label: "Teacher Request", to: "/teacher-request", icon: <AssignmentTurnedInOutlinedIcon />, roles: ["STUDENT"] },
     { label: "Teacher Cabinet", to: "/teacher/courses", icon: <AdminPanelSettingsOutlinedIcon />, roles: ["TEACHER", "ADMIN"] },
-    { label: "Teacher Requests", to: "/admin/teacher-requests", icon: <AssignmentTurnedInOutlinedIcon />, roles: ["ADMIN"] },
+    { label: "Admin Panel", to: "/admin", icon: <AdminPanelSettingsOutlinedIcon />, roles: ["ADMIN"] },
+    { label: "Course Moderation", to: "/admin/courses/moderation", icon: <AssignmentTurnedInOutlinedIcon />, roles: ["ADMIN"] },
 ];
 
 function canShow(item: NavItem, role: UserRole | null) {
@@ -82,8 +82,8 @@ function navLabel(label: string, t: ReturnType<typeof useI18n>["t"]) {
         "My Learning": "nav.myLearning",
         Profile: "nav.profile",
         "Teacher Cabinet": "nav.teacherCabinet",
-        "Teacher Request": "nav.teacherRequest",
-        "Teacher Requests": "nav.adminRequests",
+        "Admin Panel": "nav.adminPanel",
+        "Course Moderation": "nav.courseModeration",
     };
     return map[label] ? t(map[label]) : label;
 }
@@ -191,9 +191,6 @@ function AccountMenu() {
             <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
                 <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
                     {t("nav.profile")}
-                </MenuItem>
-                <MenuItem component={RouterLink} to="/teacher-request" onClick={handleMenuClose} sx={{ display: user.role === "STUDENT" ? "flex" : "none" }}>
-                    {t("nav.teacherRequest")}
                 </MenuItem>
                 <MenuItem disabled>{user.role}</MenuItem>
                 <Divider />
@@ -378,11 +375,11 @@ function MobileBottomNav({ visibleItems, role }: { visibleItems: NavItem[]; role
     const location = useLocation();
     const { t } = useI18n();
     const priority = role === "ADMIN"
-        ? ["/courses", "/teacher/courses", "/admin/teacher-requests", "/profile"]
+        ? ["/courses", "/teacher/courses", "/admin", "/profile"]
         : role === "TEACHER"
           ? ["/courses", "/my-learning", "/teacher/courses", "/profile"]
           : role === "STUDENT"
-            ? ["/courses", "/my-learning", "/teacher-request", "/profile"]
+            ? ["/courses", "/my-learning", "/profile"]
             : ["/courses"];
     const items = priority.map((to) => visibleItems.find((item) => item.to === to)).filter((item): item is NavItem => Boolean(item)).slice(0, 4);
     const activeValue = items.find((item) => isActivePath(location.pathname, item))?.to ?? false;

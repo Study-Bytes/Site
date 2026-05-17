@@ -49,20 +49,18 @@ Available variables:
 ```env
 VITE_BFF_BASE_URL=http://localhost:8080
 VITE_BFF_API_PREFIX=/api/v1
-VITE_USE_MOCK_BFF=true
+VITE_USE_MOCK_BFF=false
 ```
 
 `VITE_BFF_BASE_URL` is the BFF origin. `VITE_BFF_API_PREFIX` is the versioned external Site-BFF API prefix. Service modules keep paths like `/courses` and `/teacher/courses`; the API client combines them into `/api/v1/courses` and `/api/v1/teacher/courses`.
 
-`VITE_USE_MOCK_BFF=true` enables the local mock BFF adapter. This lets frontend development continue before the real BFF endpoints are finished.
+The Site uses the real BFF by default. `VITE_USE_MOCK_BFF=true` must be set explicitly only for frontend-only local development without a running BFF.
 
-When `VITE_USE_MOCK_BFF` is not set, mock mode is enabled in Vite dev mode and disabled in production build.
-
-Set it to `false` when BFF is deployed:
+For same-origin production where Nginx proxies `/api/v1/**` to BFF, keep `VITE_BFF_BASE_URL` empty:
 
 ```env
 VITE_USE_MOCK_BFF=false
-VITE_BFF_BASE_URL=https://studybytes.example.com
+VITE_BFF_BASE_URL=
 VITE_BFF_API_PREFIX=/api/v1
 ```
 
@@ -146,7 +144,7 @@ The teacher flow now uses the shared `teacherApi` service and the versioned BFF 
 
 - `/teacher` renders a teacher dashboard with course statistics, recent courses and quick actions.
 - `/teacher/courses` renders teacher-owned courses with search, status, difficulty and access type filters.
-- Teacher course cards support edit, publish and archive actions through the BFF API.
+- Teacher course cards support edit, submit-for-review and archive actions through the BFF API.
 - `/teacher/courses/new` creates a course draft through `POST /api/v1/teacher/courses`.
 - `/teacher/courses/:courseId/edit` loads and saves course metadata through `GET/PUT /api/v1/teacher/courses/{courseId}`.
 - Course metadata form includes title, slug, short description, description, difficulty, access type, enrollment toggle, cover image URL and estimated minutes.
@@ -291,7 +289,7 @@ PUT /api/v1/me/password
 ```http
 GET /api/v1/courses
 GET /api/v1/courses/{courseId}
-GET /api/v1/courses/{courseId}/items/{itemId}/preview
+GET /api/v1/course-items/{itemId}
 ```
 
 Supported catalog query params:
@@ -476,7 +474,7 @@ GET  /api/v1/teacher/courses
 POST /api/v1/teacher/courses
 GET  /api/v1/teacher/courses/{courseId}
 PUT  /api/v1/teacher/courses/{courseId}
-POST /api/v1/teacher/courses/{courseId}/publish
+POST /api/v1/teacher/courses/{courseId}/submit-review
 POST /api/v1/teacher/courses/{courseId}/archive
 ```
 
@@ -660,6 +658,7 @@ If the current BFF does not implement these endpoints yet, it should return a cl
 
 - Manual QA checklist: `docs/QA_CHECKLIST.md`
 - Auth/access matrix: `docs/AUTH_ACCESS_MATRIX.md`
+- Required BFF endpoints: `docs/SITE_BFF_REQUIRED_ENDPOINTS.md`
 - Site deployment notes: `docs/DEPLOYMENT.md`
 
 ## Site VPS deployment and CD
@@ -715,12 +714,12 @@ This version adds the final Site readiness layer:
 - RU/EN localization with a language switcher;
 - default locale selection from account setting, browser/BFF hint, and fallback;
 - account settings with `preferredLocale`;
-- teacher access request flow for students and new registrations;
-- admin teacher request review page;
+- role selection during registration for `STUDENT` and `TEACHER`;
+- course publication moderation for admin review;
 - richer error screens for 400/401/403/404/409/500/maintenance states;
 - static teacher course templates for draft course creation;
 - teacher course editor preview action;
-- BFF OpenAPI additions for localization, settings, and teacher requests.
+- BFF OpenAPI additions for localization, settings, course moderation, and admin review.
 
 Production auth should use BFF-managed `HttpOnly` cookies where possible. Token-based auth is still supported in the API client for MVP compatibility.
 
@@ -739,9 +738,31 @@ Important behavior:
 
 Expected route matrix:
 
-| User state | `/courses` | `/courses/:id` | `/my-learning` | `/teacher/courses` | `/admin/teacher-requests` |
+| User state | `/courses` | `/courses/:id` | `/my-learning` | `/teacher/courses` | `/admin/courses/moderation` |
 |---|---|---|---|---|---|
 | Anonymous | allowed | allowed | login redirect | login redirect | login redirect |
 | STUDENT | allowed | allowed | allowed | 403 | 403 |
 | TEACHER | allowed | allowed | allowed | allowed | 403 |
 | ADMIN | allowed | allowed | allowed | allowed | allowed |
+
+## Course moderation flow
+
+StudyBytes no longer requires separate approval to become a teacher. Users may register as `STUDENT` or `TEACHER`; `ADMIN` self-registration is not available.
+
+Teachers can create course drafts immediately. Public publication requires admin moderation:
+
+```text
+DRAFT -> PENDING_REVIEW -> PUBLISHED -> ARCHIVED
+DRAFT -> PENDING_REVIEW -> CHANGES_REQUESTED -> PENDING_REVIEW -> PUBLISHED
+```
+
+Implemented Site routes:
+
+```text
+/admin
+/admin/courses
+/admin/courses/moderation
+/admin/courses/:courseId/review
+```
+
+Teacher-facing publish buttons now use submit-for-review semantics. Public catalog and course details should show only `PUBLISHED` courses from the BFF.

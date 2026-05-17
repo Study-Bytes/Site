@@ -34,13 +34,13 @@ Public BFF endpoints:
 ```http
 GET /api/v1/courses
 GET /api/v1/courses/{courseId}
-GET /api/v1/courses/{courseId}/items/{itemId}/preview
+GET /api/v1/course-items/{itemId}
 GET /api/v1/i18n/default-locale
 ```
 
 ## Route matrix
 
-| User state | `/courses` | `/courses/:id` | `/my-learning` | `/teacher/courses` | `/admin/teacher-requests` |
+| User state | `/courses` | `/courses/:id` | `/my-learning` | `/teacher/courses` | `/admin/courses/moderation` |
 |---|---|---|---|---|---|
 | Anonymous | allowed | allowed | login redirect | login redirect | login redirect |
 | STUDENT | allowed | allowed | allowed | 403 | 403 |
@@ -82,3 +82,14 @@ Preferred error shape:
   "validationErrors": []
 }
 ```
+
+## Course moderation access update
+
+Teacher access requests are no longer part of the main Site navigation. Users may register as `STUDENT` or `TEACHER` directly.
+
+| User state | `/admin` | `/admin/courses` | `/admin/courses/moderation` | `/admin/courses/:id/review` |
+|---|---|---|---|---|
+| Anonymous | redirect login | redirect login | redirect login | redirect login |
+| STUDENT | 403 | 403 | 403 | 403 |
+| TEACHER | 403 | 403 | 403 | 403 |
+| ADMIN | allowed | allowed | allowed | allowed |

@@ -151,7 +151,6 @@ export default function ProfilePage() {
                 </FormSectionCard>
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                    {auth.user.role === "STUDENT" ? <Button variant="outlined" onClick={() => navigate("/teacher-request")}>{t("nav.teacherRequest")}</Button> : null}
                     <Button variant="contained" color="error" onClick={handleLogout} sx={{ alignSelf: "flex-start" }}>
                         {t("nav.logout")}
                     </Button>

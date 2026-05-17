@@ -515,7 +515,7 @@ export default function TeacherItemEditorPage() {
                 ) : null}
 
                 {isQuiz ? (
-                    <FormSectionCard title="Quiz options" description="At least one correct option is required before publishing a quiz course item.">
+                    <FormSectionCard title="Quiz options" description="At least one correct option is required before submitting a quiz course item for review.">
                         <Stack spacing={2}>
                             {options.length === 0 ? <Alert severity="info">No quiz options yet.</Alert> : null}
                             {options.map((option, index) => (

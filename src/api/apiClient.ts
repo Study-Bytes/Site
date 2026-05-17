@@ -118,7 +118,7 @@ function shouldAttemptRefresh(path: string, options: RequestOptions, hasKnownSes
     if (!hasKnownSession) return false;
     if (options.auth === "none" || options.skipRefresh) return false;
     const normalizedPath = normalizePath(path);
-    return !["/auth/login", "/auth/register", "/auth/register-teacher-request", "/auth/refresh", "/auth/logout"].some((authPath) => normalizedPath.startsWith(authPath));
+    return !["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"].some((authPath) => normalizedPath.startsWith(authPath));
 }
 
 async function refreshSession(): Promise<boolean> {

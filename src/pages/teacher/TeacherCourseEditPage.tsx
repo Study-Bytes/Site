@@ -31,7 +31,7 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
-import PublishRoundedIcon from "@mui/icons-material/PublishRounded";
+import RateReviewRoundedIcon from "@mui/icons-material/RateReviewRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { ApiError, getErrorMessage } from "../../api/apiError";
@@ -272,6 +272,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         if (!course) return { modules: 0, items: 0 };
         return { modules: getCourseModuleCount(course), items: getCourseItemCount(course) };
     }, [course]);
+    const isEditingLocked = course?.status === "PENDING_REVIEW";
 
     const handleApiError = (requestError: unknown, fallback: string) => {
         if (requestError instanceof ApiError && requestError.validationErrors.length > 0) {
@@ -309,19 +310,19 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         }
     };
 
-    const runCourseAction = async (nextAction: "publish" | "archive") => {
+    const runCourseAction = async (nextAction: "submit" | "archive") => {
         if (!course) return;
         setAction(nextAction);
         setSuccessMessage(null);
         setError(null);
         setValidationErrors([]);
         try {
-            const updated = nextAction === "publish" ? await teacherApi.publishCourse(course.id) : await teacherApi.archiveCourse(course.id);
+            const updated = nextAction === "submit" ? await teacherApi.submitCourseForReview(course.id) : await teacherApi.archiveCourse(course.id);
             setCourse(updated);
             setForm(toForm(updated));
-            setSuccessMessage(nextAction === "publish" ? "Course published" : "Course archived");
+            setSuccessMessage(nextAction === "submit" ? "Course submitted for review" : "Course archived");
         } catch (requestError) {
-            handleApiError(requestError, nextAction === "publish" ? "Failed to publish course" : "Failed to archive course");
+            handleApiError(requestError, nextAction === "submit" ? "Failed to submit course for review" : "Failed to archive course");
         } finally {
             setAction(null);
         }
@@ -337,8 +338,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
 
     const saveModule = async () => {
         if (!course || !moduleDialog) return;
-        setValidationErrors(validateModuleDraft(moduleDialog.draft));
-        if (validateModuleDraft(moduleDialog.draft).length > 0) return;
+        const errors = validateModuleDraft(moduleDialog.draft);
+        setValidationErrors(errors);
+        if (errors.length > 0) return;
         setAction("module");
         setError(null);
         try {
@@ -506,31 +508,36 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
 
                 {successMessage ? <Alert severity="success" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert> : null}
                 {error ? <Alert severity="error" onClose={() => setError(null)}>{error}</Alert> : null}
+                {isEditingLocked ? (
+                    <Alert severity="info">
+                        This course is waiting for admin moderation. Editing is locked until the course is approved or changes are requested.
+                    </Alert>
+                ) : null}
                 <ValidationErrorPanel errors={validationErrors} />
 
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: course ? "minmax(0, 1fr) 320px" : "1fr" }, gap: 3 }}>
                     <Stack spacing={3}>
                         <FormSectionCard title="Course metadata" description="These fields match the frontend-facing BFF CourseUpsertRequest.">
                             <Stack spacing={2}>
-                                <TextField label="Title" value={form.title} onChange={(event) => updateField("title", event.target.value)} required />
-                                <TextField label="Slug" value={form.slug} onChange={(event) => updateField("slug", event.target.value)} helperText="Lowercase URL slug, for example java-core" required />
-                                <TextField label="Short description" value={form.shortDescription} onChange={(event) => updateField("shortDescription", event.target.value)} required />
-                                <TextField label="Description" multiline minRows={5} value={form.description} onChange={(event) => updateField("description", event.target.value)} required />
+                                <TextField label="Title" value={form.title} onChange={(event) => updateField("title", event.target.value)} required disabled={isEditingLocked} />
+                                <TextField label="Slug" value={form.slug} onChange={(event) => updateField("slug", event.target.value)} helperText="Lowercase URL slug, for example java-core" required disabled={isEditingLocked} />
+                                <TextField label="Short description" value={form.shortDescription} onChange={(event) => updateField("shortDescription", event.target.value)} required disabled={isEditingLocked} />
+                                <TextField label="Description" multiline minRows={5} value={form.description} onChange={(event) => updateField("description", event.target.value)} required disabled={isEditingLocked} />
                                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                    <TextField select label="Difficulty" value={form.difficulty} onChange={(event) => updateField("difficulty", event.target.value as CourseDifficulty)} fullWidth>
+                                    <TextField select label="Difficulty" value={form.difficulty} onChange={(event) => updateField("difficulty", event.target.value as CourseDifficulty)} fullWidth disabled={isEditingLocked}>
                                         <MenuItem value="BEGINNER">BEGINNER</MenuItem>
                                         <MenuItem value="INTERMEDIATE">INTERMEDIATE</MenuItem>
                                         <MenuItem value="ADVANCED">ADVANCED</MenuItem>
                                     </TextField>
-                                    <TextField select label="Access type" value={form.accessType} onChange={(event) => updateField("accessType", event.target.value as CourseAccessType)} fullWidth>
+                                    <TextField select label="Access type" value={form.accessType} onChange={(event) => updateField("accessType", event.target.value as CourseAccessType)} fullWidth disabled={isEditingLocked}>
                                         <MenuItem value="PUBLIC">PUBLIC</MenuItem>
                                         <MenuItem value="UNLISTED">UNLISTED</MenuItem>
                                         <MenuItem value="PRIVATE">PRIVATE</MenuItem>
                                     </TextField>
                                 </Stack>
-                                <TextField label="Cover image URL" value={form.coverImageUrl ?? ""} onChange={(event) => updateField("coverImageUrl", event.target.value)} />
-                                <TextField label="Estimated minutes" type="number" value={form.estimatedMinutes ?? ""} onChange={(event) => updateField("estimatedMinutes", event.target.value === "" ? null : Number(event.target.value))} />
-                                <FormControlLabel control={<Switch checked={form.enrollmentEnabled} onChange={(event) => updateField("enrollmentEnabled", event.target.checked)} />} label="Enrollment enabled" />
+                                <TextField label="Cover image URL" value={form.coverImageUrl ?? ""} onChange={(event) => updateField("coverImageUrl", event.target.value)} disabled={isEditingLocked} />
+                                <TextField label="Estimated minutes" type="number" value={form.estimatedMinutes ?? ""} onChange={(event) => updateField("estimatedMinutes", event.target.value === "" ? null : Number(event.target.value))} disabled={isEditingLocked} />
+                                <FormControlLabel control={<Switch checked={form.enrollmentEnabled} onChange={(event) => updateField("enrollmentEnabled", event.target.checked)} disabled={isEditingLocked} />} label="Enrollment enabled" />
                             </Stack>
                         </FormSectionCard>
 
@@ -544,6 +551,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                         <Button
                                             variant="contained"
                                             startIcon={<AddRoundedIcon />}
+                                            disabled={isEditingLocked}
                                             onClick={() => setModuleDialog({ mode: "create", draft: { title: "", orderIndex: course.modules.length } })}
                                         >
                                             Add module
@@ -573,17 +581,17 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
                                                                 <Stack direction="row" spacing={0.5}>
                                                                     <Tooltip title="Move module up">
-                                                                        <span><IconButton disabled={moduleIndex === 0 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
+                                                                        <span><IconButton disabled={isEditingLocked || moduleIndex === 0 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
                                                                     </Tooltip>
                                                                     <Tooltip title="Move module down">
-                                                                        <span><IconButton disabled={moduleIndex === course.modules.length - 1 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
+                                                                        <span><IconButton disabled={isEditingLocked || moduleIndex === course.modules.length - 1 || action === "reorder-modules"} onClick={() => void reorderModules(module.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
                                                                     </Tooltip>
                                                                 </Stack>
                                                                 <Stack direction="row" spacing={1}>
-                                                                    <Button variant="outlined" size="small" startIcon={<EditRoundedIcon />} onClick={() => setModuleDialog({ mode: "edit", moduleId: module.id, draft: { title: module.title, orderIndex: module.orderIndex } })}>
+                                                                    <Button variant="outlined" size="small" startIcon={<EditRoundedIcon />} disabled={isEditingLocked} onClick={() => setModuleDialog({ mode: "edit", moduleId: module.id, draft: { title: module.title, orderIndex: module.orderIndex } })}>
                                                                         Edit module
                                                                     </Button>
-                                                                    <Button variant="outlined" size="small" color="error" startIcon={<DeleteRoundedIcon />} onClick={() => void deleteModule(module.id)}>
+                                                                    <Button variant="outlined" size="small" color="error" startIcon={<DeleteRoundedIcon />} disabled={isEditingLocked} onClick={() => void deleteModule(module.id)}>
                                                                         Delete
                                                                     </Button>
                                                                 </Stack>
@@ -605,19 +613,19 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                                                                 </Box>
                                                                                 <Stack direction="row" spacing={0.5}>
                                                                                     <Tooltip title="Move item up">
-                                                                                        <span><IconButton disabled={itemIndex === 0 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
+                                                                                        <span><IconButton disabled={isEditingLocked || itemIndex === 0 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, -1)}><ArrowUpwardRoundedIcon /></IconButton></span>
                                                                                     </Tooltip>
                                                                                     <Tooltip title="Move item down">
-                                                                                        <span><IconButton disabled={itemIndex === items.length - 1 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
+                                                                                        <span><IconButton disabled={isEditingLocked || itemIndex === items.length - 1 || action === `reorder-items-${module.id}`} onClick={() => void reorderItems(module, item.id, 1)}><ArrowDownwardRoundedIcon /></IconButton></span>
                                                                                     </Tooltip>
                                                                                     <Tooltip title="Quick edit metadata">
-                                                                                        <span><IconButton disabled={action === `load-item-${item.id}`} onClick={() => void openEditItemDialog(module.id, item)}><EditRoundedIcon /></IconButton></span>
+                                                                                        <span><IconButton disabled={isEditingLocked || action === `load-item-${item.id}`} onClick={() => void openEditItemDialog(module.id, item)}><EditRoundedIcon /></IconButton></span>
                                                                                     </Tooltip>
                                                                                     <Tooltip title="Open full item editor">
                                                                                         <IconButton component={RouterLink} to={`/teacher/courses/${course.id}/edit/items/${item.id}`}><OpenInNewRoundedIcon /></IconButton>
                                                                                     </Tooltip>
                                                                                     <Tooltip title="Delete item">
-                                                                                        <IconButton color="error" onClick={() => void deleteItem(item.id)}><DeleteRoundedIcon /></IconButton>
+                                                                                        <IconButton color="error" disabled={isEditingLocked} onClick={() => void deleteItem(item.id)}><DeleteRoundedIcon /></IconButton>
                                                                                     </Tooltip>
                                                                                 </Stack>
                                                                             </Stack>
@@ -626,7 +634,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                                                 </Stack>
                                                             )}
 
-                                                            <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => openCreateItemDialog(module)}>
+                                                            <Button variant="outlined" startIcon={<AddRoundedIcon />} disabled={isEditingLocked} onClick={() => openCreateItemDialog(module)}>
                                                                 Add item
                                                             </Button>
                                                         </Stack>
@@ -654,6 +662,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                     <Typography sx={{ color: "text.secondary" }}>Created {new Date(course.createdAt).toLocaleDateString()}</Typography>
                                     <Typography sx={{ color: "text.secondary" }}>Updated {new Date(course.updatedAt).toLocaleDateString()}</Typography>
                                     {course.publishedAt ? <Typography sx={{ color: "text.secondary" }}>Published {new Date(course.publishedAt).toLocaleDateString()}</Typography> : null}
+                                    {course.submittedForReviewAt ? <Typography sx={{ color: "text.secondary" }}>Submitted for review {new Date(course.submittedForReviewAt).toLocaleDateString()}</Typography> : null}
+                                    {course.reviewedAt ? <Typography sx={{ color: "text.secondary" }}>Reviewed {new Date(course.reviewedAt).toLocaleDateString()}</Typography> : null}
+                                    {course.reviewComment ? <Alert severity={course.status === "CHANGES_REQUESTED" ? "warning" : "info"}>Admin review: {course.reviewComment}</Alert> : null}
                                 </Stack>
                             </Paper>
                         </Stack>
@@ -662,13 +673,13 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
 
                 <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, position: { md: "sticky" }, bottom: { md: 16 }, zIndex: 2, bgcolor: "background.paper" }}>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                        <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={submitForm} disabled={isSaving || action !== null}>
+                        <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={submitForm} disabled={isSaving || action !== null || isEditingLocked}>
                             {isCreate ? "Create course" : "Save metadata"}
                         </Button>
                         {!isCreate && course ? (
                             <>
-                                <Button variant="outlined" startIcon={<PublishRoundedIcon />} onClick={() => void runCourseAction("publish")} disabled={isSaving || action !== null || course.status === "PUBLISHED"}>
-                                    Publish Course
+                                <Button variant="outlined" startIcon={<RateReviewRoundedIcon />} onClick={() => void runCourseAction("submit")} disabled={isSaving || action !== null || course.status === "PENDING_REVIEW" || course.status === "PUBLISHED" || course.status === "ARCHIVED"}>
+                                    Submit for review
                                 </Button>
                                 <Button variant="outlined" component={RouterLink} to={`/courses/${course.id}`} startIcon={<VisibilityRoundedIcon />}>
                                     Preview as student
@@ -694,7 +705,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setModuleDialog(null)}>Cancel</Button>
-                    <Button variant="contained" onClick={() => void saveModule()} disabled={action === "module"}>Save module</Button>
+                    <Button variant="contained" onClick={() => void saveModule()} disabled={action === "module" || isEditingLocked}>Save module</Button>
                 </DialogActions>
             </Dialog>
 
@@ -733,7 +744,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setItemDialog(null)}>Cancel</Button>
-                    <Button variant="contained" onClick={() => void saveItem()} disabled={action === "item"}>Save item</Button>
+                    <Button variant="contained" onClick={() => void saveItem()} disabled={action === "item" || isEditingLocked}>Save item</Button>
                 </DialogActions>
             </Dialog>
         </PageContainer>

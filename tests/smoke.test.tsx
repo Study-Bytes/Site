@@ -93,10 +93,10 @@ describe("StudyBytes role-based behavior", () => {
         expect((await screen.findAllByText(/Java Core/i, {}, findOptions)).length).toBeGreaterThan(0);
     });
 
-    it("renders admin teacher requests page", async () => {
+    it("renders admin moderation queue", async () => {
         await loginAs("ADMIN");
-        renderRoute("/admin/teacher-requests");
-        expect((await screen.findAllByText(/Teacher requests|Заявки преподавателей/i, {}, findOptions)).length).toBeGreaterThan(0);
+        renderRoute("/admin/courses/moderation");
+        expect(await screen.findByText(/Course moderation/i, {}, findOptions)).toBeInTheDocument();
     });
 
     it("redirects authenticated users away from login", async () => {
@@ -107,10 +107,11 @@ describe("StudyBytes role-based behavior", () => {
 });
 
 describe("StudyBytes final QA states", () => {
-    it("renders teacher request page for student", async () => {
-        await loginAs("STUDENT");
-        renderRoute("/teacher-request");
-        expect(await screen.findByText(/Teacher access request|Заявка на роль преподавателя/i, {}, findOptions)).toBeInTheDocument();
+    it("renders registration role selection without admin self-registration", async () => {
+        renderRoute("/register");
+        expect((await screen.findAllByText(/Student/i, {}, findOptions)).length).toBeGreaterThan(0);
+        expect((await screen.findAllByText(/Teacher/i, {}, findOptions)).length).toBeGreaterThan(0);
+        expect(screen.queryByText(/^Admin$/i)).not.toBeInTheDocument();
     });
 
     it("renders localized error status page with requestId", async () => {

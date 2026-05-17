@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import AutoStoriesRoundedIcon from "@mui/icons-material/AutoStoriesRounded";
 import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
-import PublishRoundedIcon from "@mui/icons-material/PublishRounded";
+import RateReviewRoundedIcon from "@mui/icons-material/RateReviewRounded";
 import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import { Link as RouterLink } from "react-router-dom";
 import { teacherApi } from "../../api/services";
@@ -17,6 +17,8 @@ import { useAuth } from "../../auth/useAuth";
 
 const statusLabels: Record<CourseStatus, string> = {
     DRAFT: "Drafts",
+    PENDING_REVIEW: "Pending review",
+    CHANGES_REQUESTED: "Changes requested",
     PUBLISHED: "Published",
     ARCHIVED: "Archived",
 };
@@ -76,7 +78,7 @@ export default function TeacherDashboardPage() {
                 acc[course.status] += 1;
                 return acc;
             },
-            { DRAFT: 0, PUBLISHED: 0, ARCHIVED: 0 }
+            { DRAFT: 0, PENDING_REVIEW: 0, CHANGES_REQUESTED: 0, PUBLISHED: 0, ARCHIVED: 0 }
         );
         return { total: courses.length, ...byStatus };
     }, [courses]);
@@ -100,7 +102,7 @@ export default function TeacherDashboardPage() {
                         <Box sx={{ flexGrow: 1 }}>
                             <Typography variant="h2">Teacher Cabinet</Typography>
                             <Typography sx={{ opacity: 0.86, mt: 1, maxWidth: 720 }}>
-                                Create course drafts, manage metadata, publish learning content, and prepare courses for StudyBytes students.
+                                Create course drafts, manage metadata, submit ready content for review, and prepare courses for StudyBytes students.
                             </Typography>
                             <Typography sx={{ opacity: 0.75, mt: 1 }}>
                                 Signed in as {user?.fullName ?? user?.email ?? "teacher"}
@@ -125,8 +127,8 @@ export default function TeacherDashboardPage() {
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }, gap: 2 }}>
                             <StatCard title="Total courses" value={stats.total} description="Courses visible to your teacher role." icon={<AutoStoriesRoundedIcon />} />
                             <StatCard title={statusLabels.DRAFT} value={stats.DRAFT} description="Work in progress before publication." icon={<EditNoteRoundedIcon />} />
-                            <StatCard title={statusLabels.PUBLISHED} value={stats.PUBLISHED} description="Available in the public catalog." icon={<PublishRoundedIcon />} />
-                            <StatCard title={statusLabels.ARCHIVED} value={stats.ARCHIVED} description="Hidden from active course flows." icon={<SchoolRoundedIcon />} />
+                            <StatCard title={statusLabels.PENDING_REVIEW} value={stats.PENDING_REVIEW} description="Waiting for admin moderation." icon={<RateReviewRoundedIcon />} />
+                            <StatCard title={statusLabels.PUBLISHED} value={stats.PUBLISHED} description="Available in the public catalog." icon={<SchoolRoundedIcon />} />
                         </Box>
 
                         <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
@@ -134,7 +136,7 @@ export default function TeacherDashboardPage() {
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
                                     <Box sx={{ flexGrow: 1 }}>
                                         <Typography variant="h5">Recent courses</Typography>
-                                        <Typography sx={{ color: "text.secondary", mt: 0.5 }}>Continue editing or publish the latest drafts.</Typography>
+                                        <Typography sx={{ color: "text.secondary", mt: 0.5 }}>Continue editing or submit the latest drafts for review.</Typography>
                                     </Box>
                                     <Button component={RouterLink} to="/teacher/courses" variant="outlined">
                                         View all
