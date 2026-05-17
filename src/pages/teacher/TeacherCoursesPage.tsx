@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Box, Button, Chip, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import ArchiveRoundedIcon from "@mui/icons-material/ArchiveRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import PublishRoundedIcon from "@mui/icons-material/PublishRounded";
+import RateReviewRoundedIcon from "@mui/icons-material/RateReviewRounded";
 import { Link as RouterLink } from "react-router-dom";
 import { ApiError, getErrorMessage } from "../../api/apiError";
 import { teacherApi } from "../../api/services";
@@ -16,7 +16,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration } from "../../utils/courseFormat";
 
-const statusOptions: Array<"" | CourseStatus> = ["", "DRAFT", "PUBLISHED", "ARCHIVED"];
+const statusOptions: Array<"" | CourseStatus> = ["", "DRAFT", "PENDING_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED"];
 const difficultyOptions: Array<"" | CourseDifficulty> = ["", "BEGINNER", "INTERMEDIATE", "ADVANCED"];
 const accessTypeOptions: Array<"" | CourseAccessType> = ["", "PUBLIC", "UNLISTED", "PRIVATE"];
 
@@ -88,14 +88,14 @@ export default function TeacherCoursesPage() {
         setCourses((current) => current.map((course) => (course.id === updated.id ? toSummary({ ...course, ...updated }) : course)));
     };
 
-    const runCourseAction = async (courseId: number, action: "publish" | "archive") => {
+    const runCourseAction = async (courseId: number, action: "submit" | "archive") => {
         setActionCourseId(courseId);
         setActionError(null);
         try {
-            const updated = action === "publish" ? await teacherApi.publishCourse(courseId) : await teacherApi.archiveCourse(courseId);
+            const updated = action === "submit" ? await teacherApi.submitCourseForReview(courseId) : await teacherApi.archiveCourse(courseId);
             updateCourseInList({ ...updated, updatedAt: updated.updatedAt });
         } catch (requestError) {
-            const message = getErrorMessage(requestError, action === "publish" ? "Failed to publish course" : "Failed to archive course");
+            const message = getErrorMessage(requestError, action === "submit" ? "Failed to submit course for review" : "Failed to archive course");
             setActionError(message);
             if (requestError instanceof ApiError && requestError.validationErrors.length > 0) {
                 setActionError(`${message}: ${requestError.validationErrors.map((item) => item.message).join("; ")}`);
@@ -128,7 +128,7 @@ export default function TeacherCoursesPage() {
                         <Box sx={{ flexGrow: 1 }}>
                             <Typography variant="h2">Teacher courses</Typography>
                             <Typography sx={{ color: "text.secondary", mt: 1, maxWidth: 760 }}>
-                                Manage course drafts, publish ready content, archive outdated courses, and keep metadata aligned with the BFF contract.
+                                Manage course drafts, submit ready content for moderation, archive outdated courses, and keep metadata aligned with the BFF contract.
                             </Typography>
                         </Box>
                         <Button component={RouterLink} to="/teacher/courses/new" variant="contained" size="large">
@@ -221,6 +221,11 @@ export default function TeacherCoursesPage() {
                                             <Typography variant="body2" sx={{ color: "text.secondary", mt: 1 }}>
                                                 Updated {new Date(course.updatedAt).toLocaleDateString()}
                                             </Typography>
+                                            {course.reviewComment ? (
+                                                <Alert severity={course.status === "CHANGES_REQUESTED" ? "warning" : "info"} sx={{ mt: 1.5 }}>
+                                                    Admin review: {course.reviewComment}
+                                                </Alert>
+                                            ) : null}
                                         </Box>
                                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ flexShrink: 0 }}>
                                             <Button component={RouterLink} to={`/teacher/courses/${course.id}/edit`} variant="outlined" startIcon={<EditRoundedIcon />}>
@@ -228,11 +233,11 @@ export default function TeacherCoursesPage() {
                                             </Button>
                                             <Button
                                                 variant="contained"
-                                                startIcon={<PublishRoundedIcon />}
-                                                disabled={isActionLoading || course.status === "PUBLISHED"}
-                                                onClick={() => void runCourseAction(course.id, "publish")}
+                                                startIcon={<RateReviewRoundedIcon />}
+                                                disabled={isActionLoading || course.status === "PUBLISHED" || course.status === "ARCHIVED" || course.status === "PENDING_REVIEW"}
+                                                onClick={() => void runCourseAction(course.id, "submit")}
                                             >
-                                                Publish
+                                                Submit for review
                                             </Button>
                                             <Button
                                                 variant="outlined"

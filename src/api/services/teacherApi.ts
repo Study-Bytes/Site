@@ -39,9 +39,9 @@ export const teacherApi = {
         return request<TeacherCourseDetails>(`/teacher/courses/${courseId}`, { method: "PUT", body: input });
     },
 
-    publishCourse(courseId: number): Promise<TeacherCourseDetails> {
-        if (env.useMockBff) return mockBff.publishTeacherCourse(courseId);
-        return request<TeacherCourseDetails>(`/teacher/courses/${courseId}/publish`, { method: "POST" });
+    submitCourseForReview(courseId: number): Promise<TeacherCourseDetails> {
+        if (env.useMockBff) return mockBff.submitTeacherCourseForReview(courseId);
+        return request<TeacherCourseDetails>(`/teacher/courses/${courseId}/submit-review`, { method: "POST" });
     },
 
     archiveCourse(courseId: number): Promise<TeacherCourseDetails> {
