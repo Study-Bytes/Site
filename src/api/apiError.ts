@@ -17,7 +17,14 @@ export class ApiError extends Error {
 }
 
 export function getErrorMessage(error: unknown, fallback = "Request failed") {
-    if (error instanceof ApiError) return error.message;
+    if (error instanceof ApiError) {
+        const prefix = [
+            error.status > 0 ? `HTTP ${error.status}` : null,
+            error.code,
+        ].filter(Boolean).join(" ");
+        const requestId = error.requestId ? ` requestId: ${error.requestId}` : "";
+        return `${prefix ? `${prefix}: ` : ""}${error.message}${requestId}`;
+    }
     if (error instanceof Error) return error.message;
     return fallback;
 }

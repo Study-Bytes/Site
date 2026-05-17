@@ -4,13 +4,49 @@ import { request } from "../apiClient";
 import type {
     EnrollCourseResponse,
     EnrollmentSummary,
+    ContentBlockDto,
+    CourseItemSummary,
+    CourseModuleSummary,
+    HintDto,
     LearningCourse,
     LearningItem,
+    QuizOptionDto,
     RunItemRequest,
     SubmissionHistoryItem,
     SubmissionResult,
     SubmitItemRequest,
+    TestResultDto,
 } from "../bffContracts";
+import { readArray, unwrapListResponse } from "../responseParsing";
+
+function normalizeLearningCourse(course: LearningCourse): LearningCourse {
+    return {
+        ...course,
+        modules: readArray<CourseModuleSummary>(course.modules).map((module) => ({
+            ...module,
+            items: readArray<CourseItemSummary>(module.items),
+        })),
+    };
+}
+
+function normalizeLearningItem(item: LearningItem): LearningItem {
+    return {
+        ...item,
+        item: {
+            ...item.item,
+            contentBlocks: readArray<ContentBlockDto>(item.item.contentBlocks),
+            hints: readArray<HintDto>(item.item.hints),
+            options: readArray<QuizOptionDto>(item.item.options),
+        },
+    };
+}
+
+function normalizeSubmissionResult(result: SubmissionResult): SubmissionResult {
+    return {
+        ...result,
+        testResults: readArray<TestResultDto>(result.testResults),
+    };
+}
 
 export const learningApi = {
     enrollCourse(courseId: number): Promise<EnrollCourseResponse> {
@@ -18,38 +54,40 @@ export const learningApi = {
         return request<EnrollCourseResponse>(`/learn/courses/${courseId}/enroll`, { method: "POST" });
     },
 
-    getMyCourses(): Promise<EnrollmentSummary[]> {
+    async getMyCourses(): Promise<EnrollmentSummary[]> {
         if (env.useMockBff) return mockBff.getMyLearning();
-        return request<EnrollmentSummary[]>("/learn/my-courses");
+        const response = await request<unknown>("/learn/my-courses");
+        return unwrapListResponse<EnrollmentSummary>(response, "Мои курсы", ["items", "courses", "enrollments", "content", "data"]);
     },
 
-    getLearningCourse(courseId: number): Promise<LearningCourse> {
+    async getLearningCourse(courseId: number): Promise<LearningCourse> {
         if (env.useMockBff) return mockBff.getLearningCourse(courseId);
-        return request<LearningCourse>(`/learn/courses/${courseId}`);
+        return normalizeLearningCourse(await request<LearningCourse>(`/learn/courses/${courseId}`));
     },
 
-    getLearningItem(courseId: number, itemId: number): Promise<LearningItem> {
+    async getLearningItem(courseId: number, itemId: number): Promise<LearningItem> {
         if (env.useMockBff) return mockBff.getLearningItem(courseId, itemId);
-        return request<LearningItem>(`/learn/courses/${courseId}/items/${itemId}`);
+        return normalizeLearningItem(await request<LearningItem>(`/learn/courses/${courseId}/items/${itemId}`));
     },
 
-    runItem(courseId: number, itemId: number, input: RunItemRequest): Promise<SubmissionResult> {
+    async runItem(courseId: number, itemId: number, input: RunItemRequest): Promise<SubmissionResult> {
         if (env.useMockBff) return mockBff.runItem(courseId, itemId, input);
-        return request<SubmissionResult>(`/learn/courses/${courseId}/items/${itemId}/run`, { method: "POST", body: input });
+        return normalizeSubmissionResult(await request<SubmissionResult>(`/learn/courses/${courseId}/items/${itemId}/run`, { method: "POST", body: input }));
     },
 
-    submitItem(courseId: number, itemId: number, input: SubmitItemRequest): Promise<SubmissionResult> {
+    async submitItem(courseId: number, itemId: number, input: SubmitItemRequest): Promise<SubmissionResult> {
         if (env.useMockBff) return mockBff.submitItem(courseId, itemId, input);
-        return request<SubmissionResult>(`/learn/courses/${courseId}/items/${itemId}/submit`, { method: "POST", body: input });
+        return normalizeSubmissionResult(await request<SubmissionResult>(`/learn/courses/${courseId}/items/${itemId}/submit`, { method: "POST", body: input }));
     },
 
-    getItemSubmissions(courseId: number, itemId: number): Promise<SubmissionHistoryItem[]> {
+    async getItemSubmissions(courseId: number, itemId: number): Promise<SubmissionHistoryItem[]> {
         if (env.useMockBff) return mockBff.getItemSubmissions(courseId, itemId);
-        return request<SubmissionHistoryItem[]>(`/learn/courses/${courseId}/items/${itemId}/submissions`);
+        const response = await request<unknown>(`/learn/courses/${courseId}/items/${itemId}/submissions`);
+        return unwrapListResponse<SubmissionHistoryItem>(response, "История отправок", ["items", "submissions", "content", "data"]);
     },
 
-    getSubmission(submissionId: number): Promise<SubmissionResult> {
+    async getSubmission(submissionId: number): Promise<SubmissionResult> {
         if (env.useMockBff) return mockBff.getSubmission(submissionId);
-        return request<SubmissionResult>(`/learn/submissions/${submissionId}`);
+        return normalizeSubmissionResult(await request<SubmissionResult>(`/learn/submissions/${submissionId}`));
     },
 };

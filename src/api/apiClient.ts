@@ -80,11 +80,12 @@ async function parseError(response: Response): Promise<ApiError> {
     let message = `Request failed with status ${response.status}`;
     let validationErrors: ApiValidationError[] = [];
     let code: string | undefined;
-    let requestId: string | undefined;
+    let requestId: string | undefined = response.headers.get("x-request-id") ?? response.headers.get("x-correlation-id") ?? undefined;
 
     try {
         const payload = (await response.json()) as Partial<ApiErrorResponse>;
         if (typeof payload?.message === "string") message = payload.message;
+        else if (typeof payload?.error === "string") message = payload.error;
         if (typeof payload?.code === "string") code = payload.code;
         if (typeof payload?.requestId === "string") requestId = payload.requestId;
         if (Array.isArray(payload?.validationErrors)) validationErrors = payload.validationErrors;

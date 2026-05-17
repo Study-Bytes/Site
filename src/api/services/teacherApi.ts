@@ -2,11 +2,15 @@ import { env } from "../../config/env";
 import { mockBff } from "../../mocks/mockBff";
 import { request } from "../apiClient";
 import type {
+    ContentBlockDto,
     ContentBlockUpsertRequest,
     CourseItemUpsertRequest,
+    CourseItemSummary,
     CourseModuleSummary,
     CourseUpsertRequest,
+    HintDto,
     HintUpsertRequest,
+    QuizOptionDto,
     QuizOptionUpsertRequest,
     ReorderItemsRequest,
     ReorderModulesRequest,
@@ -14,39 +18,62 @@ import type {
     TeacherCourseQuery,
     TeacherCourseSummary,
     TeacherItemDetails,
+    TestCaseDto,
     TestCaseUpsertRequest,
     ModuleUpsertRequest,
 } from "../bffContracts";
+import { readArray, unwrapListResponse } from "../responseParsing";
+
+function normalizeTeacherCourseDetails(course: TeacherCourseDetails): TeacherCourseDetails {
+    return {
+        ...course,
+        modules: readArray<CourseModuleSummary>(course.modules).map((module) => ({
+            ...module,
+            items: readArray<CourseItemSummary>(module.items),
+        })),
+    };
+}
+
+function normalizeTeacherItemDetails(item: TeacherItemDetails): TeacherItemDetails {
+    return {
+        ...item,
+        contentBlocks: readArray<ContentBlockDto>(item.contentBlocks),
+        hints: readArray<HintDto>(item.hints),
+        testCases: readArray<TestCaseDto>(item.testCases),
+        options: readArray<QuizOptionDto>(item.options),
+    };
+}
 
 export const teacherApi = {
-    listCourses(query?: TeacherCourseQuery): Promise<TeacherCourseSummary[]> {
+    async listCourses(query?: TeacherCourseQuery): Promise<TeacherCourseSummary[]> {
         if (env.useMockBff) return mockBff.getTeacherCourses(query);
-        return request<TeacherCourseSummary[]>("/teacher/courses", { query });
+        const response = await request<unknown>("/teacher/courses", { query });
+        return unwrapListResponse<TeacherCourseSummary>(response, "Курсы преподавателя", ["items", "courses", "content", "data"]);
     },
 
-    createCourse(input: CourseUpsertRequest): Promise<TeacherCourseDetails> {
+    async createCourse(input: CourseUpsertRequest): Promise<TeacherCourseDetails> {
         if (env.useMockBff) return mockBff.createTeacherCourse(input);
-        return request<TeacherCourseDetails>("/teacher/courses", { method: "POST", body: input });
+        return normalizeTeacherCourseDetails(await request<TeacherCourseDetails>("/teacher/courses", { method: "POST", body: input }));
     },
 
-    getCourse(courseId: number): Promise<TeacherCourseDetails> {
+    async getCourse(courseId: number): Promise<TeacherCourseDetails> {
         if (env.useMockBff) return mockBff.getTeacherCourse(courseId);
-        return request<TeacherCourseDetails>(`/teacher/courses/${courseId}`);
+        return normalizeTeacherCourseDetails(await request<TeacherCourseDetails>(`/teacher/courses/${courseId}`));
     },
 
-    updateCourse(courseId: number, input: CourseUpsertRequest): Promise<TeacherCourseDetails> {
+    async updateCourse(courseId: number, input: CourseUpsertRequest): Promise<TeacherCourseDetails> {
         if (env.useMockBff) return mockBff.updateTeacherCourse(courseId, input);
-        return request<TeacherCourseDetails>(`/teacher/courses/${courseId}`, { method: "PUT", body: input });
+        return normalizeTeacherCourseDetails(await request<TeacherCourseDetails>(`/teacher/courses/${courseId}`, { method: "PUT", body: input }));
     },
 
-    submitCourseForReview(courseId: number): Promise<TeacherCourseDetails> {
+    async submitCourseForReview(courseId: number): Promise<TeacherCourseDetails> {
         if (env.useMockBff) return mockBff.submitTeacherCourseForReview(courseId);
-        return request<TeacherCourseDetails>(`/teacher/courses/${courseId}/submit-review`, { method: "POST" });
+        return normalizeTeacherCourseDetails(await request<TeacherCourseDetails>(`/teacher/courses/${courseId}/submit-review`, { method: "POST" }));
     },
 
-    archiveCourse(courseId: number): Promise<TeacherCourseDetails> {
+    async archiveCourse(courseId: number): Promise<TeacherCourseDetails> {
         if (env.useMockBff) return mockBff.archiveTeacherCourse(courseId);
-        return request<TeacherCourseDetails>(`/teacher/courses/${courseId}/archive`, { method: "POST" });
+        return normalizeTeacherCourseDetails(await request<TeacherCourseDetails>(`/teacher/courses/${courseId}/archive`, { method: "POST" }));
     },
 
     createModule(courseId: number, input: ModuleUpsertRequest): Promise<CourseModuleSummary> {
@@ -69,19 +96,19 @@ export const teacherApi = {
         return request<CourseModuleSummary[]>(`/teacher/courses/${courseId}/modules/reorder`, { method: "PUT", body: input });
     },
 
-    createItem(moduleId: number, input: CourseItemUpsertRequest): Promise<TeacherItemDetails> {
+    async createItem(moduleId: number, input: CourseItemUpsertRequest): Promise<TeacherItemDetails> {
         if (env.useMockBff) return mockBff.createItem(moduleId, input);
-        return request<TeacherItemDetails>(`/teacher/modules/${moduleId}/items`, { method: "POST", body: input });
+        return normalizeTeacherItemDetails(await request<TeacherItemDetails>(`/teacher/modules/${moduleId}/items`, { method: "POST", body: input }));
     },
 
-    getItem(itemId: number): Promise<TeacherItemDetails> {
+    async getItem(itemId: number): Promise<TeacherItemDetails> {
         if (env.useMockBff) return mockBff.getItem(itemId);
-        return request<TeacherItemDetails>(`/teacher/items/${itemId}`);
+        return normalizeTeacherItemDetails(await request<TeacherItemDetails>(`/teacher/items/${itemId}`));
     },
 
-    updateItem(itemId: number, input: CourseItemUpsertRequest): Promise<TeacherItemDetails> {
+    async updateItem(itemId: number, input: CourseItemUpsertRequest): Promise<TeacherItemDetails> {
         if (env.useMockBff) return mockBff.updateItem(itemId, input);
-        return request<TeacherItemDetails>(`/teacher/items/${itemId}`, { method: "PUT", body: input });
+        return normalizeTeacherItemDetails(await request<TeacherItemDetails>(`/teacher/items/${itemId}`, { method: "PUT", body: input }));
     },
 
     deleteItem(itemId: number): Promise<void> {
@@ -94,23 +121,23 @@ export const teacherApi = {
         return request<CourseModuleSummary>(`/teacher/modules/${moduleId}/items/reorder`, { method: "PUT", body: input });
     },
 
-    replaceContentBlocks(itemId: number, blocks: ContentBlockUpsertRequest[]): Promise<TeacherItemDetails> {
+    async replaceContentBlocks(itemId: number, blocks: ContentBlockUpsertRequest[]): Promise<TeacherItemDetails> {
         if (env.useMockBff) return mockBff.replaceContentBlocks(itemId, blocks);
-        return request<TeacherItemDetails>(`/teacher/items/${itemId}/content-blocks`, { method: "PUT", body: blocks });
+        return normalizeTeacherItemDetails(await request<TeacherItemDetails>(`/teacher/items/${itemId}/content-blocks`, { method: "PUT", body: blocks }));
     },
 
-    replaceHints(itemId: number, hints: HintUpsertRequest[]): Promise<TeacherItemDetails> {
+    async replaceHints(itemId: number, hints: HintUpsertRequest[]): Promise<TeacherItemDetails> {
         if (env.useMockBff) return mockBff.replaceHints(itemId, hints);
-        return request<TeacherItemDetails>(`/teacher/items/${itemId}/hints`, { method: "PUT", body: hints });
+        return normalizeTeacherItemDetails(await request<TeacherItemDetails>(`/teacher/items/${itemId}/hints`, { method: "PUT", body: hints }));
     },
 
-    replaceTestCases(itemId: number, testCases: TestCaseUpsertRequest[]): Promise<TeacherItemDetails> {
+    async replaceTestCases(itemId: number, testCases: TestCaseUpsertRequest[]): Promise<TeacherItemDetails> {
         if (env.useMockBff) return mockBff.replaceTestCases(itemId, testCases);
-        return request<TeacherItemDetails>(`/teacher/items/${itemId}/test-cases`, { method: "PUT", body: testCases });
+        return normalizeTeacherItemDetails(await request<TeacherItemDetails>(`/teacher/items/${itemId}/test-cases`, { method: "PUT", body: testCases }));
     },
 
-    replaceOptions(itemId: number, options: QuizOptionUpsertRequest[]): Promise<TeacherItemDetails> {
+    async replaceOptions(itemId: number, options: QuizOptionUpsertRequest[]): Promise<TeacherItemDetails> {
         if (env.useMockBff) return mockBff.replaceOptions(itemId, options);
-        return request<TeacherItemDetails>(`/teacher/items/${itemId}/options`, { method: "PUT", body: options });
+        return normalizeTeacherItemDetails(await request<TeacherItemDetails>(`/teacher/items/${itemId}/options`, { method: "PUT", body: options }));
     },
 };
