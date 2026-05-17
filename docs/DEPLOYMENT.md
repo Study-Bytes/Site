@@ -9,7 +9,7 @@ The Site is a Vite SPA built into static assets and served from a Docker contain
 Production traffic should be handled by Nginx or another reverse proxy in front of the container.
 
 ```text
-Browser -> Nginx -> Site container :3000
+Browser -> host Nginx -> 127.0.0.1:3000 -> Site container :3000
 Browser -> Nginx /api/v1/** -> BFF
 ```
 
@@ -83,6 +83,8 @@ VITE_BFF_BASE_URL=
 VITE_BFF_API_PREFIX=/api/v1
 VITE_USE_MOCK_BFF=false
 STUDYBYTES_BACKEND_NETWORK=studybytes-backend
+SITE_HOST_BIND=127.0.0.1
+SITE_HOST_PORT=3000
 EOF_ENV
 ```
 
@@ -93,6 +95,8 @@ VITE_BFF_BASE_URL=https://api.studybytes.example.com
 VITE_BFF_API_PREFIX=/api/v1
 VITE_USE_MOCK_BFF=false
 STUDYBYTES_BACKEND_NETWORK=studybytes-backend
+SITE_HOST_BIND=127.0.0.1
+SITE_HOST_PORT=3000
 ```
 
 Start Site manually for the first time if needed:
@@ -118,9 +122,15 @@ The Site container is attached to the external backend network configured throug
 STUDYBYTES_BACKEND_NETWORK
 ```
 
-The Site container exposes port `3000` only inside Docker networks. It does not publish the port to the host by default.
+The Site container publishes port `3000` to the host loopback interface by default:
 
-If you use host-level Nginx instead of containerized Nginx, either run Nginx with Docker network access or intentionally add a host port mapping in a local override file.
+```text
+127.0.0.1:3000 -> studybytes-site:3000
+```
+
+This matches the current VPS model where Nginx runs on the host and proxies to a local port. The port is not exposed publicly because it binds to `127.0.0.1`.
+
+If Nginx is later moved into Docker, it can proxy to `studybytes-site:3000` through the Docker network instead.
 
 ## Production environment rules
 
@@ -145,15 +155,15 @@ Nginx should:
 - return `index.html` for unknown frontend routes;
 - preserve WebSocket/upgrade headers if BFF later needs them.
 
-Example container-network upstreams:
+Example host-level Nginx upstreams:
 
 ```nginx
 upstream studybytes_site {
-    server studybytes-site:3000;
+    server 127.0.0.1:3000;
 }
 
 upstream studybytes_bff {
-    server studybytes-bff:8080;
+    server 127.0.0.1:8080;
 }
 
 server {

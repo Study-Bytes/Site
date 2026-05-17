@@ -8,6 +8,8 @@ services:
         VITE_USE_MOCK_BFF: ${VITE_USE_MOCK_BFF:-false}
     container_name: studybytes-site
     restart: unless-stopped
+    ports:
+      - "${SITE_HOST_BIND:-127.0.0.1}:${SITE_HOST_PORT:-3000}:3000"
     expose:
       - "3000"
     environment:
