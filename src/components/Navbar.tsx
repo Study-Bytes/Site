@@ -89,6 +89,9 @@ function navLabel(label: string, t: ReturnType<typeof useI18n>["t"]) {
 }
 
 function Brand({ compact = false }: { compact?: boolean }) {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
+
     return (
         <Stack component={RouterLink} to="/" direction="row" spacing={1.4} alignItems="center" sx={{ textDecoration: "none" }}>
             <Box
@@ -109,7 +112,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
                 <Typography sx={{ fontWeight: 950, fontSize: compact ? 18 : 22, color: "primary.main", lineHeight: 1 }}>StudyBytes</Typography>
                 {!compact ? (
                     <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase" }}>
-                        EdTech Platform
+                        {isRu ? "Учебная платформа" : "EdTech Platform"}
                     </Typography>
                 ) : null}
             </Box>

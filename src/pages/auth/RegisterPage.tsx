@@ -6,35 +6,46 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import type { UserRole } from "../../api/bffContracts";
 import { useI18n } from "../../i18n/useI18n";
 
-const registerSchema = z.object({
-    fullName: z.string().min(2, "Full name is required").max(80, "Too long"),
-    email: z.string().min(1, "Email is required").refine((value) => z.email().safeParse(value).success, { message: "Invalid email" }),
-    password: z.string().min(8, "Password must contain at least 8 characters"),
-    confirmPassword: z.string().min(8, "Confirm password"),
+const createRegisterSchema = (isRu: boolean) => z.object({
+    fullName: z.string().min(2, isRu ? "Укажите имя" : "Full name is required").max(80, isRu ? "Слишком длинное имя" : "Too long"),
+    email: z.string().min(1, isRu ? "Укажите email" : "Email is required").refine((value) => z.email().safeParse(value).success, { message: isRu ? "Некорректный email" : "Invalid email" }),
+    password: z.string().min(8, isRu ? "Пароль должен содержать минимум 8 символов" : "Password must contain at least 8 characters"),
+    confirmPassword: z.string().min(8, isRu ? "Повторите пароль" : "Confirm password"),
 }).refine((value) => value.password === value.confirmPassword, {
-    message: "Passwords do not match",
+    message: isRu ? "Пароли не совпадают" : "Passwords do not match",
     path: ["confirmPassword"],
 });
 
-type RegisterForm = z.infer<typeof registerSchema>;
+type RegisterForm = z.infer<ReturnType<typeof createRegisterSchema>>;
 type RegistrationRole = Exclude<UserRole, "ADMIN">;
-
-const roleCards: Array<{ role: RegistrationRole; title: string; description: string; icon: "student" | "teacher" }> = [
-    { role: "STUDENT", title: "Student", description: "Learn from courses, solve tasks, track progress.", icon: "student" },
-    { role: "TEACHER", title: "Teacher", description: "Create courses immediately. Public publication requires admin moderation.", icon: "teacher" },
-];
 
 export default function RegisterPage() {
     const auth = useAuth();
     const { locale } = useI18n();
+    const isRu = locale === "ru";
     const navigate = useNavigate();
     const [role, setRole] = useState<RegistrationRole>("STUDENT");
     const [serverError, setServerError] = useState<string | null>(null);
+    const registerSchema = useMemo(() => createRegisterSchema(isRu), [isRu]);
+    const roleCards = useMemo<Array<{ role: RegistrationRole; title: string; description: string; icon: "student" | "teacher" }>>(() => [
+        {
+            role: "STUDENT",
+            title: isRu ? "Студент" : "Student",
+            description: isRu ? "Проходи курсы, решай задания и отслеживай прогресс." : "Learn from courses, solve tasks and track progress.",
+            icon: "student",
+        },
+        {
+            role: "TEACHER",
+            title: isRu ? "Преподаватель" : "Teacher",
+            description: isRu ? "Создавай курсы сразу. Публикация для всех проходит модерацию." : "Create courses immediately. Public publication requires admin moderation.",
+            icon: "teacher",
+        },
+    ], [isRu]);
 
     const {
         register,
@@ -51,7 +62,7 @@ export default function RegisterPage() {
             await auth.register({ fullName: values.fullName, email: values.email, password: values.password, role, preferredLocale: locale });
             navigate(role === "TEACHER" ? "/teacher" : "/my-learning", { replace: true });
         } catch (error) {
-            setServerError(error instanceof Error ? error.message : "Registration failed");
+            setServerError(error instanceof Error ? error.message : isRu ? "Не удалось зарегистрироваться" : "Registration failed");
         }
     };
 
@@ -61,8 +72,10 @@ export default function RegisterPage() {
                 <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 3 }}>
                     <Stack spacing={2.5}>
                         <Box>
-                            <Typography variant="h4">Register</Typography>
-                            <Typography sx={{ color: "text.secondary", mt: 0.5 }}>Create a StudyBytes account and choose how you want to use the platform.</Typography>
+                            <Typography variant="h4">{isRu ? "Регистрация" : "Register"}</Typography>
+                            <Typography sx={{ color: "text.secondary", mt: 0.5 }}>
+                                {isRu ? "Создай аккаунт StudyBytes и выбери, как будешь пользоваться платформой." : "Create a StudyBytes account and choose how you want to use the platform."}
+                            </Typography>
                         </Box>
 
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
@@ -80,19 +93,26 @@ export default function RegisterPage() {
                         </Box>
 
                         <Alert severity="info">
-                            Admin accounts cannot be self-registered. Teachers can create courses immediately, but publication for all users requires admin moderation.
+                            {isRu
+                                ? "Аккаунт администратора нельзя создать самостоятельно. Преподаватели могут сразу создавать курсы, но публикация для всех пользователей проходит модерацию."
+                                : "Admin accounts cannot be self-registered. Teachers can create courses immediately, but publication for all users requires admin moderation."}
                         </Alert>
                         {serverError ? <Alert severity="error">{serverError}</Alert> : null}
                         <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
-                            <TextField label="Full name" autoComplete="name" {...register("fullName")} error={Boolean(errors.fullName)} helperText={errors.fullName?.message} />
+                            <TextField label={isRu ? "Имя" : "Full name"} autoComplete="name" {...register("fullName")} error={Boolean(errors.fullName)} helperText={errors.fullName?.message} />
                             <TextField label="Email" type="email" autoComplete="email" {...register("email")} error={Boolean(errors.email)} helperText={errors.email?.message} />
-                            <TextField label="Password" type="password" autoComplete="new-password" {...register("password")} error={Boolean(errors.password)} helperText={errors.password?.message} />
-                            <TextField label="Confirm password" type="password" autoComplete="new-password" {...register("confirmPassword")} error={Boolean(errors.confirmPassword)} helperText={errors.confirmPassword?.message} />
+                            <TextField label={isRu ? "Пароль" : "Password"} type="password" autoComplete="new-password" {...register("password")} error={Boolean(errors.password)} helperText={errors.password?.message} />
+                            <TextField label={isRu ? "Повторите пароль" : "Confirm password"} type="password" autoComplete="new-password" {...register("confirmPassword")} error={Boolean(errors.confirmPassword)} helperText={errors.confirmPassword?.message} />
                             <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
-                                {role === "TEACHER" ? "Create teacher account" : "Create student account"}
+                                {role === "TEACHER"
+                                    ? isRu ? "Создать аккаунт преподавателя" : "Create teacher account"
+                                    : isRu ? "Создать аккаунт студента" : "Create student account"}
                             </Button>
                             <Typography variant="body2">
-                                Already registered? <Button component={RouterLink} to="/login" sx={{ p: 0, minWidth: 0 }}>Login</Button>
+                                {isRu ? "Уже есть аккаунт?" : "Already registered?"}{" "}
+                                <Button component={RouterLink} to="/login" sx={{ p: 0, minWidth: 0 }}>
+                                    {isRu ? "Войти" : "Login"}
+                                </Button>
                             </Typography>
                         </Stack>
                     </Stack>

@@ -245,7 +245,7 @@ export default function Home() {
                         {coursesError ? <ErrorState message={coursesError} onRetry={loadFeaturedCourses} /> : null}
                         {!isLoadingCourses && !coursesError && featuredCourses.length === 0 ? (
                             <EmptyState
-                                title="No public courses yet"
+                                title={isRu ? "Опубликованных курсов пока нет" : "No public courses yet"}
                                 description={isRu ? "После публикации курсов преподавателями они появятся здесь." : "Once courses are published by teachers, they will appear here."}
                                 action={
                                     <Button component={RouterLink} to="/courses" variant="contained">

@@ -26,6 +26,7 @@ import { ErrorState } from "../../components/ui/ErrorState";
 import { LoadingState } from "../../components/ui/LoadingState";
 import { PageContainer } from "../../layouts/PageContainer";
 import { useSearchParams } from "react-router-dom";
+import { useI18n } from "../../i18n/useI18n";
 
 type DifficultyFilter = CourseDifficulty | "ALL";
 type AccessFilter = CourseAccessType | "ALL";
@@ -74,6 +75,8 @@ function sortCourses(courses: CourseCatalogItem[], sort: SortOption) {
 
 export default function CoursesPage() {
     const [searchParams, setSearchParams] = useSearchParams();
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const urlSearch = searchParams.get("search") ?? "";
     const [courses, setCourses] = useState<CourseCatalogItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -124,11 +127,11 @@ export default function CoursesPage() {
             });
             setCourses(response);
         } catch (requestError) {
-            setError(getErrorMessage(requestError, "Failed to load courses"));
+            setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить курсы" : "Failed to load courses"));
         } finally {
             setIsLoading(false);
         }
-    }, [accessType, difficulty, duration, enrollment, query]);
+    }, [accessType, difficulty, duration, enrollment, isRu, query]);
 
     useEffect(() => {
         void loadCourses();
@@ -146,8 +149,8 @@ export default function CoursesPage() {
             <TextField
                 value={query}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by title, topic or slug"
-                label="Search"
+                placeholder={isRu ? "Название, тема или адрес курса" : "Search by title, topic or slug"}
+                label={isRu ? "Поиск" : "Search"}
                 fullWidth
                 InputProps={{
                     startAdornment: (
@@ -157,37 +160,37 @@ export default function CoursesPage() {
                     ),
                 }}
             />
-            <TextField select label="Difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value as DifficultyFilter)} fullWidth>
-                <MenuItem value="ALL">All difficulties</MenuItem>
-                <MenuItem value="BEGINNER">Beginner</MenuItem>
-                <MenuItem value="INTERMEDIATE">Intermediate</MenuItem>
-                <MenuItem value="ADVANCED">Advanced</MenuItem>
+            <TextField select label={isRu ? "Сложность" : "Difficulty"} value={difficulty} onChange={(event) => setDifficulty(event.target.value as DifficultyFilter)} fullWidth>
+                <MenuItem value="ALL">{isRu ? "Любая сложность" : "All difficulties"}</MenuItem>
+                <MenuItem value="BEGINNER">{isRu ? "Начальный" : "Beginner"}</MenuItem>
+                <MenuItem value="INTERMEDIATE">{isRu ? "Средний" : "Intermediate"}</MenuItem>
+                <MenuItem value="ADVANCED">{isRu ? "Продвинутый" : "Advanced"}</MenuItem>
             </TextField>
-            <TextField select label="Access type" value={accessType} onChange={(event) => setAccessType(event.target.value as AccessFilter)} fullWidth>
-                <MenuItem value="ALL">All access types</MenuItem>
-                <MenuItem value="PUBLIC">Public</MenuItem>
-                <MenuItem value="UNLISTED">Unlisted</MenuItem>
-                <MenuItem value="PRIVATE">Private</MenuItem>
+            <TextField select label={isRu ? "Доступ" : "Access type"} value={accessType} onChange={(event) => setAccessType(event.target.value as AccessFilter)} fullWidth>
+                <MenuItem value="ALL">{isRu ? "Любой доступ" : "All access types"}</MenuItem>
+                <MenuItem value="PUBLIC">{isRu ? "Открытый" : "Public"}</MenuItem>
+                <MenuItem value="UNLISTED">{isRu ? "По ссылке" : "Unlisted"}</MenuItem>
+                <MenuItem value="PRIVATE">{isRu ? "Закрытый" : "Private"}</MenuItem>
             </TextField>
-            <TextField select label="Enrollment" value={enrollment} onChange={(event) => setEnrollment(event.target.value as EnrollmentFilter)} fullWidth>
-                <MenuItem value="ALL">Any enrollment state</MenuItem>
-                <MenuItem value="OPEN">Enrollment open</MenuItem>
-                <MenuItem value="DISABLED">Enrollment disabled</MenuItem>
+            <TextField select label={isRu ? "Запись" : "Enrollment"} value={enrollment} onChange={(event) => setEnrollment(event.target.value as EnrollmentFilter)} fullWidth>
+                <MenuItem value="ALL">{isRu ? "Любое состояние" : "Any enrollment state"}</MenuItem>
+                <MenuItem value="OPEN">{isRu ? "Запись открыта" : "Enrollment open"}</MenuItem>
+                <MenuItem value="DISABLED">{isRu ? "Запись закрыта" : "Enrollment disabled"}</MenuItem>
             </TextField>
-            <TextField select label="Duration" value={duration} onChange={(event) => setDuration(event.target.value as DurationFilter)} fullWidth>
-                <MenuItem value="ALL">Any duration</MenuItem>
-                <MenuItem value="SHORT">Up to 3 hours</MenuItem>
-                <MenuItem value="MEDIUM">3-8 hours</MenuItem>
-                <MenuItem value="LONG">8+ hours</MenuItem>
+            <TextField select label={isRu ? "Длительность" : "Duration"} value={duration} onChange={(event) => setDuration(event.target.value as DurationFilter)} fullWidth>
+                <MenuItem value="ALL">{isRu ? "Любая длительность" : "Any duration"}</MenuItem>
+                <MenuItem value="SHORT">{isRu ? "До 3 часов" : "Up to 3 hours"}</MenuItem>
+                <MenuItem value="MEDIUM">{isRu ? "3-8 часов" : "3-8 hours"}</MenuItem>
+                <MenuItem value="LONG">{isRu ? "8+ часов" : "8+ hours"}</MenuItem>
             </TextField>
-            <TextField select label="Sort" value={sort} onChange={(event) => setSort(event.target.value as SortOption)} fullWidth>
-                <MenuItem value="RELEVANCE">Recommended</MenuItem>
-                <MenuItem value="DURATION_ASC">Shortest first</MenuItem>
-                <MenuItem value="DURATION_DESC">Longest first</MenuItem>
-                <MenuItem value="TITLE_ASC">Title A-Z</MenuItem>
+            <TextField select label={isRu ? "Сортировка" : "Sort"} value={sort} onChange={(event) => setSort(event.target.value as SortOption)} fullWidth>
+                <MenuItem value="RELEVANCE">{isRu ? "Рекомендованные" : "Recommended"}</MenuItem>
+                <MenuItem value="DURATION_ASC">{isRu ? "Сначала короткие" : "Shortest first"}</MenuItem>
+                <MenuItem value="DURATION_DESC">{isRu ? "Сначала длинные" : "Longest first"}</MenuItem>
+                <MenuItem value="TITLE_ASC">{isRu ? "По названию А-Я" : "Title A-Z"}</MenuItem>
             </TextField>
             <Button variant="outlined" onClick={resetFilters} disabled={activeFilterCount === 0}>
-                Reset filters
+                {isRu ? "Сбросить фильтры" : "Reset filters"}
             </Button>
         </Stack>
     );
@@ -197,15 +200,17 @@ export default function CoursesPage() {
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "300px 1fr" }, gap: { xs: 3, md: 4 }, alignItems: "start" }}>
                 <Stack spacing={3} sx={{ display: { xs: "none", md: "flex" }, position: "sticky", top: 96 }}>
                     <Box>
-                        <Typography variant="h4">Explore</Typography>
-                        <Typography sx={{ color: "text.secondary", mt: 0.7 }}>Find your next technical skill.</Typography>
+                        <Typography variant="h4">{isRu ? "Каталог" : "Explore"}</Typography>
+                        <Typography sx={{ color: "text.secondary", mt: 0.7 }}>
+                            {isRu ? "Найди следующий навык для изучения." : "Find your next technical skill."}
+                        </Typography>
                     </Box>
                     <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
                         <Stack spacing={2.2}>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <TuneRoundedIcon color="primary" />
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
-                                    Filters
+                                    {isRu ? "Фильтры" : "Filters"}
                                 </Typography>
                             </Stack>
                             <Divider />
@@ -217,18 +222,18 @@ export default function CoursesPage() {
                 <Stack spacing={3}>
                     <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "flex-start" }} justifyContent="space-between">
                         <Box>
-                            <Typography variant="h2">Recommended Courses</Typography>
+                            <Typography variant="h2">{isRu ? "Рекомендуемые курсы" : "Recommended Courses"}</Typography>
                             <Typography sx={{ color: "text.secondary", mt: 0.8, display: { xs: "block", md: "none" } }}>
-                                Discover high-quality educational content to advance your skills.
+                                {isRu ? "Выбирай опубликованные курсы и развивай навыки на практике." : "Discover high-quality educational content to advance your skills."}
                             </Typography>
                         </Box>
-                        <Chip label={`Showing ${visibleCourses.length} result${visibleCourses.length === 1 ? "" : "s"}`} variant="outlined" sx={{ fontWeight: 900, alignSelf: { xs: "flex-start", md: "center" } }} />
+                        <Chip label={isRu ? `Найдено: ${visibleCourses.length}` : `Showing ${visibleCourses.length} result${visibleCourses.length === 1 ? "" : "s"}`} variant="outlined" sx={{ fontWeight: 900, alignSelf: { xs: "flex-start", md: "center" } }} />
                     </Stack>
 
                     <TextField
                         value={query}
                         onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder="Search for courses, topics, or skills..."
+                        placeholder={isRu ? "Курс, тема или навык..." : "Search for courses, topics, or skills..."}
                         fullWidth
                         sx={{ display: { xs: "block", md: "none" } }}
                         InputProps={{
@@ -244,21 +249,21 @@ export default function CoursesPage() {
                             <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" spacing={1} alignItems="center">
                                     <FilterListRoundedIcon color="primary" />
-                                    <Typography sx={{ fontWeight: 900 }}>{activeFilterCount ? `${activeFilterCount} active filters` : "Filters"}</Typography>
+                                    <Typography sx={{ fontWeight: 900 }}>{activeFilterCount ? (isRu ? `Активно: ${activeFilterCount}` : `${activeFilterCount} active filters`) : (isRu ? "Фильтры" : "Filters")}</Typography>
                                 </Stack>
                                 <Button variant="outlined" onClick={() => setFilterDrawerOpen(true)}>
-                                    Open
+                                    {isRu ? "Открыть" : "Open"}
                                 </Button>
                             </Stack>
                         </Paper>
 
                         {activeFilterCount > 0 ? (
                             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                                {query.trim() ? <Chip label={`Search: ${query.trim()}`} onDelete={() => setSearchQuery("")} /> : null}
-                                {difficulty !== "ALL" ? <Chip label={`Difficulty: ${difficulty}`} onDelete={() => setDifficulty("ALL")} /> : null}
-                                {accessType !== "ALL" ? <Chip label={`Access: ${accessType}`} onDelete={() => setAccessType("ALL")} /> : null}
-                                {enrollment !== "ALL" ? <Chip label={enrollment === "OPEN" ? "Enrollment open" : "Enrollment disabled"} onDelete={() => setEnrollment("ALL")} /> : null}
-                                {duration !== "ALL" ? <Chip label={`Duration: ${duration}`} onDelete={() => setDuration("ALL")} /> : null}
+                                {query.trim() ? <Chip label={`${isRu ? "Поиск" : "Search"}: ${query.trim()}`} onDelete={() => setSearchQuery("")} /> : null}
+                                {difficulty !== "ALL" ? <Chip label={`${isRu ? "Сложность" : "Difficulty"}: ${difficulty}`} onDelete={() => setDifficulty("ALL")} /> : null}
+                                {accessType !== "ALL" ? <Chip label={`${isRu ? "Доступ" : "Access"}: ${accessType}`} onDelete={() => setAccessType("ALL")} /> : null}
+                                {enrollment !== "ALL" ? <Chip label={enrollment === "OPEN" ? (isRu ? "Запись открыта" : "Enrollment open") : (isRu ? "Запись закрыта" : "Enrollment disabled")} onDelete={() => setEnrollment("ALL")} /> : null}
+                                {duration !== "ALL" ? <Chip label={`${isRu ? "Длительность" : "Duration"}: ${duration}`} onDelete={() => setDuration("ALL")} /> : null}
                             </Stack>
                         ) : null}
 
@@ -266,11 +271,11 @@ export default function CoursesPage() {
                         {error ? <ErrorState message={error} onRetry={loadCourses} /> : null}
                         {!isLoading && !error && visibleCourses.length === 0 ? (
                             <EmptyState
-                                title="No courses found"
-                                description="Try clearing filters or changing your search query."
+                                title={isRu ? "Курсы не найдены" : "No courses found"}
+                                description={isRu ? "Попробуй изменить поиск или сбросить фильтры." : "Try clearing filters or changing your search query."}
                                 action={
                                     <Button variant="contained" onClick={resetFilters} disabled={activeFilterCount === 0}>
-                                        Reset filters
+                                        {isRu ? "Сбросить фильтры" : "Reset filters"}
                                     </Button>
                                 }
                             />
@@ -290,7 +295,7 @@ export default function CoursesPage() {
                     <Stack spacing={2.2}>
                         <Stack direction="row" alignItems="center" justifyContent="space-between">
                             <Typography variant="h6" sx={{ fontWeight: 950 }}>
-                                Catalog filters
+                                {isRu ? "Фильтры каталога" : "Catalog filters"}
                             </Typography>
                             <IconButton onClick={() => setFilterDrawerOpen(false)}>
                                 <CloseRoundedIcon />
@@ -299,7 +304,7 @@ export default function CoursesPage() {
                         <Divider />
                         {filterControls}
                         <Button variant="contained" onClick={() => setFilterDrawerOpen(false)}>
-                            Show courses
+                            {isRu ? "Показать курсы" : "Show courses"}
                         </Button>
                     </Stack>
                 </Box>
