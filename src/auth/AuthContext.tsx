@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { authApi } from "../api/services";
+import { sessionExpiredEventName } from "../api/apiClient";
 import type { CurrentUser } from "../api/bffContracts";
 import { AuthContext } from "./auth-context";
 import type { AuthContextValue } from "./auth-context";
@@ -25,6 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         void reloadSession();
     }, []);
 
+    useEffect(() => {
+        const handleSessionExpired = () => setUser(null);
+        window.addEventListener(sessionExpiredEventName, handleSessionExpired);
+        return () => window.removeEventListener(sessionExpiredEventName, handleSessionExpired);
+    }, []);
+
     const value = useMemo<AuthContextValue>(
         () => ({
             user,
@@ -43,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(null);
             },
             reloadSession,
+            setCurrentUser: setUser,
         }),
         [isLoading, user]
     );
