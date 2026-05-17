@@ -91,7 +91,7 @@ The Site calls these public endpoints with API client auth mode `none`: no `Auth
 
 Protected endpoints must return `401` for anonymous users. Role-protected endpoints must return `403` for authenticated users without the required role.
 
-| User state | `/courses` | `/courses/{id}` | `/my-learning` | `/teacher/courses` | `/admin/teacher-requests` |
+| User state | `/courses` | `/courses/{id}` | `/my-learning` | `/teacher/courses` | `/admin/courses/moderation` |
 |---|---|---|---|---|---|
 | Anonymous | allowed | allowed | 401 / redirect login | 401 / redirect login | 401 / redirect login |
 | STUDENT | allowed | allowed | allowed | 403 | 403 |
@@ -172,7 +172,7 @@ GET  /api/v1/teacher/courses
 POST /api/v1/teacher/courses
 GET  /api/v1/teacher/courses/{courseId}
 PUT  /api/v1/teacher/courses/{courseId}
-POST /api/v1/teacher/courses/{courseId}/publish
+POST /api/v1/teacher/courses/{courseId}/submit-review
 POST /api/v1/teacher/courses/{courseId}/archive
 ```
 
@@ -285,28 +285,6 @@ Request:
 }
 ```
 
-### Teacher access requests
-
-```http
-POST /api/v1/teacher-requests
-GET  /api/v1/teacher-requests/me
-GET  /api/v1/admin/teacher-requests
-POST /api/v1/admin/teacher-requests/{requestId}/approve
-POST /api/v1/admin/teacher-requests/{requestId}/reject
-POST /api/v1/auth/register-teacher-request
-```
-
-Create request body:
-
-```json
-{
-  "motivation": "I want to create Java courses.",
-  "experience": "3 years of Java backend experience.",
-  "portfolioUrl": "https://example.com",
-  "preferredTopics": ["Java", "Spring Boot"]
-}
-```
-
 ### Standard error shape
 
 All BFF errors should use one format:
@@ -321,4 +299,110 @@ All BFF errors should use one format:
     { "field": "title", "message": "Title is required" }
   ]
 }
+```
+
+## Course publication moderation update
+
+Current Site flow no longer requires separate approval for becoming a teacher. Users may register as `STUDENT` or `TEACHER`; public course publication is controlled by course moderation.
+
+### Registration role
+
+`POST /api/v1/auth/register` should accept:
+
+```json
+{
+  "fullName": "Teacher User",
+  "email": "teacher@example.com",
+  "password": "password123",
+  "role": "TEACHER",
+  "preferredLocale": "ru"
+}
+```
+
+Rules:
+
+```text
+role can be STUDENT or TEACHER
+role ADMIN must be rejected for self-registration
+```
+
+### Course moderation lifecycle
+
+```text
+DRAFT -> PENDING_REVIEW -> PUBLISHED -> ARCHIVED
+DRAFT -> PENDING_REVIEW -> CHANGES_REQUESTED -> PENDING_REVIEW -> PUBLISHED
+```
+
+Public course endpoints must return only `PUBLISHED` courses. Teacher/admin endpoints may return all moderation states.
+
+### Teacher submit for review
+
+```http
+POST /api/v1/teacher/courses/{courseId}/submit-review
+```
+
+Response:
+
+```json
+{
+  "id": 1,
+  "status": "PENDING_REVIEW",
+  "reviewComment": null,
+  "submittedForReviewAt": "2026-05-17T12:00:00Z",
+  "reviewedAt": null,
+  "reviewedByUserId": null
+}
+```
+
+### Admin moderation endpoints
+
+```http
+GET  /api/v1/admin/courses
+GET  /api/v1/admin/courses/moderation
+GET  /api/v1/admin/courses/{courseId}/review
+POST /api/v1/admin/courses/{courseId}/approve
+POST /api/v1/admin/courses/{courseId}/reject
+```
+
+Reject request:
+
+```json
+{
+  "reviewComment": "Please add at least one coding task and fix quiz answers."
+}
+```
+
+Admin course list and review DTOs should include moderation metadata when available:
+
+```json
+{
+  "status": "PENDING_REVIEW",
+  "createdByUserId": 10,
+  "createdByUserEmail": "teacher@example.com",
+  "createdByUserFullName": "Teacher User",
+  "submittedForReviewAt": "2026-05-17T12:00:00Z",
+  "reviewedAt": null,
+  "reviewedByUserId": null,
+  "reviewComment": null
+}
+```
+
+### Backend ownership
+
+```text
+UserService:
+- registration accepts STUDENT or TEACHER
+- registration rejects ADMIN
+- /me and JWT return selected role
+
+CourseService:
+- supports PENDING_REVIEW and CHANGES_REQUESTED statuses
+- stores submittedForReviewAt, reviewedAt, reviewedByUserId, reviewComment
+- supports submit-review, approve, reject
+- public catalog/details return only PUBLISHED courses
+
+BFF:
+- exposes the frontend-facing endpoints above
+- maps them to UserService/CourseService
+- normalizes errors to the standard BFF error shape
 ```
