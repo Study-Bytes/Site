@@ -1,15 +1,32 @@
 services:
-  studybytes:
-    build: .
-    container_name: studybytes-app
+  site:
+    build:
+      context: .
+      args:
+        VITE_BFF_BASE_URL: ${VITE_BFF_BASE_URL:-}
+        VITE_BFF_API_PREFIX: ${VITE_BFF_API_PREFIX:-/api/v1}
+        VITE_USE_MOCK_BFF: ${VITE_USE_MOCK_BFF:-false}
+    container_name: studybytes-site
+    restart: unless-stopped
     expose:
       - "3000"
-    ports:
-      - "3000:3000"
     environment:
-      - PORT=3000
+      NODE_ENV: production
+      PORT: 3000
     networks:
-      - proxy
+      - backend
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 networks:
-  proxy:
+  backend:
+    name: ${STUDYBYTES_BACKEND_NETWORK:?STUDYBYTES_BACKEND_NETWORK is required}
     external: true

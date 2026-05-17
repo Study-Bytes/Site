@@ -660,3 +660,47 @@ If the current BFF does not implement these endpoints yet, it should return a cl
 
 - Manual QA checklist: `docs/QA_CHECKLIST.md`
 - Site deployment notes: `docs/DEPLOYMENT.md`
+
+## Site VPS deployment and CD
+
+Site deployment is configured in:
+
+```text
+.github/workflows/site-cd.yml
+```
+
+The workflow validates the project and then deploys over SSH to:
+
+```text
+${VPS_DEPLOY_BASE_PATH}/site
+```
+
+Required organization secrets:
+
+```text
+VPS_HOST
+VPS_PORT
+VPS_USER
+VPS_SSH_KEY
+VPS_DEPLOY_BASE_PATH
+STUDYBYTES_BACKEND_NETWORK
+```
+
+The VPS must contain a production `.env` file in the Site deploy directory:
+
+```env
+VITE_BFF_BASE_URL=
+VITE_BFF_API_PREFIX=/api/v1
+VITE_USE_MOCK_BFF=false
+STUDYBYTES_BACKEND_NETWORK=studybytes-backend
+```
+
+If BFF is routed through the same public domain by Nginx, keep `VITE_BFF_BASE_URL` empty. If BFF is on a separate public origin, set it to that origin.
+
+The Site container exposes port `3000` only inside Docker networks. Nginx should route frontend paths to the Site container and `/api/v1/**` to BFF.
+
+Full deployment documentation is available in:
+
+```text
+docs/DEPLOYMENT.md
+```
