@@ -58,6 +58,7 @@ import { ItemTypeBadge } from "../../components/ui/ItemTypeBadge";
 import { LoadingState } from "../../components/ui/LoadingState";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { ValidationErrorPanel } from "../../components/ui/ValidationErrorPanel";
+import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCourseId } from "../../utils/courseFormat";
 
@@ -223,6 +224,8 @@ function sortedItems(module: CourseModuleSummary) {
 export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const { courseId } = useParams();
     const navigate = useNavigate();
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const parsedCourseId = parseRouteCourseId(courseId);
     const isCreate = mode === "create";
 
@@ -266,7 +269,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         setForm((current) => ({ ...current, [field]: value }));
     };
 
-    const title = isCreate ? "Create course" : `Edit course${course ? `: ${course.title}` : ""}`;
+    const title = isCreate
+        ? isRu ? "Создать курс" : "Create course"
+        : `${isRu ? "Редактирование курса" : "Edit course"}${course ? `: ${course.title}` : ""}`;
 
     const stats = useMemo(() => {
         if (!course) return { modules: 0, items: 0 };
@@ -492,10 +497,12 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }} justifyContent="space-between">
                     <Box>
                         <Button component={RouterLink} to="/teacher/courses" startIcon={<ArrowBackRoundedIcon />} sx={{ mb: 1 }}>
-                            Back to courses
+                            {isRu ? "К курсам" : "Back to courses"}
                         </Button>
                         <Typography variant="h2">{title}</Typography>
-                        <Typography sx={{ color: "text.secondary", mt: 1 }}>Edit course metadata, structure, modules and items through the BFF teacher API.</Typography>
+                        <Typography sx={{ color: "text.secondary", mt: 1 }}>
+                            {isRu ? "Настрой описание, структуру, модули и уроки курса." : "Edit course details, structure, modules and lessons."}
+                        </Typography>
                     </Box>
                     {course ? (
                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -517,7 +524,10 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
 
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: course ? "minmax(0, 1fr) 320px" : "1fr" }, gap: 3 }}>
                     <Stack spacing={3}>
-                        <FormSectionCard title="Course metadata" description="These fields match the frontend-facing BFF CourseUpsertRequest.">
+                        <FormSectionCard
+                            title={isRu ? "Описание курса" : "Course details"}
+                            description={isRu ? "Эти данные видят студенты в каталоге и на странице курса." : "These fields are shown in the catalog and on the course details page."}
+                        >
                             <Stack spacing={2}>
                                 <TextField label="Title" value={form.title} onChange={(event) => updateField("title", event.target.value)} required disabled={isEditingLocked} />
                                 <TextField label="Slug" value={form.slug} onChange={(event) => updateField("slug", event.target.value)} helperText="Lowercase URL slug, for example java-core" required disabled={isEditingLocked} />
@@ -731,7 +741,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                             <TextField label="Statement" multiline minRows={4} value={itemDialog.draft.statement ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, statement: event.target.value } })} />
                             {itemDialog.draft.itemType === "CODING" || itemDialog.draft.itemType === "SQL" ? (
                                 <Stack spacing={2}>
-                                    <TextField label="Language" helperText="Free string. CourseService does not hardcode supported execution languages." value={itemDialog.draft.language ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, language: event.target.value } })} required />
+                                    <TextField label={isRu ? "Язык" : "Language"} helperText={isRu ? "Например: java, python или sql." : "For example: java, python or sql."} value={itemDialog.draft.language ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, language: event.target.value } })} required />
                                     <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                                         <TextField label="timeLimitMs" type="number" value={itemDialog.draft.timeLimitMs ?? 2000} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, timeLimitMs: Number(event.target.value) } })} fullWidth />
                                         <TextField label="memoryLimitMb" type="number" value={itemDialog.draft.memoryLimitMb ?? 256} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, memoryLimitMb: Number(event.target.value) } })} fullWidth />

@@ -53,7 +53,7 @@ export default function ProfilePage() {
         setProfileValidationErrors([]);
 
         if (!fullName.trim()) {
-            setProfileValidationErrors([{ field: "fullName", message: "Full name is required" }]);
+            setProfileValidationErrors([{ field: "fullName", message: t("profile.fullNameRequired") }]);
             return;
         }
 
@@ -81,7 +81,7 @@ export default function ProfilePage() {
         setPasswordSuccess(null);
 
         if (!currentPassword || newPassword.length < 8) {
-            setPasswordError("Current password is required and new password must contain at least 8 characters.");
+            setPasswordError(t("profile.passwordValidation"));
             return;
         }
 
@@ -90,7 +90,7 @@ export default function ProfilePage() {
             await profileApi.changePassword({ currentPassword, newPassword });
             setCurrentPassword("");
             setNewPassword("");
-            setPasswordSuccess("Password was changed successfully.");
+            setPasswordSuccess(t("profile.passwordChanged"));
         } catch (error) {
             setPasswordError(getErrorMessage(error, "Failed to change password"));
         } finally {
@@ -112,7 +112,7 @@ export default function ProfilePage() {
                             {(auth.user.fullName ?? auth.user.email).charAt(0).toUpperCase()}
                         </Avatar>
                         <Box sx={{ flexGrow: 1 }}>
-                            <Typography variant="h4">{auth.user.fullName ?? "Unnamed user"}</Typography>
+                            <Typography variant="h4">{auth.user.fullName ?? auth.user.email}</Typography>
                             <Typography sx={{ color: "text.secondary" }}>{auth.user.email}</Typography>
                         </Box>
                         <Chip label={auth.user.role} color="primary" sx={{ fontWeight: 900 }} />
@@ -124,28 +124,28 @@ export default function ProfilePage() {
                         {profileError ? <Alert severity="error">{profileError}</Alert> : null}
                         {profileSuccess ? <Alert severity="success">{profileSuccess}</Alert> : null}
                         <ValidationErrorPanel errors={profileValidationErrors} />
-                        <TextField label="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
-                        <TextField label="Email" value={auth.user.email} disabled />
-                        <TextField label="Avatar URL" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} />
-                        <TextField label="Bio" value={bio} onChange={(event) => setBio(event.target.value)} multiline minRows={3} />
+                        <TextField label={t("profile.fullName")} value={fullName} onChange={(event) => setFullName(event.target.value)} />
+                        <TextField label={t("profile.email")} value={auth.user.email} disabled />
+                        <TextField label={t("profile.avatarUrl")} value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} />
+                        <TextField label={t("profile.bio")} value={bio} onChange={(event) => setBio(event.target.value)} multiline minRows={3} />
                         <TextField select label={t("profile.language")} value={preferredLocale} onChange={(event) => setPreferredLocale(event.target.value as Locale)} helperText={t("profile.languageDescription")}>
                             <MenuItem value="ru">{t("language.ru")}</MenuItem>
                             <MenuItem value="en">{t("language.en")}</MenuItem>
                         </TextField>
                         <Button variant="outlined" sx={{ alignSelf: "flex-start" }} onClick={handleProfileSave} disabled={isSavingProfile}>
-                            {isSavingProfile ? "Saving..." : "Save changes"}
+                            {isSavingProfile ? t("common.saving") : t("profile.saveChanges")}
                         </Button>
                     </Stack>
                 </FormSectionCard>
 
-                <FormSectionCard title={t("profile.security")} description="Password changes use the BFF profile contract when the endpoint is enabled.">
+                <FormSectionCard title={t("profile.security")} description={t("profile.securityDescription")}>
                     <Stack spacing={2}>
                         {passwordError ? <Alert severity="error">{passwordError}</Alert> : null}
                         {passwordSuccess ? <Alert severity="success">{passwordSuccess}</Alert> : null}
-                        <TextField label="Current password" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" />
-                        <TextField label="New password" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" />
+                        <TextField label={t("profile.currentPassword")} type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" />
+                        <TextField label={t("profile.newPassword")} type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" />
                         <Button variant="outlined" sx={{ alignSelf: "flex-start" }} onClick={handlePasswordChange} disabled={isChangingPassword}>
-                            {isChangingPassword ? "Changing..." : "Change password"}
+                            {isChangingPassword ? t("common.saving") : t("profile.changePassword")}
                         </Button>
                     </Stack>
                 </FormSectionCard>

@@ -25,6 +25,7 @@ import { ApiError, getErrorMessage } from "../../api/apiError";
 import type { CourseDetails, CourseItemSummary } from "../../api/bffContracts";
 import { coursesApi, learningApi } from "../../api/services";
 import { useAuth } from "../../auth/useAuth";
+import { useI18n } from "../../i18n/useI18n";
 import { AccessTypeBadge } from "../../components/ui/AccessTypeBadge";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -55,7 +56,9 @@ function CourseMetric({ label, value }: { label: string; value: string | number 
 }
 
 function CourseItemRow({ item }: { item: CourseItemSummary }) {
-    const stateLabel = item.locked ? "Locked" : item.completed ? "Completed" : "Available";
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
+    const stateLabel = item.locked ? (isRu ? "Закрыто" : "Locked") : item.completed ? (isRu ? "Пройдено" : "Completed") : (isRu ? "Доступно" : "Available");
 
     return (
         <Paper
@@ -73,7 +76,7 @@ function CourseItemRow({ item }: { item: CourseItemSummary }) {
                     <Box>
                         <Typography sx={{ fontWeight: 900 }}>{item.title}</Typography>
                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                            {item.estimatedMinutes ? `${item.estimatedMinutes} min` : "Flexible"}
+                            {item.estimatedMinutes ? `${item.estimatedMinutes} ${isRu ? "мин" : "min"}` : (isRu ? "Без ограничения" : "Flexible")}
                         </Typography>
                     </Box>
                 </Stack>
@@ -85,8 +88,10 @@ function CourseItemRow({ item }: { item: CourseItemSummary }) {
 
 function CourseCta({ course }: { course: CourseDetails }) {
     const { isAuthenticated } = useAuth();
+    const { locale } = useI18n();
     const navigate = useNavigate();
     const location = useLocation();
+    const isRu = locale === "ru";
     const [isEnrolling, setIsEnrolling] = useState(false);
     const [enrollError, setEnrollError] = useState<string | null>(null);
     const hasStarted = course.modules.some((module) => module.items.some((item) => item.completed));
@@ -107,7 +112,7 @@ function CourseCta({ course }: { course: CourseDetails }) {
     if (course.status !== "PUBLISHED") {
         return (
             <Button variant="outlined" disabled startIcon={<LockOutlinedIcon />} fullWidth>
-                Course unavailable
+                {isRu ? "Курс недоступен" : "Course unavailable"}
             </Button>
         );
     }
@@ -115,7 +120,7 @@ function CourseCta({ course }: { course: CourseDetails }) {
     if (!course.enrollmentEnabled) {
         return (
             <Button variant="outlined" disabled startIcon={<LockOutlinedIcon />} fullWidth>
-                Enrollment disabled
+                {isRu ? "Запись закрыта" : "Enrollment disabled"}
             </Button>
         );
     }
@@ -123,7 +128,7 @@ function CourseCta({ course }: { course: CourseDetails }) {
     if (!isAuthenticated) {
         return (
             <Button component={RouterLink} to="/login" state={{ from: `${location.pathname}${location.search}` }} variant="contained" endIcon={<ArrowForwardRoundedIcon />} fullWidth>
-                Login to start
+                {isRu ? "Войти и начать" : "Login to start"}
             </Button>
         );
     }
@@ -137,7 +142,7 @@ function CourseCta({ course }: { course: CourseDetails }) {
                 fullWidth
                 onClick={() => void enrollAndOpen()}
             >
-                {hasStarted ? "Continue learning" : "Start course"}
+                {hasStarted ? (isRu ? "Продолжить обучение" : "Continue learning") : (isRu ? "Начать курс" : "Start course")}
             </Button>
             {enrollError ? <Alert severity="error">{enrollError}</Alert> : null}
         </Stack>
@@ -145,6 +150,8 @@ function CourseCta({ course }: { course: CourseDetails }) {
 }
 
 export default function CourseDetailsPage() {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const { courseId } = useParams();
     const parsedCourseId = parseRouteCourseId(courseId);
     const [course, setCourse] = useState<CourseDetails | null>(null);
@@ -190,11 +197,11 @@ export default function CourseDetailsPage() {
             {error ? <ErrorState message={error} onRetry={loadCourse} /> : null}
             {!isLoading && isNotFound ? (
                 <EmptyState
-                    title="Course not found"
-                    description="The course does not exist, is not published, or is not available through the public BFF catalog."
+                    title={isRu ? "Курс не найден" : "Course not found"}
+                    description={isRu ? "Курс не найден, ещё не опубликован или недоступен в каталоге." : "The course does not exist, is not published, or is not available in the catalog."}
                     action={
                         <Button component={RouterLink} to="/courses" variant="contained" startIcon={<ArrowBackRoundedIcon />}>
-                            Back to catalog
+                            {isRu ? "Назад в каталог" : "Back to catalog"}
                         </Button>
                     }
                 />
@@ -220,7 +227,7 @@ export default function CourseDetailsPage() {
                                     <AccessTypeBadge accessType={course.accessType} />
                                     <Chip
                                         icon={course.enrollmentEnabled ? <PlayCircleOutlineRoundedIcon /> : <LockOutlinedIcon />}
-                                        label={course.enrollmentEnabled ? "Enrollment open" : "Enrollment disabled"}
+                                        label={course.enrollmentEnabled ? (isRu ? "Запись открыта" : "Enrollment open") : (isRu ? "Запись закрыта" : "Enrollment disabled")}
                                         variant="outlined"
                                         sx={{ fontWeight: 900 }}
                                     />
@@ -228,7 +235,7 @@ export default function CourseDetailsPage() {
 
                                 <Box>
                                     <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 950 }}>
-                                        Course details
+                                        {isRu ? "Описание курса" : "Course details"}
                                     </Typography>
                                     <Typography variant="h2" sx={{ mt: 1 }}>
                                         {course.title}
@@ -241,10 +248,10 @@ export default function CourseDetailsPage() {
                                 <Typography sx={{ color: "text.secondary", lineHeight: 1.75, maxWidth: 760 }}>{course.description}</Typography>
 
                                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 1.5 }}>
-                                    <CourseMetric label="Modules" value={moduleCount} />
-                                    <CourseMetric label="Items" value={itemCount} />
-                                    <CourseMetric label="Duration" value={formatDuration(course.estimatedMinutes)} />
-                                    <CourseMetric label="Status" value={course.status} />
+                                    <CourseMetric label={isRu ? "Модули" : "Modules"} value={moduleCount} />
+                                    <CourseMetric label={isRu ? "Уроки" : "Items"} value={itemCount} />
+                                    <CourseMetric label={isRu ? "Длительность" : "Duration"} value={formatDuration(course.estimatedMinutes)} />
+                                    <CourseMetric label={isRu ? "Статус" : "Status"} value={course.status} />
                                 </Box>
                             </Stack>
 
@@ -277,13 +284,13 @@ export default function CourseDetailsPage() {
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) 320px" }, gap: 3, alignItems: "start" }}>
                         <Stack spacing={2.5}>
                             <Box>
-                                <Typography variant="h3">Course structure</Typography>
+                                <Typography variant="h3">{isRu ? "Структура курса" : "Course structure"}</Typography>
                                 <Typography sx={{ color: "text.secondary", mt: 1 }}>
-                                    Modules and item metadata are loaded from the BFF public course details endpoint.
+                                    {isRu ? "Посмотри модули и типы заданий перед началом обучения." : "Preview modules and task types before starting the course."}
                                 </Typography>
                             </Box>
 
-                            {course.modules.length === 0 ? <EmptyState title="No modules yet" description="This course has no visible modules in the public catalog." /> : null}
+                            {course.modules.length === 0 ? <EmptyState title={isRu ? "Модулей пока нет" : "No modules yet"} description={isRu ? "У курса пока нет опубликованной структуры." : "This course has no visible modules in the catalog."} /> : null}
                             {course.modules.map((module, index) => (
                                 <Accordion key={module.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 1.5, overflow: "hidden", "&:before": { display: "none" } }}>
                                     <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />} sx={{ px: { xs: 2, md: 2.5 }, py: 1 }}>
@@ -292,14 +299,14 @@ export default function CourseDetailsPage() {
                                             <Box sx={{ minWidth: 0 }}>
                                                 <Typography sx={{ fontWeight: 950 }}>{module.title}</Typography>
                                                 <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                                    {module.items.length} item{module.items.length === 1 ? "" : "s"}
+                                                    {isRu ? `${module.items.length} уроков` : `${module.items.length} item${module.items.length === 1 ? "" : "s"}`}
                                                 </Typography>
                                             </Box>
                                         </Stack>
                                     </AccordionSummary>
                                     <AccordionDetails sx={{ px: { xs: 2, md: 2.5 }, pb: 2.5 }}>
                                         <Stack spacing={1.2}>
-                                            {module.items.length === 0 ? <Typography sx={{ color: "text.secondary" }}>This module has no visible items.</Typography> : null}
+                                            {module.items.length === 0 ? <Typography sx={{ color: "text.secondary" }}>{isRu ? "В этом модуле пока нет опубликованных уроков." : "This module has no visible items."}</Typography> : null}
                                             {module.items.map((item) => (
                                                 <CourseItemRow key={item.id} item={item} />
                                             ))}
@@ -312,10 +319,10 @@ export default function CourseDetailsPage() {
                         <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, position: { md: "sticky" }, top: { md: 96 }, display: { xs: "none", md: "block" } }}>
                             <Stack spacing={2.2}>
                                 <Typography variant="h6" sx={{ fontWeight: 950 }}>
-                                    Start learning
+                                    {isRu ? "Начать обучение" : "Start learning"}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                    Sign in to enroll, track progress and continue from the next item.
+                                    {isRu ? "Войди, чтобы записаться на курс, отслеживать прогресс и продолжать с нужного урока." : "Sign in to enroll, track progress and continue from the next item."}
                                 </Typography>
                                 <CourseCta course={course} />
                                 <Divider />
@@ -323,13 +330,13 @@ export default function CourseDetailsPage() {
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <AccessTimeRoundedIcon fontSize="small" color="primary" />
                                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                            Estimated time: {formatDuration(course.estimatedMinutes)}
+                                            {isRu ? "Примерное время" : "Estimated time"}: {formatDuration(course.estimatedMinutes)}
                                         </Typography>
                                     </Stack>
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <MenuBookRoundedIcon fontSize="small" color="primary" />
                                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                            {moduleCount} modules · {itemCount} items
+                                            {isRu ? `${moduleCount} модулей · ${itemCount} уроков` : `${moduleCount} modules · ${itemCount} items`}
                                         </Typography>
                                     </Stack>
                                 </Stack>

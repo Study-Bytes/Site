@@ -50,6 +50,7 @@ import { ItemTypeBadge } from "../../components/ui/ItemTypeBadge";
 import { LoadingState } from "../../components/ui/LoadingState";
 import { ErrorState } from "../../components/ui/ErrorState";
 import { ValidationErrorPanel } from "../../components/ui/ValidationErrorPanel";
+import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { parseRouteCourseId } from "../../utils/courseFormat";
 
@@ -162,6 +163,8 @@ const newId = () => -Date.now() - Math.floor(Math.random() * 1000);
 
 export default function TeacherItemEditorPage() {
     const { courseId, itemId } = useParams();
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const parsedCourseId = parseRouteCourseId(courseId);
     const parsedItemId = parseRouteCourseId(itemId);
 
@@ -335,12 +338,14 @@ export default function TeacherItemEditorPage() {
             <Stack spacing={3}>
                 <Box>
                     <Button component={RouterLink} to={`/teacher/courses/${parsedCourseId ?? ""}/edit`} startIcon={<ArrowBackRoundedIcon />} sx={{ mb: 1 }}>
-                        Back to Course Editor
+                        {isRu ? "К редактору курса" : "Back to course editor"}
                     </Button>
                     <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} justifyContent="space-between" alignItems={{ md: "center" }}>
                         <Box>
-                            <Typography variant="h2">Item editor: {item.title}</Typography>
-                            <Typography sx={{ color: "text.secondary", mt: 1 }}>Edit metadata, content blocks, hints, tests and quiz options through the BFF teacher API.</Typography>
+                            <Typography variant="h2">{isRu ? "Редактор урока" : "Item editor"}: {item.title}</Typography>
+                            <Typography sx={{ color: "text.secondary", mt: 1 }}>
+                                {isRu ? "Редактируй задание, материалы, подсказки, тесты и варианты ответа." : "Edit the task, materials, hints, tests and answer options."}
+                            </Typography>
                         </Box>
                         <ItemTypeBadge itemType={item.itemType} />
                     </Stack>
@@ -350,7 +355,7 @@ export default function TeacherItemEditorPage() {
                 {error ? <Alert severity="error" onClose={() => setError(null)}>{error}</Alert> : null}
                 <ValidationErrorPanel errors={validationErrors} />
 
-                <FormSectionCard title="Basic settings" description="Common CourseItem fields shared by all item types.">
+                <FormSectionCard title={isRu ? "Основные настройки" : "Basic settings"} description={isRu ? "Общие параметры для всех типов уроков." : "Basic fields shared by all item types."}>
                     <Stack spacing={2}>
                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                             <TextField label="Title" value={form.title} onChange={(event) => updateForm("title", event.target.value)} required fullWidth />
@@ -373,7 +378,7 @@ export default function TeacherItemEditorPage() {
                 </FormSectionCard>
 
                 {isExecutable ? (
-                    <FormSectionCard title="Execution settings" description="Language is a free string. Supported execution languages are decided by LearningService/CodeExecutorService.">
+                    <FormSectionCard title={isRu ? "Настройки проверки" : "Execution settings"} description={isRu ? "Настрой язык, ограничения выполнения и код для проверки решения." : "Configure language, execution limits and solution-checking code."}>
                         <Stack spacing={2}>
                             <TextField label="Language" value={form.language ?? ""} onChange={(event) => updateForm("language", event.target.value)} required />
                             <TextField label="Starter code" multiline minRows={8} value={form.starterCode ?? ""} onChange={(event) => updateForm("starterCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />

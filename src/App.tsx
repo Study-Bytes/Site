@@ -17,6 +17,8 @@ const LearningCoursePage = lazy(() => import("./pages/learning/LearningCoursePag
 const LearningItemPage = lazy(() => import("./pages/learning/LearningItemPage"));
 const MyLearningPage = lazy(() => import("./pages/learning/MyLearningPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/legal/PrivacyPolicyPage"));
+const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
 const ErrorStatusPage = lazy(() => import("./pages/system/ErrorStatusPage"));
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
 const AdminCoursesPage = lazy(() => import("./pages/admin/AdminCoursesPage"));
@@ -52,6 +54,8 @@ export default function App() {
                 <Route path="/" element={<PageSuspense><Home /></PageSuspense>} />
                 <Route path="/courses" element={<PageSuspense><CoursesPage /></PageSuspense>} />
                 <Route path="/courses/:courseId" element={<PageSuspense><CourseDetailsPage /></PageSuspense>} />
+                <Route path="/privacy" element={<PageSuspense><PrivacyPolicyPage /></PageSuspense>} />
+                <Route path="/terms" element={<PageSuspense><TermsPage /></PageSuspense>} />
                 <Route
                     path="/login"
                     element={

@@ -34,9 +34,21 @@ export type TranslationKey =
     | "profile.accountDetails"
     | "profile.accountDescription"
     | "profile.security"
+    | "profile.securityDescription"
     | "profile.language"
     | "profile.languageDescription"
     | "profile.updated"
+    | "profile.fullName"
+    | "profile.fullNameRequired"
+    | "profile.email"
+    | "profile.avatarUrl"
+    | "profile.bio"
+    | "profile.saveChanges"
+    | "profile.currentPassword"
+    | "profile.newPassword"
+    | "profile.changePassword"
+    | "profile.passwordChanged"
+    | "profile.passwordValidation"
     | "errors.400.title"
     | "errors.400.description"
     | "errors.401.title"
@@ -96,13 +108,25 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "home.browseCourses": "Смотреть курсы",
         "home.createAccount": "Создать аккаунт",
         "profile.title": "Профиль",
-        "profile.subtitle": "Профиль и настройки аккаунта загружаются через BFF.",
+        "profile.subtitle": "Управляй личными данными, языком интерфейса и безопасностью аккаунта.",
         "profile.accountDetails": "Данные аккаунта",
-        "profile.accountDescription": "Эти поля сохраняются через BFF profile/settings endpoints.",
+        "profile.accountDescription": "Эти данные используются для отображения профиля и персонализации интерфейса.",
         "profile.security": "Безопасность",
+        "profile.securityDescription": "Обнови пароль, если считаешь, что доступ к аккаунту мог быть скомпрометирован.",
         "profile.language": "Язык интерфейса",
         "profile.languageDescription": "Выбор сохраняется в настройках аккаунта. Для гостей — в браузере.",
         "profile.updated": "Профиль обновлён.",
+        "profile.fullName": "Имя",
+        "profile.fullNameRequired": "Укажи имя.",
+        "profile.email": "Электронная почта",
+        "profile.avatarUrl": "Ссылка на аватар",
+        "profile.bio": "О себе",
+        "profile.saveChanges": "Сохранить изменения",
+        "profile.currentPassword": "Текущий пароль",
+        "profile.newPassword": "Новый пароль",
+        "profile.changePassword": "Изменить пароль",
+        "profile.passwordChanged": "Пароль успешно изменён.",
+        "profile.passwordValidation": "Укажи текущий пароль. Новый пароль должен содержать минимум 8 символов.",
         "errors.400.title": "Ошибка валидации",
         "errors.400.description": "Проверь введённые данные и попробуй снова.",
         "errors.401.title": "Сессия истекла",
@@ -114,7 +138,7 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "errors.409.title": "Конфликт данных",
         "errors.409.description": "Данные уже изменились. Обнови страницу и попробуй снова.",
         "errors.500.title": "Ошибка сервера",
-        "errors.500.description": "BFF или один из сервисов временно недоступен.",
+        "errors.500.description": "Сервис временно недоступен. Попробуй позже.",
         "errors.maintenance.title": "Сервис недоступен",
         "errors.maintenance.description": "Платформа обновляется. Попробуй позже.",
         "templates.title": "Создать курс",
@@ -158,13 +182,25 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "home.browseCourses": "Browse courses",
         "home.createAccount": "Create account",
         "profile.title": "Profile",
-        "profile.subtitle": "Profile and account settings are loaded through BFF.",
+        "profile.subtitle": "Manage personal details, interface language and account security.",
         "profile.accountDetails": "Account details",
-        "profile.accountDescription": "These fields are saved through BFF profile/settings endpoints.",
+        "profile.accountDescription": "These details are used for your profile and interface personalization.",
         "profile.security": "Security",
+        "profile.securityDescription": "Update your password if you think account access may be compromised.",
         "profile.language": "Interface language",
         "profile.languageDescription": "The selected language is saved to account settings. Guests use browser storage.",
         "profile.updated": "Profile was updated successfully.",
+        "profile.fullName": "Full name",
+        "profile.fullNameRequired": "Full name is required.",
+        "profile.email": "Email",
+        "profile.avatarUrl": "Avatar URL",
+        "profile.bio": "Bio",
+        "profile.saveChanges": "Save changes",
+        "profile.currentPassword": "Current password",
+        "profile.newPassword": "New password",
+        "profile.changePassword": "Change password",
+        "profile.passwordChanged": "Password was changed successfully.",
+        "profile.passwordValidation": "Current password is required and new password must contain at least 8 characters.",
         "errors.400.title": "Validation error",
         "errors.400.description": "Check the submitted data and try again.",
         "errors.401.title": "Session expired",
@@ -176,7 +212,7 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
         "errors.409.title": "Data conflict",
         "errors.409.description": "The data has changed. Refresh the page and try again.",
         "errors.500.title": "Server error",
-        "errors.500.description": "BFF or one of the services is temporarily unavailable.",
+        "errors.500.description": "The service is temporarily unavailable. Try again later.",
         "errors.maintenance.title": "Service unavailable",
         "errors.maintenance.description": "The platform is being updated. Try again later.",
         "templates.title": "Create course",

@@ -89,7 +89,7 @@ describe("StudyBytes role-based behavior", () => {
     it("renders teacher course management for teacher", async () => {
         await loginAs("TEACHER");
         renderRoute("/teacher/courses");
-        expect(await screen.findByRole("heading", { name: /Teacher courses/i }, findOptions)).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: /Teacher courses|Курсы преподавателя/i }, findOptions)).toBeInTheDocument();
         expect((await screen.findAllByText(/Java Core/i, {}, findOptions)).length).toBeGreaterThan(0);
     });
 

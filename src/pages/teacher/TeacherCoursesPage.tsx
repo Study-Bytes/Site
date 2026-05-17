@@ -15,6 +15,7 @@ import { LoadingState } from "../../components/ui/LoadingState";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration } from "../../utils/courseFormat";
+import { useI18n } from "../../i18n/useI18n";
 
 const statusOptions: Array<"" | CourseStatus> = ["", "DRAFT", "PENDING_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED"];
 const difficultyOptions: Array<"" | CourseDifficulty> = ["", "BEGINNER", "INTERMEDIATE", "ADVANCED"];
@@ -58,6 +59,8 @@ function toSummary(course: TeacherCourseSummary): TeacherCourseSummary {
 }
 
 export default function TeacherCoursesPage() {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
     const [courses, setCourses] = useState<TeacherCourseSummary[]>([]);
     const [filters, setFilters] = useState<FilterState>(initialFilters);
     const [isLoading, setIsLoading] = useState(true);
@@ -126,60 +129,60 @@ export default function TeacherCoursesPage() {
                 >
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
                         <Box sx={{ flexGrow: 1 }}>
-                            <Typography variant="h2">Teacher courses</Typography>
+                            <Typography variant="h2">{isRu ? "Курсы преподавателя" : "Teacher courses"}</Typography>
                             <Typography sx={{ color: "text.secondary", mt: 1, maxWidth: 760 }}>
-                                Manage course drafts, submit ready content for moderation, archive outdated courses, and keep metadata aligned with the BFF contract.
+                                {isRu ? "Создавай черновики, отправляй готовые курсы на модерацию и архивируй устаревшие материалы." : "Manage drafts, submit ready courses for moderation and archive outdated materials."}
                             </Typography>
                         </Box>
                         <Button component={RouterLink} to="/teacher/courses/new" variant="contained" size="large">
-                            Create course
+                            {isRu ? "Создать курс" : "Create course"}
                         </Button>
                     </Stack>
                 </Paper>
 
                 <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
                     <Stack spacing={2}>
-                        <Typography variant="h5">Filters</Typography>
+                        <Typography variant="h5">{isRu ? "Фильтры" : "Filters"}</Typography>
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "2fr repeat(3, 1fr)" }, gap: 2 }}>
                             <TextField
-                                label="Search"
+                                label={isRu ? "Поиск" : "Search"}
                                 value={filters.search}
                                 onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-                                placeholder="Course title or description"
+                                placeholder={isRu ? "Название или описание курса" : "Course title or description"}
                             />
-                            <TextField select label="Status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as FilterState["status"] }))}>
+                            <TextField select label={isRu ? "Статус" : "Status"} value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as FilterState["status"] }))}>
                                 {statusOptions.map((value) => (
                                     <MenuItem key={value || "all"} value={value}>
-                                        {value || "All statuses"}
+                                        {value || (isRu ? "Все статусы" : "All statuses")}
                                     </MenuItem>
                                 ))}
                             </TextField>
                             <TextField
                                 select
-                                label="Difficulty"
+                                label={isRu ? "Сложность" : "Difficulty"}
                                 value={filters.difficulty}
                                 onChange={(event) => setFilters((current) => ({ ...current, difficulty: event.target.value as FilterState["difficulty"] }))}
                             >
                                 {difficultyOptions.map((value) => (
                                     <MenuItem key={value || "all"} value={value}>
-                                        {value || "All difficulties"}
+                                        {value || (isRu ? "Любая сложность" : "All difficulties")}
                                     </MenuItem>
                                 ))}
                             </TextField>
-                            <TextField select label="Access type" value={filters.accessType} onChange={(event) => setFilters((current) => ({ ...current, accessType: event.target.value as FilterState["accessType"] }))}>
+                            <TextField select label={isRu ? "Доступ" : "Access type"} value={filters.accessType} onChange={(event) => setFilters((current) => ({ ...current, accessType: event.target.value as FilterState["accessType"] }))}>
                                 {accessTypeOptions.map((value) => (
                                     <MenuItem key={value || "all"} value={value}>
-                                        {value || "All access types"}
+                                        {value || (isRu ? "Любой доступ" : "All access types")}
                                     </MenuItem>
                                 ))}
                             </TextField>
                         </Box>
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                             <Button variant="contained" onClick={applyFilters} disabled={isLoading}>
-                                Apply filters
+                                {isRu ? "Применить" : "Apply filters"}
                             </Button>
                             <Button variant="outlined" onClick={resetFilters} disabled={isLoading || !hasActiveFilters}>
-                                Reset
+                                {isRu ? "Сбросить" : "Reset"}
                             </Button>
                         </Stack>
                     </Stack>
@@ -191,11 +194,11 @@ export default function TeacherCoursesPage() {
 
                 {!isLoading && !error && courses.length === 0 ? (
                     <EmptyState
-                        title="No courses found"
-                        description={hasActiveFilters ? "No courses match the selected filters." : "Create your first course draft to start building content."}
+                        title={isRu ? "Курсы не найдены" : "No courses found"}
+                        description={hasActiveFilters ? (isRu ? "Нет курсов по выбранным фильтрам." : "No courses match the selected filters.") : (isRu ? "Создай первый черновик курса, чтобы начать наполнение." : "Create your first course draft to start building content.")}
                         action={
                             <Button component={RouterLink} to="/teacher/courses/new" variant="contained">
-                                Create course
+                                {isRu ? "Создать курс" : "Create course"}
                             </Button>
                         }
                     />
@@ -213,23 +216,23 @@ export default function TeacherCoursesPage() {
                                                 <StatusBadge status={course.status} />
                                                 <DifficultyBadge difficulty={course.difficulty} />
                                                 <AccessTypeBadge accessType={course.accessType} />
-                                                <Chip size="small" label={course.enrollmentEnabled ? "Enrollment open" : "Enrollment disabled"} />
+                                                <Chip size="small" label={course.enrollmentEnabled ? (isRu ? "Запись открыта" : "Enrollment open") : (isRu ? "Запись закрыта" : "Enrollment disabled")} />
                                                 <Chip size="small" label={formatDuration(course.estimatedMinutes)} />
                                             </Stack>
                                             <Typography variant="h5">{course.title}</Typography>
                                             <Typography sx={{ color: "text.secondary", mt: 0.5 }}>{course.shortDescription}</Typography>
                                             <Typography variant="body2" sx={{ color: "text.secondary", mt: 1 }}>
-                                                Updated {new Date(course.updatedAt).toLocaleDateString()}
+                                                {isRu ? "Обновлено" : "Updated"} {new Date(course.updatedAt).toLocaleDateString()}
                                             </Typography>
                                             {course.reviewComment ? (
                                                 <Alert severity={course.status === "CHANGES_REQUESTED" ? "warning" : "info"} sx={{ mt: 1.5 }}>
-                                                    Admin review: {course.reviewComment}
+                                                    {isRu ? "Комментарий модератора" : "Admin review"}: {course.reviewComment}
                                                 </Alert>
                                             ) : null}
                                         </Box>
                                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ flexShrink: 0 }}>
                                             <Button component={RouterLink} to={`/teacher/courses/${course.id}/edit`} variant="outlined" startIcon={<EditRoundedIcon />}>
-                                                Edit
+                                                {isRu ? "Редактировать" : "Edit"}
                                             </Button>
                                             <Button
                                                 variant="contained"
@@ -237,7 +240,7 @@ export default function TeacherCoursesPage() {
                                                 disabled={isActionLoading || course.status === "PUBLISHED" || course.status === "ARCHIVED" || course.status === "PENDING_REVIEW"}
                                                 onClick={() => void runCourseAction(course.id, "submit")}
                                             >
-                                                Submit for review
+                                                {isRu ? "На модерацию" : "Submit for review"}
                                             </Button>
                                             <Button
                                                 variant="outlined"
@@ -246,7 +249,7 @@ export default function TeacherCoursesPage() {
                                                 disabled={isActionLoading || course.status === "ARCHIVED"}
                                                 onClick={() => void runCourseAction(course.id, "archive")}
                                             >
-                                                Archive
+                                                {isRu ? "Архивировать" : "Archive"}
                                             </Button>
                                         </Stack>
                                     </Stack>

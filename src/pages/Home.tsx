@@ -75,6 +75,9 @@ function StatCard({ value, label }: { value: string; label: string }) {
 }
 
 function CodePreviewCard() {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
+
     return (
         <Paper
             variant="outlined"
@@ -112,7 +115,7 @@ function CodePreviewCard() {
                         &#125;
                     </Typography>
                     <Typography component="div" sx={{ color: "#8ee6a7", fontFamily: "inherit", fontSize: "inherit" }}>
-                        OK 4/4 tests passed
+                        {isRu ? "OK 4/4 проверки пройдены" : "OK 4/4 tests passed"}
                     </Typography>
                 </Stack>
             </Paper>
@@ -121,7 +124,8 @@ function CodePreviewCard() {
 }
 
 export default function Home() {
-    const { t } = useI18n();
+    const { locale, t } = useI18n();
+    const isRu = locale === "ru";
     const [featuredCourses, setFeaturedCourses] = useState<CourseCatalogItem[]>([]);
     const [isLoadingCourses, setIsLoadingCourses] = useState(true);
     const [coursesError, setCoursesError] = useState<string | null>(null);
@@ -187,9 +191,9 @@ export default function Home() {
                                 </Button>
                             </Stack>
                             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.5, maxWidth: 620 }}>
-                                <StatCard value="5" label="item types" />
-                                <StatCard value="BFF" label="single API" />
-                                <StatCard value="MVP" label="course flow" />
+                                <StatCard value="5" label={isRu ? "типов уроков" : "item types"} />
+                                <StatCard value="24/7" label={isRu ? "доступ к курсам" : "course access"} />
+                                <StatCard value="100%" label={isRu ? "практический формат" : "practice focused"} />
                             </Box>
                         </Stack>
 
@@ -202,17 +206,17 @@ export default function Home() {
                 <Stack spacing={4}>
                     <Box sx={{ maxWidth: 720 }}>
                         <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 950 }}>
-                            Platform capabilities
+                            {isRu ? "Возможности платформы" : "Platform capabilities"}
                         </Typography>
                         <Typography variant="h2" sx={{ mt: 1 }}>
-                            Built for measurable progress
+                            {isRu ? "Обучение с понятным прогрессом" : "Built for measurable progress"}
                         </Typography>
                     </Box>
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 3 }}>
-                        <FeatureCard title="Structured courses" text="Modules and lessons are organized for predictable learning paths." icon={<SchoolRoundedIcon />} />
-                        <FeatureCard title="Coding tasks" text="Practice with executable tasks, starter code and test feedback." icon={<CodeRoundedIcon />} />
-                        <FeatureCard title="Quizzes" text="Check understanding with fast theory checkpoints before practice." icon={<FactCheckRoundedIcon />} />
-                        <FeatureCard title="Progress tracking" text="Learning data is aggregated through the BFF and LearningService." icon={<TimelineRoundedIcon />} />
+                        <FeatureCard title={isRu ? "Структурные курсы" : "Structured courses"} text={isRu ? "Модули и уроки выстроены в понятный учебный маршрут." : "Modules and lessons are organized for predictable learning paths."} icon={<SchoolRoundedIcon />} />
+                        <FeatureCard title={isRu ? "Практические задачи" : "Coding tasks"} text={isRu ? "Пиши код, запускай решения и получай обратную связь по проверкам." : "Practice with executable tasks, starter code and test feedback."} icon={<CodeRoundedIcon />} />
+                        <FeatureCard title={isRu ? "Короткие тесты" : "Quizzes"} text={isRu ? "Проверяй понимание теории перед практическими заданиями." : "Check understanding with fast theory checkpoints before practice."} icon={<FactCheckRoundedIcon />} />
+                        <FeatureCard title={isRu ? "Отслеживание прогресса" : "Progress tracking"} text={isRu ? "Продолжай обучение с того места, где остановился." : "Continue learning from the exact place where you stopped."} icon={<TimelineRoundedIcon />} />
                     </Box>
                 </Stack>
             </Container>
@@ -223,17 +227,17 @@ export default function Home() {
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "flex-end" }} justifyContent="space-between">
                             <Box>
                                 <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 950 }}>
-                                    Public catalog
+                                    {isRu ? "Каталог курсов" : "Course catalog"}
                                 </Typography>
                                 <Typography variant="h2" sx={{ mt: 1 }}>
-                                    Featured courses
+                                    {isRu ? "Рекомендуемые курсы" : "Featured courses"}
                                 </Typography>
                                 <Typography sx={{ color: "text.secondary", mt: 1, maxWidth: 650 }}>
-                                    Loaded through the shared BFF course API. Mock mode uses the same frontend service layer.
+                                    {isRu ? "Выбирай опубликованные курсы и начинай обучение в удобном темпе." : "Choose published courses and start learning at your own pace."}
                                 </Typography>
                             </Box>
                             <Button component={RouterLink} to="/courses" variant="outlined" endIcon={<ArrowForwardRoundedIcon />} sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}>
-                                View all courses
+                                {isRu ? "Все курсы" : "View all courses"}
                             </Button>
                         </Stack>
 
@@ -242,10 +246,10 @@ export default function Home() {
                         {!isLoadingCourses && !coursesError && featuredCourses.length === 0 ? (
                             <EmptyState
                                 title="No public courses yet"
-                                description="Once courses are published by teachers, they will appear here."
+                                description={isRu ? "После публикации курсов преподавателями они появятся здесь." : "Once courses are published by teachers, they will appear here."}
                                 action={
                                     <Button component={RouterLink} to="/courses" variant="contained">
-                                        Open catalog
+                                        {isRu ? "Открыть каталог" : "Open catalog"}
                                     </Button>
                                 }
                             />
@@ -279,16 +283,16 @@ export default function Home() {
                             <Stack direction="row" spacing={1} alignItems="center" sx={{ color: "primary.main", mb: 1 }}>
                                 <TerminalRoundedIcon fontSize="small" />
                                 <Typography variant="overline" sx={{ fontWeight: 950 }}>
-                                    Ready for BFF integration
+                                    {isRu ? "Учебная платформа готова к работе" : "Ready for learning"}
                                 </Typography>
                             </Stack>
-                            <Typography variant="h3">One frontend API, multiple backend services behind it.</Typography>
+                            <Typography variant="h3">{isRu ? "Курсы, задания и прогресс собраны в одном удобном кабинете." : "Courses, tasks and progress are kept in one clear workspace."}</Typography>
                             <Typography sx={{ color: "text.secondary", mt: 1.5, maxWidth: 740 }}>
-                                Site uses only the versioned BFF contract. CourseService, UserService, LearningService and CodeExecutorService stay hidden behind the BFF.
+                                {isRu ? "Учись, отслеживай результаты и возвращайся к нужному уроку без лишних технических деталей." : "Learn, track results and return to the right lesson without technical friction."}
                             </Typography>
                         </Box>
                         <Button component={RouterLink} to="/courses" size="large" variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
-                            Start exploring
+                            {isRu ? "Перейти к курсам" : "Start exploring"}
                         </Button>
                     </Stack>
                 </Paper>
