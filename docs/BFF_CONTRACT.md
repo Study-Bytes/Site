@@ -155,8 +155,35 @@ Preferred response shape is `PageResponse<CourseCatalogItem>`. For early BFF dev
 POST /api/v1/learn/courses/{courseId}/enroll
 GET  /api/v1/learn/my-courses
 GET  /api/v1/learn/courses/{courseId}
+GET  /api/v1/learn/courses/{courseId}/leaderboard
 GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 ```
+
+`GET /api/v1/learn/courses/{courseId}/leaderboard` returns `CourseLeaderboardResponse`: top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list.
+
+```json
+{
+  "courseId": 101,
+  "top": [
+    {
+      "userId": 11,
+      "fullName": "Ada Lovelace",
+      "avatarUrl": null,
+      "progressPercent": 100,
+      "rank": 1
+    }
+  ],
+  "currentUser": {
+    "userId": 1,
+    "fullName": "Student Demo",
+    "avatarUrl": null,
+    "progressPercent": 42,
+    "rank": 11
+  }
+}
+```
+
+The Site renders only 10 top rows. If `currentUser.userId` is already present in the returned top list, the Site highlights that top row and does not render a duplicate current-user row.
 
 ### Submissions/execution
 

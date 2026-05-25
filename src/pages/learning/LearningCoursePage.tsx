@@ -8,8 +8,9 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { getErrorMessage } from "../../api/apiError";
-import type { CourseItemSummary, LearningCourse } from "../../api/bffContracts";
+import type { CourseItemSummary, CourseLeaderboardResponse, LearningCourse } from "../../api/bffContracts";
 import { learningApi } from "../../api/services";
+import { CourseLeaderboard } from "../../components/learning/CourseLeaderboard";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
@@ -71,8 +72,11 @@ export default function LearningCoursePage() {
     const { courseId } = useParams();
     const parsedCourseId = parseId(courseId);
     const [course, setCourse] = useState<LearningCourse | null>(null);
+    const [leaderboard, setLeaderboard] = useState<CourseLeaderboardResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
     const loadCourse = useCallback(async () => {
         if (!parsedCourseId) {
@@ -91,9 +95,29 @@ export default function LearningCoursePage() {
         }
     }, [isRu, parsedCourseId]);
 
+    const loadLeaderboard = useCallback(async () => {
+        if (!parsedCourseId) {
+            setIsLeaderboardLoading(false);
+            return;
+        }
+        setIsLeaderboardLoading(true);
+        setLeaderboardError(null);
+        try {
+            setLeaderboard(await learningApi.getCourseLeaderboard(parsedCourseId));
+        } catch (requestError) {
+            setLeaderboardError(getErrorMessage(requestError, isRu ? "Не удалось загрузить рейтинг курса" : "Failed to load course leaderboard"));
+        } finally {
+            setIsLeaderboardLoading(false);
+        }
+    }, [isRu, parsedCourseId]);
+
     useEffect(() => {
         void loadCourse();
     }, [loadCourse]);
+
+    useEffect(() => {
+        void loadLeaderboard();
+    }, [loadLeaderboard]);
 
     const itemCount = useMemo(() => (course ? getCourseItemCount(course) : 0), [course]);
     const moduleCount = useMemo(() => (course ? getCourseModuleCount(course) : 0), [course]);
@@ -176,17 +200,20 @@ export default function LearningCoursePage() {
                     </Paper>
 
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "320px minmax(0, 1fr)" }, gap: 3, alignItems: "start" }}>
-                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, position: { md: "sticky" }, top: { md: 96 } }}>
-                            <Stack spacing={1.7}>
-                                <Typography variant="h6" sx={{ fontWeight: 950 }}>
-                                    {isRu ? "Навигация по курсу" : "Course navigation"}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                    {isRu ? "Открывайте доступные уроки. Пройденные уроки остаются доступными для повторения." : "Open any available item. Completed items stay available for review."}
-                                </Typography>
-                                <LinearProgress variant="determinate" value={course.progressPercent} sx={{ height: 7, borderRadius: 999 }} />
-                            </Stack>
-                        </Paper>
+                        <Stack spacing={2.5} sx={{ position: { md: "sticky" }, top: { md: 96 } }}>
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                                <Stack spacing={1.7}>
+                                    <Typography variant="h6" sx={{ fontWeight: 950 }}>
+                                        {isRu ? "Навигация по курсу" : "Course navigation"}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                        {isRu ? "Открывайте доступные уроки. Пройденные уроки остаются доступными для повторения." : "Open any available item. Completed items stay available for review."}
+                                    </Typography>
+                                    <LinearProgress variant="determinate" value={course.progressPercent} sx={{ height: 7, borderRadius: 999 }} />
+                                </Stack>
+                            </Paper>
+                            <CourseLeaderboard leaderboard={leaderboard} isLoading={isLeaderboardLoading} error={leaderboardError} onRetry={loadLeaderboard} />
+                        </Stack>
 
                         <Stack spacing={2.5}>
                             {course.modules.length === 0 ? <EmptyState title={isRu ? "Модулей пока нет" : "No modules"} description={isRu ? "В этом курсе пока нет учебной структуры." : "This enrolled course has no modules yet."} /> : null}

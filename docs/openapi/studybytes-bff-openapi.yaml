@@ -369,6 +369,30 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /learn/courses/{courseId}/leaderboard:
+    get:
+      tags:
+      - Learning
+      operationId: getCourseLeaderboard
+      summary: Get course progress leaderboard
+      description: Returns top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Course leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseLeaderboardResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /learn/courses/{courseId}/items/{itemId}:
     get:
       tags:
@@ -1499,6 +1523,14 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 components:
+  parameters:
+    CourseId:
+      name: courseId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
   securitySchemes:
     BearerAuth:
       type: http
@@ -2143,6 +2175,57 @@ components:
         - progressPercent
         - enrollmentStatus
         - nextItemId
+    CourseLeaderboardEntry:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 11
+        fullName:
+          type: string
+          nullable: true
+          example: Ada Lovelace
+        avatarUrl:
+          type: string
+          nullable: true
+          example: https://cdn.example.com/avatars/11.png
+        progressPercent:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 100
+        rank:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 1
+      required:
+      - userId
+      - fullName
+      - progressPercent
+      - rank
+    CourseLeaderboardResponse:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          format: int64
+          example: 101
+        top:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/CourseLeaderboardEntry'
+        currentUser:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/CourseLeaderboardEntry'
+      required:
+      - courseId
+      - top
+      - currentUser
     LearningItem:
       type: object
       properties:

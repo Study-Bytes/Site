@@ -9,6 +9,8 @@ import type {
     CourseDetails,
     CourseItemPreview,
     CourseItemUpsertRequest,
+    CourseLeaderboardEntry,
+    CourseLeaderboardResponse,
     CourseModuleSummary,
     CourseUpsertRequest,
     CurrentUser,
@@ -390,6 +392,44 @@ function progressForCourse(courseId: number) {
     return { progressPercent: 0, status: "IN_PROGRESS" as const, nextItemId: course.modules[0]?.items[0]?.id ?? null };
 }
 
+const leaderboardUsers = [
+    { userId: 11, fullName: "Ada Lovelace", progressPercent: 100 },
+    { userId: 12, fullName: "Alan Turing", progressPercent: 96 },
+    { userId: 13, fullName: "Grace Hopper", progressPercent: 91 },
+    { userId: 14, fullName: "Katherine Johnson", progressPercent: 88 },
+    { userId: 15, fullName: "Donald Knuth", progressPercent: 73 },
+    { userId: 16, fullName: "Barbara Liskov", progressPercent: 64 },
+    { userId: 17, fullName: "Linus Torvalds", progressPercent: 58 },
+    { userId: 18, fullName: "Margaret Hamilton", progressPercent: 53 },
+    { userId: 19, fullName: "Ken Thompson", progressPercent: 49 },
+    { userId: 20, fullName: "Dennis Ritchie", progressPercent: 41 },
+];
+
+function buildCourseLeaderboard(courseId: number): CourseLeaderboardResponse {
+    const user = requireUser();
+    findCourse(courseId);
+    const currentProgress = progressForCourse(courseId).progressPercent;
+    const participants = [
+        ...leaderboardUsers,
+        { userId: user.id, fullName: user.fullName, progressPercent: currentProgress },
+        { userId: 21, fullName: "Edsger Dijkstra", progressPercent: 39 },
+        { userId: 22, fullName: "Frances Allen", progressPercent: 34 },
+    ]
+        .sort((a, b) => b.progressPercent - a.progressPercent || a.userId - b.userId)
+        .map<CourseLeaderboardEntry>((entry, index) => ({
+            ...entry,
+            avatarUrl: null,
+            rank: index + 1,
+        }));
+    const currentUser = participants.find((entry) => entry.userId === user.id) ?? null;
+
+    return {
+        courseId,
+        top: participants.slice(0, 10),
+        currentUser,
+    };
+}
+
 function assertCanEnroll(course: TeacherCourseDetails) {
     if (course.status !== "PUBLISHED") throw new ApiError("Course is unavailable", 403);
     if (!course.enrollmentEnabled) throw new ApiError("Enrollment is disabled", 403);
@@ -576,6 +616,10 @@ export const mockBff = {
         assertCanEnroll(course);
         const progress = progressForCourse(courseId);
         return delay({ ...publicCourseDetails(course), progressPercent: progress.progressPercent, enrollmentStatus: progress.status, nextItemId: progress.nextItemId });
+    },
+
+    async getCourseLeaderboard(courseId: number): Promise<CourseLeaderboardResponse> {
+        return delay(buildCourseLeaderboard(courseId));
     },
 
     async getLearningItem(courseId: number, itemId: number): Promise<LearningItem> {

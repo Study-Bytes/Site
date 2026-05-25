@@ -80,6 +80,14 @@ describe("StudyBytes role-based behavior", () => {
         expect((await screen.findAllByText(/Java Core/i, {}, findOptions)).length).toBeGreaterThan(0);
     });
 
+    it("renders course leaderboard without duplicating a visible current user", async () => {
+        await loginAs("STUDENT");
+        renderRoute("/learn/101");
+        expect(await screen.findByRole("heading", { name: /Course leaders|Лидеры курса/i }, findOptions)).toBeInTheDocument();
+        expect(await screen.findByText(/Student Demo/i, {}, findOptions)).toBeInTheDocument();
+        expect(screen.queryByText(/Your result|Ваш результат/i)).not.toBeInTheDocument();
+    });
+
     it("shows access denied when student opens teacher routes", async () => {
         await loginAs("STUDENT");
         renderRoute("/teacher/courses");

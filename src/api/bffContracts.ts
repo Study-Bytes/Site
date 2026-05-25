@@ -197,6 +197,20 @@ export type LearningCourse = CourseDetails & {
     nextItemId: number | null;
 };
 
+export type CourseLeaderboardEntry = {
+    userId: number;
+    fullName: string | null;
+    avatarUrl?: string | null;
+    progressPercent: number;
+    rank: number;
+};
+
+export type CourseLeaderboardResponse = {
+    courseId: number;
+    top: CourseLeaderboardEntry[];
+    currentUser: CourseLeaderboardEntry | null;
+};
+
 export type LearningItem = {
     course: Pick<CourseCatalogItem, "id" | "slug" | "title">;
     item: {
