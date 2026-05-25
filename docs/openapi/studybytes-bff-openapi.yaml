@@ -369,6 +369,35 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /learn/courses/{courseId}/leaderboard:
+    get:
+      tags:
+      - Learning
+      summary: Get course progress leaderboard
+      operationId: getCourseLeaderboard
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Course leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseLeaderboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /learn/courses/{courseId}/items/{itemId}:
     get:
       tags:
@@ -2143,6 +2172,57 @@ components:
         - progressPercent
         - enrollmentStatus
         - nextItemId
+    CourseLeaderboardEntry:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 11
+        fullName:
+          type: string
+          nullable: true
+          example: Ada Lovelace
+        avatarUrl:
+          type: string
+          nullable: true
+          example: https://cdn.example.com/avatars/11.png
+        progressPercent:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 100
+        rank:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 1
+      required:
+      - userId
+      - fullName
+      - progressPercent
+      - rank
+    CourseLeaderboard:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          format: int64
+          example: 101
+        top:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/CourseLeaderboardEntry'
+        currentUser:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/CourseLeaderboardEntry'
+      required:
+      - courseId
+      - top
+      - currentUser
     LearningItem:
       type: object
       properties:

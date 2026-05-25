@@ -155,8 +155,35 @@ Preferred response shape is `PageResponse<CourseCatalogItem>`. For early BFF dev
 POST /api/v1/learn/courses/{courseId}/enroll
 GET  /api/v1/learn/my-courses
 GET  /api/v1/learn/courses/{courseId}
+GET  /api/v1/learn/courses/{courseId}/leaderboard
 GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 ```
+
+`GET /api/v1/learn/courses/{courseId}/leaderboard` returns course progress leaders and the current user's rank resolved from the request JWT/session:
+
+```json
+{
+  "courseId": 101,
+  "top": [
+    {
+      "userId": 11,
+      "fullName": "Ada Lovelace",
+      "avatarUrl": null,
+      "progressPercent": 100,
+      "rank": 1
+    }
+  ],
+  "currentUser": {
+    "userId": 1,
+    "fullName": "Student Demo",
+    "avatarUrl": null,
+    "progressPercent": 42,
+    "rank": 11
+  }
+}
+```
+
+The Site renders only 10 top rows. If `currentUser.userId` is already present in the visible top rows, the Site highlights that top row and does not render a duplicate current-user row.
 
 ### Submissions/execution
 
