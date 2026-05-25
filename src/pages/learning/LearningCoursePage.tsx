@@ -8,7 +8,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { getErrorMessage } from "../../api/apiError";
-import type { CourseItemSummary, CourseLeaderboard as CourseLeaderboardData, LearningCourse } from "../../api/bffContracts";
+import type { CourseItemSummary, CourseLeaderboardResponse, LearningCourse } from "../../api/bffContracts";
 import { learningApi } from "../../api/services";
 import { CourseLeaderboard } from "../../components/learning/CourseLeaderboard";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
@@ -72,7 +72,7 @@ export default function LearningCoursePage() {
     const { courseId } = useParams();
     const parsedCourseId = parseId(courseId);
     const [course, setCourse] = useState<LearningCourse | null>(null);
-    const [leaderboard, setLeaderboard] = useState<CourseLeaderboardData | null>(null);
+    const [leaderboard, setLeaderboard] = useState<CourseLeaderboardResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

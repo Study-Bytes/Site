@@ -2,8 +2,8 @@ import { env } from "../../config/env";
 import { mockBff } from "../../mocks/mockBff";
 import { request } from "../apiClient";
 import type {
-    CourseLeaderboard,
     CourseLeaderboardEntry,
+    CourseLeaderboardResponse,
     EnrollCourseResponse,
     EnrollmentSummary,
     ContentBlockDto,
@@ -31,10 +31,10 @@ function normalizeLearningCourse(course: LearningCourse): LearningCourse {
     };
 }
 
-function normalizeCourseLeaderboard(leaderboard: CourseLeaderboard): CourseLeaderboard {
+function normalizeCourseLeaderboard(leaderboard: CourseLeaderboardResponse): CourseLeaderboardResponse {
     return {
         ...leaderboard,
-        top: readArray<CourseLeaderboardEntry>(leaderboard.top).slice(0, 10),
+        top: readArray<CourseLeaderboardEntry>(leaderboard.top),
         currentUser: leaderboard.currentUser ?? null,
     };
 }
@@ -75,9 +75,9 @@ export const learningApi = {
         return normalizeLearningCourse(await request<LearningCourse>(`/learn/courses/${courseId}`));
     },
 
-    async getCourseLeaderboard(courseId: number): Promise<CourseLeaderboard> {
+    async getCourseLeaderboard(courseId: number): Promise<CourseLeaderboardResponse> {
         if (env.useMockBff) return mockBff.getCourseLeaderboard(courseId);
-        return normalizeCourseLeaderboard(await request<CourseLeaderboard>(`/learn/courses/${courseId}/leaderboard`));
+        return normalizeCourseLeaderboard(await request<CourseLeaderboardResponse>(`/learn/courses/${courseId}/leaderboard`));
     },
 
     async getLearningItem(courseId: number, itemId: number): Promise<LearningItem> {

@@ -205,7 +205,7 @@ export type CourseLeaderboardEntry = {
     rank: number;
 };
 
-export type CourseLeaderboard = {
+export type CourseLeaderboardResponse = {
     courseId: number;
     top: CourseLeaderboardEntry[];
     currentUser: CourseLeaderboardEntry | null;

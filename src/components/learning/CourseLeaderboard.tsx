@@ -3,7 +3,7 @@ import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
-import type { CourseLeaderboard as CourseLeaderboardData, CourseLeaderboardEntry } from "../../api/bffContracts";
+import type { CourseLeaderboardEntry, CourseLeaderboardResponse } from "../../api/bffContracts";
 import { useI18n } from "../../i18n/useI18n";
 
 const leaderboardLimit = 10;
@@ -119,16 +119,17 @@ export function CourseLeaderboard({
     error,
     onRetry,
 }: {
-    leaderboard: CourseLeaderboardData | null;
+    leaderboard: CourseLeaderboardResponse | null;
     isLoading: boolean;
     error: string | null;
     onRetry: () => void;
 }) {
     const { locale } = useI18n();
     const isRu = locale === "ru";
-    const topEntries = leaderboard?.top.slice(0, leaderboardLimit) ?? [];
+    const returnedTopEntries = leaderboard?.top ?? [];
+    const topEntries = returnedTopEntries.slice(0, leaderboardLimit);
     const currentUser = leaderboard?.currentUser ?? null;
-    const currentUserInTop = Boolean(currentUser && topEntries.some((entry) => entry.userId === currentUser.userId));
+    const currentUserInTop = Boolean(currentUser && returnedTopEntries.some((entry) => entry.userId === currentUser.userId));
     const shouldShowCurrentUser = Boolean(currentUser && !currentUserInTop);
 
     return (

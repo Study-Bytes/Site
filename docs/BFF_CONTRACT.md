@@ -159,7 +159,7 @@ GET  /api/v1/learn/courses/{courseId}/leaderboard
 GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 ```
 
-`GET /api/v1/learn/courses/{courseId}/leaderboard` returns course progress leaders and the current user's rank resolved from the request JWT/session:
+`GET /api/v1/learn/courses/{courseId}/leaderboard` returns `CourseLeaderboardResponse`: top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list.
 
 ```json
 {
@@ -183,7 +183,7 @@ GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 }
 ```
 
-The Site renders only 10 top rows. If `currentUser.userId` is already present in the visible top rows, the Site highlights that top row and does not render a duplicate current-user row.
+The Site renders only 10 top rows. If `currentUser.userId` is already present in the returned top list, the Site highlights that top row and does not render a duplicate current-user row.
 
 ### Submissions/execution
 

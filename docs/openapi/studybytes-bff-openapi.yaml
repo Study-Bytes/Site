@@ -373,25 +373,20 @@ paths:
     get:
       tags:
       - Learning
-      summary: Get course progress leaderboard
       operationId: getCourseLeaderboard
+      summary: Get course progress leaderboard
+      description: Returns top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list.
       security:
       - BearerAuth: []
-      - CookieAuth: []
       parameters:
-      - name: courseId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+      - $ref: '#/components/parameters/CourseId'
       responses:
         '200':
           description: Course leaderboard
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CourseLeaderboard'
+                $ref: '#/components/schemas/CourseLeaderboardResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1528,6 +1523,14 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 components:
+  parameters:
+    CourseId:
+      name: courseId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
   securitySchemes:
     BearerAuth:
       type: http
@@ -2203,7 +2206,7 @@ components:
       - fullName
       - progressPercent
       - rank
-    CourseLeaderboard:
+    CourseLeaderboardResponse:
       type: object
       properties:
         courseId:

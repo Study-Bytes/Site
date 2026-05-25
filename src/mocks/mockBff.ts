@@ -9,8 +9,8 @@ import type {
     CourseDetails,
     CourseItemPreview,
     CourseItemUpsertRequest,
-    CourseLeaderboard,
     CourseLeaderboardEntry,
+    CourseLeaderboardResponse,
     CourseModuleSummary,
     CourseUpsertRequest,
     CurrentUser,
@@ -405,7 +405,7 @@ const leaderboardUsers = [
     { userId: 20, fullName: "Dennis Ritchie", progressPercent: 41 },
 ];
 
-function buildCourseLeaderboard(courseId: number): CourseLeaderboard {
+function buildCourseLeaderboard(courseId: number): CourseLeaderboardResponse {
     const user = requireUser();
     findCourse(courseId);
     const currentProgress = progressForCourse(courseId).progressPercent;
@@ -618,7 +618,7 @@ export const mockBff = {
         return delay({ ...publicCourseDetails(course), progressPercent: progress.progressPercent, enrollmentStatus: progress.status, nextItemId: progress.nextItemId });
     },
 
-    async getCourseLeaderboard(courseId: number): Promise<CourseLeaderboard> {
+    async getCourseLeaderboard(courseId: number): Promise<CourseLeaderboardResponse> {
         return delay(buildCourseLeaderboard(courseId));
     },
 
