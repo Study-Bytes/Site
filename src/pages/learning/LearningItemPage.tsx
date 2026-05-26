@@ -23,6 +23,7 @@ import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { getErrorMessage } from "../../api/apiError";
 import type {
@@ -45,6 +46,7 @@ import { LoadingState } from "../../components/ui/LoadingState";
 import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { studyBytesColors } from "../../theme/theme";
+import { formatDuration } from "../../utils/courseFormat";
 import { deadlineStatusColor, deadlineStatusLabel, deadlineTypeLabel, effectiveModuleDeadlineAt, formatDateTime, getStoredModuleStartedAt, storeModuleStartedAt } from "../../utils/moduleDeadlines";
 
 function parseId(value: string | undefined) {
@@ -468,17 +470,88 @@ export default function LearningItemPage() {
                     ) : null}
 
                     {requiresModuleStart && currentModule ? (
-                        <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 4 }, borderRadius: 2 }}>
-                            <Stack spacing={2}>
-                                <Typography variant="h4">{isRu ? "Сначала начните модуль" : "Start the module first"}</Typography>
-                                <Typography sx={{ color: "text.secondary", lineHeight: 1.7 }}>
-                                    {isRu
-                                        ? "У этого модуля есть таймер от старта. Задания откроются после явного запуска, повторный старт не сбросит время."
-                                        : "This module has a timer from start. Items unlock after an explicit start, and starting again will not reset the timer."}
-                                </Typography>
-                                <Button variant="contained" startIcon={<PlayArrowRoundedIcon />} disabled={isStartingModule} onClick={() => void startCurrentModule()} sx={{ alignSelf: "flex-start" }}>
-                                    {isRu ? "Начать / продолжить модуль" : "Start / continue module"}
-                                </Button>
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: { xs: 2.5, md: 4 },
+                                borderRadius: 2.5,
+                                maxWidth: 860,
+                                mx: "auto",
+                                width: "100%",
+                                bgcolor: "background.paper",
+                            }}
+                        >
+                            <Stack spacing={3} alignItems="center" textAlign="center">
+                                <Box
+                                    sx={{
+                                        width: 56,
+                                        height: 56,
+                                        display: "grid",
+                                        placeItems: "center",
+                                        borderRadius: 2,
+                                        bgcolor: "action.hover",
+                                        color: "primary.main",
+                                        border: 1,
+                                        borderColor: "divider",
+                                    }}
+                                >
+                                    <AccessTimeRoundedIcon />
+                                </Box>
+                                <Box>
+                                    <Typography variant="h3">{isRu ? "Сначала начните модуль" : "Start the module first"}</Typography>
+                                    <Typography sx={{ color: "text.secondary", lineHeight: 1.7, mt: 1, maxWidth: 640 }}>
+                                        {isRu
+                                            ? "Задания откроются после явного запуска. Повторный старт вернет старое время и не сбросит таймер."
+                                            : "Items unlock after an explicit start. Starting again returns the original time and will not reset the timer."}
+                                    </Typography>
+                                </Box>
+
+                                <Paper
+                                    variant="outlined"
+                                    sx={{
+                                        width: "100%",
+                                        p: 2.2,
+                                        borderRadius: 1.5,
+                                        borderColor: "error.main",
+                                        bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255,180,171,0.08)" : "rgba(186,26,26,0.05)"),
+                                    }}
+                                >
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "center", sm: "flex-start" }} textAlign={{ xs: "center", sm: "left" }}>
+                                        <WarningAmberRoundedIcon color="error" />
+                                        <Box sx={{ minWidth: 0 }}>
+                                            <Typography sx={{ fontWeight: 950, color: "error.main" }}>{isRu ? "Модуль с таймером" : "Timed module"}</Typography>
+                                            <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+                                                {isRu
+                                                    ? `Лимит: ${formatDuration(currentModule.timeLimitMinutes ?? 0)}. Начинайте, когда готовы пройти модуль без пауз.`
+                                                    : `Limit: ${formatDuration(currentModule.timeLimitMinutes ?? 0)}. Start when you are ready to work through the module without breaks.`}
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </Paper>
+
+                                <Stack direction={{ xs: "column", sm: "row" }} spacing={0} divider={<Divider flexItem orientation="vertical" sx={{ display: { xs: "none", sm: "block" } }} />} sx={{ width: "100%", maxWidth: 420 }}>
+                                    <Box sx={{ flex: 1, py: 0.5 }}>
+                                        <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 950 }}>
+                                            {isRu ? "Лимит" : "Limit"}
+                                        </Typography>
+                                        <Typography variant="h5">{formatDuration(currentModule.timeLimitMinutes ?? 0)}</Typography>
+                                    </Box>
+                                    <Box sx={{ flex: 1, py: 0.5 }}>
+                                        <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 950 }}>
+                                            {isRu ? "Уроки" : "Items"}
+                                        </Typography>
+                                        <Typography variant="h5">{currentModule.items.length}</Typography>
+                                    </Box>
+                                </Stack>
+
+                                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4} justifyContent="center">
+                                    <Button variant="contained" size="large" startIcon={<PlayArrowRoundedIcon />} disabled={isStartingModule} onClick={() => void startCurrentModule()}>
+                                        {isRu ? "Начать / продолжить модуль" : "Start / continue module"}
+                                    </Button>
+                                    <Button component={RouterLink} to={`/learn/${learningItem.course.id}`} size="large" variant="outlined">
+                                        {isRu ? "Карта курса" : "Course map"}
+                                    </Button>
+                                </Stack>
                             </Stack>
                         </Paper>
                     ) : null}

@@ -1,4 +1,4 @@
-import { Alert, Avatar, Box, Button, Chip, Divider, LinearProgress, Paper, Skeleton, Stack, Tooltip, Typography } from "@mui/material";
+import { Alert, Avatar, Box, Button, Chip, Divider, Paper, Skeleton, Stack, Tooltip, Typography } from "@mui/material";
 import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
@@ -61,13 +61,15 @@ function LeaderboardRow({ entry, isCurrentUser, compact = false }: { entry: Cour
         <Box
             sx={{
                 display: "grid",
-                gridTemplateColumns: "auto minmax(0, 1fr)",
-                gap: 1.2,
+                gridTemplateColumns: "34px minmax(0, 1fr) 48px",
+                gap: 1,
                 alignItems: "center",
-                py: compact ? 1.2 : 1.35,
-                px: isCurrentUser ? 1.2 : 0,
+                py: compact ? 1.1 : 1.25,
+                px: 1,
                 borderRadius: 1.2,
                 bgcolor: isCurrentUser ? "action.hover" : "transparent",
+                borderLeft: isCurrentUser ? 3 : 0,
+                borderColor: "primary.main",
             }}
         >
             <Tooltip title={rankLabel(entry.rank, isRu)}>
@@ -87,28 +89,24 @@ function LeaderboardRow({ entry, isCurrentUser, compact = false }: { entry: Cour
                 </Box>
             </Tooltip>
 
-            <Stack spacing={0.75} sx={{ minWidth: 0 }}>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                    <Avatar src={entry.avatarUrl ?? undefined} sx={{ width: 28, height: 28, fontSize: 12, fontWeight: 900, flex: "0 0 auto" }}>
-                        {initials(name) || <PersonRoundedIcon fontSize="small" />}
-                    </Avatar>
-                    <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                            <Typography noWrap sx={{ fontWeight: 900, minWidth: 0, flexGrow: 1 }}>
-                                {name}
-                            </Typography>
-                            <Typography sx={{ fontWeight: 950, whiteSpace: "nowrap", flex: "0 0 auto" }}>{progress}%</Typography>
-                        </Stack>
-                        <Stack direction="row" spacing={0.7} alignItems="center" sx={{ minWidth: 0 }}>
-                            <Typography noWrap variant="caption" sx={{ color: "text.secondary", fontWeight: 800, minWidth: 0 }}>
-                                {rankLabel(entry.rank, isRu)}
-                            </Typography>
-                            {isCurrentUser ? <Chip size="small" label={isRu ? "Вы" : "You"} color="primary" variant="outlined" sx={{ height: 22, fontWeight: 900 }} /> : null}
-                        </Stack>
-                    </Box>
-                </Stack>
-                <LinearProgress variant="determinate" value={progress} sx={{ height: 6, borderRadius: 999 }} />
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                <Avatar src={entry.avatarUrl ?? undefined} sx={{ width: 28, height: 28, fontSize: 12, fontWeight: 900, flex: "0 0 auto" }}>
+                    {initials(name) || <PersonRoundedIcon fontSize="small" />}
+                </Avatar>
+                <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                    <Typography noWrap sx={{ fontWeight: 900, minWidth: 0 }}>
+                        {name}
+                    </Typography>
+                    <Stack direction="row" spacing={0.7} alignItems="center" sx={{ minWidth: 0 }}>
+                        <Typography noWrap variant="caption" sx={{ color: "text.secondary", fontWeight: 800, minWidth: 0 }}>
+                            {rankLabel(entry.rank, isRu)}
+                        </Typography>
+                        {isCurrentUser ? <Chip size="small" label={isRu ? "Вы" : "You"} color="primary" sx={{ height: 20, fontWeight: 900 }} /> : null}
+                    </Stack>
+                </Box>
             </Stack>
+
+            <Typography sx={{ fontWeight: 950, whiteSpace: "nowrap", textAlign: "right" }}>{progress}%</Typography>
         </Box>
     );
 }
@@ -151,9 +149,9 @@ export function CourseLeaderboard({
     const shouldShowCurrentUser = Boolean(currentUser && !currentUserInTop);
 
     return (
-        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
-            <Stack spacing={2}>
-                <Stack direction="row" spacing={1.2} alignItems="center" justifyContent="space-between">
+        <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
+            <Stack spacing={0}>
+                <Stack direction="row" spacing={1.2} alignItems="center" justifyContent="space-between" sx={{ p: 2.2, borderBottom: 1, borderColor: "divider" }}>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
                         <WorkspacePremiumRoundedIcon color="primary" />
                         <Typography variant="h6" sx={{ fontWeight: 950 }}>
@@ -163,10 +161,10 @@ export function CourseLeaderboard({
                     <Chip size="small" label={`Top ${leaderboardLimit}`} variant="outlined" sx={{ fontWeight: 900 }} />
                 </Stack>
 
-                {isLoading ? <LeaderboardSkeleton /> : null}
+                {isLoading ? <Box sx={{ p: 2 }}><LeaderboardSkeleton /></Box> : null}
 
                 {!isLoading && error ? (
-                    <Stack spacing={1.3}>
+                    <Stack spacing={1.3} sx={{ p: 2 }}>
                         <Alert severity="warning">{error}</Alert>
                         <Button startIcon={<ReplayRoundedIcon />} onClick={onRetry} variant="outlined" size="small" sx={{ alignSelf: "flex-start" }}>
                             {isRu ? "Повторить" : "Retry"}
@@ -175,13 +173,24 @@ export function CourseLeaderboard({
                 ) : null}
 
                 {!isLoading && !error && topEntries.length === 0 && !currentUser ? (
-                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    <Typography variant="body2" sx={{ color: "text.secondary", p: 2 }}>
                         {isRu ? "В рейтинге пока нет участников." : "No leaderboard entries yet."}
                     </Typography>
                 ) : null}
 
                 {!isLoading && !error && topEntries.length > 0 ? (
-                    <Stack divider={<Divider flexItem />} spacing={0}>
+                    <Stack divider={<Divider flexItem />} spacing={0} sx={{ p: 1 }}>
+                        <Box sx={{ display: "grid", gridTemplateColumns: "34px minmax(0, 1fr) 48px", gap: 1, px: 1, pb: 0.8 }}>
+                            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 950 }}>
+                                #
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 950, textTransform: "uppercase" }}>
+                                {isRu ? "Ник" : "Name"}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 950, textAlign: "right", textTransform: "uppercase" }}>
+                                {isRu ? "Прог." : "Prog."}
+                            </Typography>
+                        </Box>
                         {topEntries.map((entry, index) => (
                             <LeaderboardRow key={`${entry.userId}-${entry.rank}-${index}`} entry={entry} isCurrentUser={currentUser?.userId === entry.userId} />
                         ))}
@@ -189,7 +198,7 @@ export function CourseLeaderboard({
                 ) : null}
 
                 {!isLoading && !error && shouldShowCurrentUser && currentUser ? (
-                    <Stack spacing={1.2}>
+                    <Stack spacing={1.2} sx={{ p: 1.2, pt: 0 }}>
                         <Divider />
                         <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 950 }}>
                             {isRu ? "Ваш результат" : "Your result"}

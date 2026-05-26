@@ -4,6 +4,7 @@ import {
     Box,
     Button,
     Chip,
+    Divider,
     Dialog,
     DialogActions,
     DialogContent,
@@ -16,6 +17,8 @@ import {
     Switch,
     TextField,
     Tooltip,
+    ToggleButton,
+    ToggleButtonGroup,
     Typography,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -24,7 +27,10 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
 import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import DoNotDisturbOnRoundedIcon from "@mui/icons-material/DoNotDisturbOnRounded";
 import DragIndicatorRoundedIcon from "@mui/icons-material/DragIndicatorRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import MenuOpenRoundedIcon from "@mui/icons-material/MenuOpenRounded";
@@ -236,6 +242,20 @@ function sortedItems(module: CourseModuleSummary) {
     return module.items.slice().sort((a, b) => a.orderIndex - b.orderIndex);
 }
 
+function splitTimeLimit(totalMinutes: number | null | undefined) {
+    const total = Math.max(1, Number(totalMinutes ?? 120));
+    return {
+        hours: Math.floor(total / 60),
+        minutes: total % 60,
+    };
+}
+
+function combineTimeLimit(hours: number, minutes: number) {
+    const safeHours = Math.max(0, Math.floor(Number.isFinite(hours) ? hours : 0));
+    const safeMinutes = Math.max(0, Math.min(59, Math.floor(Number.isFinite(minutes) ? minutes : 0)));
+    return Math.max(1, safeHours * 60 + safeMinutes);
+}
+
 export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const { courseId } = useParams();
     const navigate = useNavigate();
@@ -255,6 +275,32 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const [moduleDialog, setModuleDialog] = useState<ModuleDialogState | null>(null);
     const [itemDialog, setItemDialog] = useState<ItemDialogState | null>(null);
     const [isInspectorOpen, setInspectorOpen] = useState(() => localStorage.getItem("studybytes_course_editor_panel") !== "closed");
+    const moduleTimeLimit = splitTimeLimit(moduleDialog?.draft.timeLimitMinutes);
+
+    const updateModuleDeadlineType = (deadlineType: ModuleDeadlineType) => {
+        if (!moduleDialog) return;
+        setModuleDialog({
+            ...moduleDialog,
+            draft: normalizeModuleDraft({
+                ...moduleDialog.draft,
+                deadlineType,
+                deadlineAt: deadlineType === "ABSOLUTE" ? moduleDialog.draft.deadlineAt : null,
+                timeLimitMinutes: deadlineType === "RELATIVE_FROM_START" ? moduleDialog.draft.timeLimitMinutes ?? 120 : null,
+            }),
+        });
+    };
+
+    const updateModuleTimeLimit = (hours: number, minutes: number) => {
+        if (!moduleDialog) return;
+        setModuleDialog({
+            ...moduleDialog,
+            draft: {
+                ...moduleDialog.draft,
+                deadlineAt: null,
+                timeLimitMinutes: combineTimeLimit(hours, minutes),
+            },
+        });
+    };
 
     const loadCourse = async () => {
         if (isCreate) return;
@@ -832,59 +878,150 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                 </Paper>
             </Stack>
 
-            <Dialog open={Boolean(moduleDialog)} onClose={() => setModuleDialog(null)} fullWidth maxWidth="sm">
-                <DialogTitle>{moduleDialog?.mode === "create" ? (isRu ? "Создать модуль" : "Create module") : (isRu ? "Редактировать модуль" : "Edit module")}</DialogTitle>
-                <DialogContent>
+            <Dialog open={Boolean(moduleDialog)} onClose={() => setModuleDialog(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2, overflow: "hidden" } }}>
+                <DialogTitle sx={{ p: 0 }}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} sx={{ px: { xs: 2.5, md: 3 }, py: 2.2, borderBottom: 1, borderColor: "divider" }}>
+                        <Box>
+                            <Typography variant="h5">{moduleDialog?.mode === "create" ? (isRu ? "Создать модуль" : "Create module") : (isRu ? "Редактировать модуль" : "Edit module")}</Typography>
+                            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.4 }}>
+                                {isRu ? "Настройте порядок и правило дедлайна." : "Set the module order and deadline rule."}
+                            </Typography>
+                        </Box>
+                        <IconButton aria-label={isRu ? "Закрыть" : "Close"} onClick={() => setModuleDialog(null)}>
+                            <CloseRoundedIcon />
+                        </IconButton>
+                    </Stack>
+                </DialogTitle>
+                <DialogContent sx={{ px: { xs: 2.5, md: 3 }, py: 3 }}>
                     {moduleDialog ? (
-                        <Stack spacing={2} sx={{ pt: 1 }}>
-                            <TextField label={isRu ? "Название" : "Title"} value={moduleDialog.draft.title} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, title: event.target.value } })} required />
-                            <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={moduleDialog.draft.orderIndex} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, orderIndex: Number(event.target.value) } })} />
-                            <TextField
-                                select
-                                label={isRu ? "Тип дедлайна" : "Deadline type"}
-                                value={moduleDialog.draft.deadlineType ?? "NONE"}
-                                onChange={(event) => {
-                                    const deadlineType = event.target.value as ModuleDeadlineType;
-                                    setModuleDialog({
-                                        ...moduleDialog,
-                                        draft: normalizeModuleDraft({
-                                            ...moduleDialog.draft,
-                                            deadlineType,
-                                            deadlineAt: deadlineType === "ABSOLUTE" ? moduleDialog.draft.deadlineAt : null,
-                                            timeLimitMinutes: deadlineType === "RELATIVE_FROM_START" ? moduleDialog.draft.timeLimitMinutes ?? 120 : null,
-                                        }),
-                                    });
-                                }}
-                            >
-                                <MenuItem value="NONE">{isRu ? "Без дедлайна" : "No deadline"}</MenuItem>
-                                <MenuItem value="ABSOLUTE">{isRu ? "Конкретная дата" : "Fixed date"}</MenuItem>
-                                <MenuItem value="RELATIVE_FROM_START">{isRu ? "Таймер от старта" : "Timer from start"}</MenuItem>
-                            </TextField>
+                        <Stack spacing={2.4}>
+                            <TextField label={isRu ? "Название" : "Title"} value={moduleDialog.draft.title} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, title: event.target.value } })} required fullWidth />
+                            <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={moduleDialog.draft.orderIndex} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, orderIndex: Number(event.target.value) } })} sx={{ maxWidth: 180 }} />
+
+                            <Divider />
+
+                            <Stack spacing={1.4}>
+                                <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 950, lineHeight: 1 }}>
+                                    {isRu ? "Дедлайн" : "Deadline"}
+                                </Typography>
+                                <ToggleButtonGroup
+                                    exclusive
+                                    fullWidth
+                                    size="small"
+                                    value={moduleDialog.draft.deadlineType ?? "NONE"}
+                                    onChange={(_, nextDeadlineType: ModuleDeadlineType | null) => {
+                                        if (nextDeadlineType) updateModuleDeadlineType(nextDeadlineType);
+                                    }}
+                                    sx={{
+                                        p: 0.4,
+                                        border: 1,
+                                        borderColor: "divider",
+                                        borderRadius: 1.25,
+                                        bgcolor: "action.hover",
+                                        "& .MuiToggleButtonGroup-grouped": {
+                                            flex: 1,
+                                            minHeight: 42,
+                                            border: 0,
+                                            borderRadius: 1,
+                                            fontWeight: 900,
+                                            color: "text.secondary",
+                                            "&.Mui-selected": {
+                                                bgcolor: "background.paper",
+                                                color: "primary.main",
+                                                boxShadow: (theme) => (theme.palette.mode === "dark" ? "inset 0 0 0 1px rgba(255,255,255,0.08)" : "0 1px 4px rgba(53,37,205,0.12)"),
+                                            },
+                                        },
+                                    }}
+                                >
+                                    <ToggleButton value="NONE">
+                                        <Stack direction="row" spacing={0.7} alignItems="center" justifyContent="center">
+                                            <DoNotDisturbOnRoundedIcon fontSize="small" />
+                                            <span>{isRu ? "Без дедлайна" : "No deadline"}</span>
+                                        </Stack>
+                                    </ToggleButton>
+                                    <ToggleButton value="ABSOLUTE">
+                                        <Stack direction="row" spacing={0.7} alignItems="center" justifyContent="center">
+                                            <CalendarMonthRoundedIcon fontSize="small" />
+                                            <span>{isRu ? "Дата" : "Fixed date"}</span>
+                                        </Stack>
+                                    </ToggleButton>
+                                    <ToggleButton value="RELATIVE_FROM_START">
+                                        <Stack direction="row" spacing={0.7} alignItems="center" justifyContent="center">
+                                            <AccessTimeRoundedIcon fontSize="small" />
+                                            <span>{isRu ? "Таймер" : "Timer"}</span>
+                                        </Stack>
+                                    </ToggleButton>
+                                </ToggleButtonGroup>
+                            </Stack>
+
                             {moduleDialog.draft.deadlineType === "ABSOLUTE" ? (
-                                <TextField
-                                    label={isRu ? "Дата и время дедлайна" : "Deadline date and time"}
-                                    type="datetime-local"
-                                    value={moduleDialog.draft.deadlineAt ?? ""}
-                                    onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, deadlineAt: event.target.value || null, timeLimitMinutes: null } })}
-                                    InputLabelProps={{ shrink: true }}
-                                    required
-                                />
+                                <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: "action.hover" }}>
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.6} alignItems={{ sm: "flex-start" }}>
+                                        <CalendarMonthRoundedIcon color="primary" sx={{ mt: { sm: 2.2 } }} />
+                                        <TextField
+                                            fullWidth
+                                            label={isRu ? "Дата и время дедлайна" : "Deadline date and time"}
+                                            type="datetime-local"
+                                            value={moduleDialog.draft.deadlineAt ?? ""}
+                                            onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, deadlineAt: event.target.value || null, timeLimitMinutes: null } })}
+                                            InputLabelProps={{ shrink: true }}
+                                            required
+                                        />
+                                    </Stack>
+                                </Paper>
                             ) : null}
+
                             {moduleDialog.draft.deadlineType === "RELATIVE_FROM_START" ? (
-                                <TextField
-                                    label={isRu ? "Лимит времени, минут" : "Time limit, minutes"}
-                                    type="number"
-                                    value={moduleDialog.draft.timeLimitMinutes ?? 120}
-                                    onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, deadlineAt: null, timeLimitMinutes: Number(event.target.value) } })}
-                                    inputProps={{ min: 1 }}
-                                    helperText={isRu ? "Например, 120 минут для двух часов после старта модуля." : "For example, 120 minutes for two hours after module start."}
-                                    required
-                                />
+                                <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: "action.hover" }}>
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.6} alignItems={{ sm: "flex-start" }}>
+                                        <AccessTimeRoundedIcon color="primary" sx={{ mt: { sm: 0.3 } }} />
+                                        <Stack spacing={1.5} sx={{ flexGrow: 1 }}>
+                                            <Box>
+                                                <Typography sx={{ fontWeight: 950 }}>{isRu ? "Таймер от старта" : "Timer from start"}</Typography>
+                                                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                                    {isRu ? "Лимит начнется после явного старта модуля." : "The limit starts after the student explicitly starts the module."}
+                                                </Typography>
+                                            </Box>
+                                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                                                <TextField
+                                                    label={isRu ? "Часы" : "Hours"}
+                                                    type="number"
+                                                    value={moduleTimeLimit.hours}
+                                                    onChange={(event) => updateModuleTimeLimit(Number(event.target.value), moduleTimeLimit.minutes)}
+                                                    inputProps={{ min: 0 }}
+                                                    fullWidth
+                                                />
+                                                <TextField
+                                                    label={isRu ? "Минуты" : "Minutes"}
+                                                    type="number"
+                                                    value={moduleTimeLimit.minutes}
+                                                    onChange={(event) => updateModuleTimeLimit(moduleTimeLimit.hours, Number(event.target.value))}
+                                                    inputProps={{ min: 0, max: 59 }}
+                                                    fullWidth
+                                                />
+                                            </Stack>
+                                            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800 }}>
+                                                {isRu ? "Итого" : "Total"}: {formatDuration(moduleDialog.draft.timeLimitMinutes ?? 120)}
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                </Paper>
+                            ) : null}
+
+                            {moduleDialog.draft.deadlineType === "NONE" ? (
+                                <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: "action.hover" }}>
+                                    <Stack direction="row" spacing={1.2} alignItems="center">
+                                        <DoNotDisturbOnRoundedIcon color="disabled" />
+                                        <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 800 }}>
+                                            {isRu ? "Модуль будет доступен без проверки дедлайна." : "The module will be available without deadline checks."}
+                                        </Typography>
+                                    </Stack>
+                                </Paper>
                             ) : null}
                         </Stack>
                     ) : null}
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: { xs: 2.5, md: 3 }, py: 2, borderTop: 1, borderColor: "divider", bgcolor: "action.hover" }}>
                     <Button onClick={() => setModuleDialog(null)}>{isRu ? "Отмена" : "Cancel"}</Button>
                     <Button variant="contained" onClick={() => void saveModule()} disabled={action === "module" || isEditingLocked}>{isRu ? "Сохранить модуль" : "Save module"}</Button>
                 </DialogActions>
