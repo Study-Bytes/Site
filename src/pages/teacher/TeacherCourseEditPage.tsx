@@ -709,13 +709,15 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                         display: "grid",
                                         gridTemplateColumns: { xs: "1fr", md: "180px minmax(0, 1fr)" },
                                         gap: 2,
-                                        alignItems: "stretch",
+                                        alignItems: "start",
                                     }}
                                 >
                                     <Box
                                         sx={{
-                                            minHeight: 120,
-                                            aspectRatio: { xs: "16 / 9", md: "3 / 2" },
+                                            width: "100%",
+                                            minHeight: { xs: 160, md: 120 },
+                                            height: { md: 120 },
+                                            aspectRatio: { xs: "16 / 9", md: "auto" },
                                             borderRadius: 1.5,
                                             overflow: "hidden",
                                             border: "1px solid",
