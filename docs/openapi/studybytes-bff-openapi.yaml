@@ -991,6 +991,56 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /teacher/courses/cover:
+    post:
+      tags:
+      - Teacher courses
+      summary: Upload course cover
+      description: Uploads an image file for a course cover and returns a public URL that can be sent in CourseUpsertRequest.coverImageUrl. This endpoint can be called before the course is created.
+      operationId: uploadCourseCover
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PNG, JPEG, WebP, or GIF image, up to 5 MB.
+      responses:
+        '200':
+          description: Course cover uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseCoverUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          description: Payload Too Large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '415':
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /teacher/courses/{courseId}:
     get:
       tags:
@@ -2819,6 +2869,15 @@ components:
       - enrollmentEnabled
       - coverImageUrl
       - estimatedMinutes
+    CourseCoverUploadResponse:
+      type: object
+      properties:
+        coverImageUrl:
+          type: string
+          format: uri
+          example: https://cdn.studybytes.example/courses/covers/java-core.webp
+      required:
+      - coverImageUrl
     ModuleUpsertRequest:
       type: object
       properties:

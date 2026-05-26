@@ -4,6 +4,7 @@ import { request } from "../apiClient";
 import type {
     ContentBlockDto,
     ContentBlockUpsertRequest,
+    CourseCoverUploadResponse,
     CourseItemUpsertRequest,
     CourseModuleSummary,
     CourseUpsertRequest,
@@ -60,6 +61,13 @@ export const teacherApi = {
     async updateCourse(courseId: number, input: CourseUpsertRequest): Promise<TeacherCourseDetails> {
         if (env.useMockBff) return mockBff.updateTeacherCourse(courseId, input);
         return normalizeTeacherCourseDetails(await request<TeacherCourseDetails>(`/teacher/courses/${courseId}`, { method: "PUT", body: input }));
+    },
+
+    uploadCourseCover(file: File): Promise<CourseCoverUploadResponse> {
+        if (env.useMockBff) return mockBff.uploadCourseCover(file);
+        const body = new FormData();
+        body.append("file", file);
+        return request<CourseCoverUploadResponse>("/teacher/courses/cover", { method: "POST", body });
     },
 
     async submitCourseForReview(courseId: number): Promise<TeacherCourseDetails> {

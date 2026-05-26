@@ -106,6 +106,7 @@ Module DTOs returned by course structure endpoints must include `deadlineType`, 
 ```http
 GET    /api/v1/teacher/courses
 POST   /api/v1/teacher/courses
+POST   /api/v1/teacher/courses/cover
 GET    /api/v1/teacher/courses/{courseId}
 PUT    /api/v1/teacher/courses/{courseId}
 POST   /api/v1/teacher/courses/{courseId}/submit-review
@@ -126,6 +127,8 @@ PUT    /api/v1/teacher/items/{itemId}/options
 ```
 
 The Site intentionally uses `/teacher/**` paths. BFF owns mapping these paths to CourseService internals.
+
+`POST /api/v1/teacher/courses/cover` is used by the course create/edit form to upload a cover file before saving course metadata. It must accept `multipart/form-data` field `file`, allow PNG/JPEG/WebP/GIF up to 5 MB, and return `{ "coverImageUrl": "https://..." }`. URL-based covers still use `CourseUpsertRequest.coverImageUrl`.
 
 ## Admin Course Moderation
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type MouseEvent, useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Box,
@@ -29,10 +29,13 @@ import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import DoNotDisturbOnRoundedIcon from "@mui/icons-material/DoNotDisturbOnRounded";
 import DragIndicatorRoundedIcon from "@mui/icons-material/DragIndicatorRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
+import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import MenuOpenRoundedIcon from "@mui/icons-material/MenuOpenRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
@@ -71,6 +74,10 @@ import { PageContainer } from "../../layouts/PageContainer";
 import { courseItemTypeLabel } from "../../utils/courseLabels";
 import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCourseId } from "../../utils/courseFormat";
 import { deadlineTypeLabel, formatDateTime, normalizeModuleDraft } from "../../utils/moduleDeadlines";
+
+const courseCoverFileAccept = "image/jpeg,image/png,image/webp,image/gif";
+const courseCoverAllowedFileTypes = new Set(courseCoverFileAccept.split(","));
+const maxCourseCoverFileBytes = 5 * 1024 * 1024;
 
 const defaultForm: CourseUpsertRequest = {
     title: "",
@@ -113,6 +120,8 @@ const defaultModuleDraft = (orderIndex: number): ModuleUpsertRequest => ({
 type Props = {
     mode?: "create" | "edit";
 };
+
+type CoverInputMode = "url" | "file";
 
 type ModuleDialogState = {
     mode: "create" | "edit";
@@ -258,6 +267,11 @@ function combineTimeLimit(hours: number, minutes: number) {
     return Math.max(1, safeHours * 60 + safeMinutes);
 }
 
+function formatFileSize(bytes: number) {
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
 export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const { courseId } = useParams();
     const navigate = useNavigate();
@@ -274,6 +288,10 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [validationErrors, setValidationErrors] = useState<ApiValidationError[]>([]);
+    const [coverInputMode, setCoverInputMode] = useState<CoverInputMode>("url");
+    const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [coverFilePreview, setCoverFilePreview] = useState<string | null>(null);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
     const [moduleDialog, setModuleDialog] = useState<ModuleDialogState | null>(null);
     const [itemDialog, setItemDialog] = useState<ItemDialogState | null>(null);
     const [isInspectorOpen, setInspectorOpen] = useState(() => localStorage.getItem("studybytes_course_editor_panel") !== "closed");
@@ -333,6 +351,16 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         localStorage.setItem("studybytes_course_editor_panel", isInspectorOpen ? "open" : "closed");
     }, [isInspectorOpen]);
 
+    useEffect(() => {
+        if (!coverFile) {
+            setCoverFilePreview(null);
+            return undefined;
+        }
+        const previewUrl = URL.createObjectURL(coverFile);
+        setCoverFilePreview(previewUrl);
+        return () => URL.revokeObjectURL(previewUrl);
+    }, [coverFile]);
+
     const updateField = <K extends keyof CourseUpsertRequest>(field: K, value: CourseUpsertRequest[K]) => {
         setForm((current) => ({ ...current, [field]: value }));
     };
@@ -346,12 +374,62 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         return { modules: getCourseModuleCount(course), items: getCourseItemCount(course) };
     }, [course]);
     const isEditingLocked = course?.status === "PENDING_REVIEW";
+    const coverPreviewUrl = coverInputMode === "file" && coverFilePreview ? coverFilePreview : form.coverImageUrl ?? "";
+    const coverFileLabel = coverFile ? `${coverFile.name} (${formatFileSize(coverFile.size)})` : (isRu ? "Файл не выбран" : "No file selected");
 
     const handleApiError = (requestError: unknown, fallback: string) => {
         if (requestError instanceof ApiError && requestError.validationErrors.length > 0) {
             setValidationErrors(requestError.validationErrors);
         }
         setError(getErrorMessage(requestError, fallback));
+    };
+
+    const selectCoverInputMode = (_event: MouseEvent<HTMLElement>, nextMode: CoverInputMode | null) => {
+        if (!nextMode) return;
+        setCoverInputMode(nextMode);
+        if (nextMode === "url") setCoverFile(null);
+    };
+
+    const handleCoverFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0] ?? null;
+        event.target.value = "";
+        setSuccessMessage(null);
+        setError(null);
+        if (!file) return;
+        if (!courseCoverAllowedFileTypes.has(file.type)) {
+            setCoverFile(null);
+            setError(isRu ? "Выберите PNG, JPEG, WebP или GIF" : "Choose a PNG, JPEG, WebP, or GIF image");
+            return;
+        }
+        if (file.size > maxCourseCoverFileBytes) {
+            setCoverFile(null);
+            setError(isRu ? "Файл обложки должен быть не больше 5 МБ" : "Cover file must be 5 MB or smaller");
+            return;
+        }
+        setCoverInputMode("file");
+        setCoverFile(file);
+    };
+
+    const uploadCoverFile = async () => {
+        if (!coverFile) {
+            setError(isRu ? "Сначала выберите файл обложки" : "Choose a cover file first");
+            return;
+        }
+        setIsUploadingCover(true);
+        setSuccessMessage(null);
+        setError(null);
+        setValidationErrors([]);
+        try {
+            const uploaded = await teacherApi.uploadCourseCover(coverFile);
+            updateField("coverImageUrl", uploaded.coverImageUrl);
+            setCoverFile(null);
+            setCoverInputMode("url");
+            setSuccessMessage(isRu ? "Обложка загружена. Сохраните курс, чтобы применить её." : "Cover uploaded. Save the course to apply it.");
+        } catch (requestError) {
+            handleApiError(requestError, isRu ? "Не удалось загрузить обложку" : "Failed to upload cover");
+        } finally {
+            setIsUploadingCover(false);
+        }
     };
 
     const submitForm = async () => {
@@ -625,10 +703,84 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                         <MenuItem value="PRIVATE">{isRu ? "Приватный" : "PRIVATE"}</MenuItem>
                                     </TextField>
                                 </Stack>
-                                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                    <TextField label={isRu ? "Обложка URL" : "Cover image URL"} value={form.coverImageUrl ?? ""} onChange={(event) => updateField("coverImageUrl", event.target.value)} disabled={isEditingLocked} fullWidth />
-                                    <TextField label={isRu ? "Длительность, минут" : "Estimated minutes"} type="number" value={form.estimatedMinutes ?? ""} onChange={(event) => updateField("estimatedMinutes", event.target.value === "" ? null : Number(event.target.value))} disabled={isEditingLocked} fullWidth />
-                                </Stack>
+                                <TextField label={isRu ? "Длительность, минут" : "Estimated minutes"} type="number" value={form.estimatedMinutes ?? ""} onChange={(event) => updateField("estimatedMinutes", event.target.value === "" ? null : Number(event.target.value))} disabled={isEditingLocked} fullWidth />
+                                <Box
+                                    sx={{
+                                        display: "grid",
+                                        gridTemplateColumns: { xs: "1fr", md: "180px minmax(0, 1fr)" },
+                                        gap: 2,
+                                        alignItems: "stretch",
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            minHeight: 120,
+                                            aspectRatio: { xs: "16 / 9", md: "3 / 2" },
+                                            borderRadius: 1.5,
+                                            overflow: "hidden",
+                                            border: "1px solid",
+                                            borderColor: "divider",
+                                            bgcolor: "action.hover",
+                                            display: "grid",
+                                            placeItems: "center",
+                                        }}
+                                    >
+                                        {coverPreviewUrl ? (
+                                            <Box component="img" src={coverPreviewUrl} alt="" sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                        ) : (
+                                            <Stack spacing={0.75} alignItems="center" sx={{ color: "text.secondary", px: 2, textAlign: "center" }}>
+                                                <ImageRoundedIcon />
+                                                <Typography variant="body2">{isRu ? "Обложки нет" : "No cover"}</Typography>
+                                            </Stack>
+                                        )}
+                                    </Box>
+                                    <Stack spacing={1.25} sx={{ minWidth: 0 }}>
+                                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between" alignItems={{ sm: "center" }}>
+                                            <Typography sx={{ fontWeight: 850 }}>{isRu ? "Обложка курса" : "Course cover"}</Typography>
+                                            <ToggleButtonGroup size="small" exclusive value={coverInputMode} onChange={selectCoverInputMode} disabled={isEditingLocked || isUploadingCover}>
+                                                <ToggleButton value="url" aria-label={isRu ? "Обложка по URL" : "Cover by URL"}>
+                                                    <LinkRoundedIcon fontSize="small" sx={{ mr: 0.75 }} />
+                                                    URL
+                                                </ToggleButton>
+                                                <ToggleButton value="file" aria-label={isRu ? "Обложка файлом" : "Cover by file"}>
+                                                    <ImageRoundedIcon fontSize="small" sx={{ mr: 0.75 }} />
+                                                    {isRu ? "Файл" : "File"}
+                                                </ToggleButton>
+                                            </ToggleButtonGroup>
+                                        </Stack>
+                                        {coverInputMode === "url" ? (
+                                            <TextField
+                                                label={isRu ? "URL обложки" : "Cover image URL"}
+                                                value={form.coverImageUrl ?? ""}
+                                                onChange={(event) => updateField("coverImageUrl", event.target.value)}
+                                                disabled={isEditingLocked}
+                                                fullWidth
+                                            />
+                                        ) : (
+                                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                                                <Button component="label" variant="outlined" startIcon={<CloudUploadRoundedIcon />} disabled={isEditingLocked || isUploadingCover}>
+                                                    {coverFile ? (isRu ? "Заменить файл" : "Replace file") : (isRu ? "Выбрать файл" : "Choose file")}
+                                                    <input hidden type="file" accept={courseCoverFileAccept} onChange={handleCoverFileChange} />
+                                                </Button>
+                                                <Button variant="contained" onClick={() => void uploadCoverFile()} disabled={isEditingLocked || isUploadingCover || !coverFile}>
+                                                    {isUploadingCover ? (isRu ? "Загрузка..." : "Uploading...") : (isRu ? "Загрузить" : "Upload")}
+                                                </Button>
+                                                <Typography variant="body2" sx={{ color: "text.secondary", minWidth: 0, overflowWrap: "anywhere" }}>
+                                                    {coverFileLabel}
+                                                </Typography>
+                                            </Stack>
+                                        )}
+                                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                            <Chip size="small" variant="outlined" label={isRu ? "PNG/JPEG/WebP/GIF" : "PNG/JPEG/WebP/GIF"} />
+                                            <Chip size="small" variant="outlined" label={isRu ? "до 5 МБ" : "up to 5 MB"} />
+                                            {form.coverImageUrl ? (
+                                                <Button size="small" variant="text" color="inherit" startIcon={<CloseRoundedIcon />} disabled={isEditingLocked || isUploadingCover} onClick={() => updateField("coverImageUrl", "")}>
+                                                    {isRu ? "Убрать" : "Clear"}
+                                                </Button>
+                                            ) : null}
+                                        </Stack>
+                                    </Stack>
+                                </Box>
                                 <FormControlLabel control={<Switch checked={form.enrollmentEnabled} onChange={(event) => updateField("enrollmentEnabled", event.target.checked)} disabled={isEditingLocked} />} label={isRu ? "Запись на курс открыта" : "Enrollment enabled"} />
                             </Stack>
                         </FormSectionCard>

@@ -5,6 +5,7 @@ import type {
     ContentBlockUpsertRequest,
     CourseCatalogItem,
     CourseCatalogQuery,
+    CourseCoverUploadResponse,
     DefaultLocaleResponse,
     CourseDetails,
     CourseItemPreview,
@@ -378,17 +379,17 @@ function persistSession(user: CurrentUser | null) {
     else localStorage.removeItem(currentUserKey);
 }
 
-const allowedAvatarFileTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const maxAvatarFileBytes = 5 * 1024 * 1024;
+const allowedImageFileTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const maxImageFileBytes = 5 * 1024 * 1024;
 
-function readAvatarFile(file: File): Promise<string> {
+function readImageFile(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
             if (typeof reader.result === "string") resolve(reader.result);
-            else reject(new ApiError("Failed to read avatar file", 400, [{ field: "file", message: "Avatar file could not be read." }], "INVALID_AVATAR_FILE"));
+            else reject(new ApiError("Failed to read image file", 400, [{ field: "file", message: "Image file could not be read." }], "INVALID_IMAGE_FILE"));
         };
-        reader.onerror = () => reject(new ApiError("Failed to read avatar file", 400, [{ field: "file", message: "Avatar file could not be read." }], "INVALID_AVATAR_FILE"));
+        reader.onerror = () => reject(new ApiError("Failed to read image file", 400, [{ field: "file", message: "Image file could not be read." }], "INVALID_IMAGE_FILE"));
         reader.readAsDataURL(file);
     });
 }
@@ -605,14 +606,14 @@ export const mockBff = {
         const user = requireUser();
         const account = mockAccounts.find((item) => item.id === user.id);
         if (!account) throw new ApiError("User not found", 404);
-        if (!allowedAvatarFileTypes.has(file.type)) {
+        if (!allowedImageFileTypes.has(file.type)) {
             throw new ApiError("Unsupported avatar file type", 415, [{ field: "file", message: "Use PNG, JPEG, WebP, or GIF." }], "UNSUPPORTED_MEDIA_TYPE");
         }
-        if (file.size > maxAvatarFileBytes) {
+        if (file.size > maxImageFileBytes) {
             throw new ApiError("Avatar file is too large", 413, [{ field: "file", message: "Avatar file must be 5 MB or smaller." }], "PAYLOAD_TOO_LARGE");
         }
 
-        account.avatarUrl = await readAvatarFile(file);
+        account.avatarUrl = await readImageFile(file);
         const updated: CurrentUser = { id: account.id, email: account.email, fullName: account.fullName, role: account.role, status: account.status, avatarUrl: account.avatarUrl, bio: account.bio, preferredLocale: account.preferredLocale };
         persistSession(updated);
         return delay(updated);
@@ -834,6 +835,17 @@ export const mockBff = {
         const course = findCourse(courseId);
         Object.assign(course, request, { updatedAt: new Date().toISOString() });
         return delay(course);
+    },
+
+    async uploadCourseCover(file: File): Promise<CourseCoverUploadResponse> {
+        requireTeacher();
+        if (!allowedImageFileTypes.has(file.type)) {
+            throw new ApiError("Unsupported course cover file type", 415, [{ field: "file", message: "Use PNG, JPEG, WebP, or GIF." }], "UNSUPPORTED_MEDIA_TYPE");
+        }
+        if (file.size > maxImageFileBytes) {
+            throw new ApiError("Course cover file is too large", 413, [{ field: "file", message: "Course cover file must be 5 MB or smaller." }], "PAYLOAD_TOO_LARGE");
+        }
+        return delay({ coverImageUrl: await readImageFile(file) });
     },
 
     async submitTeacherCourseForReview(courseId: number): Promise<TeacherCourseDetails> {

@@ -343,6 +343,10 @@ export type CourseUpsertRequest = {
     estimatedMinutes: number | null;
 };
 
+export type CourseCoverUploadResponse = {
+    coverImageUrl: string;
+};
+
 export type ModuleUpsertRequest = {
     title: string;
     orderIndex: number;

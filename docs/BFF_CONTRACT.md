@@ -219,6 +219,7 @@ GET  /api/v1/learn/submissions/{submissionId}
 ```http
 GET  /api/v1/teacher/courses
 POST /api/v1/teacher/courses
+POST /api/v1/teacher/courses/cover
 GET  /api/v1/teacher/courses/{courseId}
 PUT  /api/v1/teacher/courses/{courseId}
 POST /api/v1/teacher/courses/{courseId}/submit-review
@@ -226,6 +227,16 @@ POST /api/v1/teacher/courses/{courseId}/archive
 ```
 
 Teacher endpoints stay UI-domain oriented. They use `/teacher/...` because Site exposes a teacher cabinet; they must not leak internal CourseService admin endpoint naming such as `/admin/...`.
+
+`POST /api/v1/teacher/courses/cover` accepts `multipart/form-data` with a single `file` field, allows PNG/JPEG/WebP/GIF up to 5 MB, and returns:
+
+```json
+{
+  "coverImageUrl": "https://cdn.studybytes.example/courses/covers/java-core.webp"
+}
+```
+
+The Site can call it before creating a course. The returned `coverImageUrl` is then sent through the existing `CourseUpsertRequest.coverImageUrl` field.
 
 ### Teacher modules/items
 
