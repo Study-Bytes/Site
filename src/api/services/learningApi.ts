@@ -7,7 +7,6 @@ import type {
     EnrollCourseResponse,
     EnrollmentSummary,
     ContentBlockDto,
-    CourseItemSummary,
     CourseModuleSummary,
     HintDto,
     LearningCourse,
@@ -22,26 +21,62 @@ import type {
     SubmitItemRequest,
     TestResultDto,
 } from "../bffContracts";
-import { readArray, unwrapListResponse } from "../responseParsing";
+import { normalizeCourseModuleSummary, readArray, unwrapListResponse } from "../responseParsing";
+
+type RawLeaderboardEntry = Partial<CourseLeaderboardEntry> & Record<string, unknown>;
+
+function readNumberField(entry: RawLeaderboardEntry, keys: string[]) {
+    for (const key of keys) {
+        const value = entry[key];
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        if (typeof value === "string" && value.trim()) {
+            const parsed = Number(value);
+            if (Number.isFinite(parsed)) return parsed;
+        }
+    }
+
+    return null;
+}
+
+function readStringField(entry: RawLeaderboardEntry, keys: string[]) {
+    for (const key of keys) {
+        const value = entry[key];
+        if (typeof value === "string" && value.trim()) return value.trim();
+    }
+
+    return null;
+}
 
 function normalizeLearningCourse(course: LearningCourse): LearningCourse {
     return {
         ...course,
-        modules: readArray<CourseModuleSummary>(course.modules).map((module) => ({
-            ...module,
-            deadlineType: module.deadlineType ?? "NONE",
-            deadlineAt: module.deadlineAt ?? null,
-            timeLimitMinutes: module.timeLimitMinutes ?? null,
-            items: readArray<CourseItemSummary>(module.items),
-        })),
+        modules: readArray<CourseModuleSummary>(course.modules).map(normalizeCourseModuleSummary),
     };
 }
 
 function normalizeCourseLeaderboard(leaderboard: CourseLeaderboardResponse): CourseLeaderboardResponse {
+    const top = readArray<RawLeaderboardEntry>(leaderboard.top).map((entry, index) => normalizeLeaderboardEntry(entry, index + 1));
+
     return {
         ...leaderboard,
-        top: readArray<CourseLeaderboardEntry>(leaderboard.top),
-        currentUser: leaderboard.currentUser ?? null,
+        top,
+        currentUser: leaderboard.currentUser ? normalizeLeaderboardEntry(leaderboard.currentUser as RawLeaderboardEntry, top.length + 1) : null,
+    };
+}
+
+function normalizeLeaderboardEntry(entry: RawLeaderboardEntry, fallbackRank: number): CourseLeaderboardEntry {
+    const rank = readNumberField(entry, ["rank", "place", "position"]) ?? fallbackRank;
+    const userId = readNumberField(entry, ["userId", "studentId", "id", "user_id"]) ?? fallbackRank;
+    const fullName = readStringField(entry, ["fullName", "nickname", "nick", "username", "displayName", "name", "email"]);
+    const avatarUrl = readStringField(entry, ["avatarUrl", "avatar", "photoUrl", "imageUrl"]);
+    const progressPercent = readNumberField(entry, ["progressPercent", "progress", "percent", "coursePercent", "completionPercent"]) ?? 0;
+
+    return {
+        userId,
+        fullName,
+        avatarUrl,
+        progressPercent,
+        rank,
     };
 }
 

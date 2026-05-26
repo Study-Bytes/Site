@@ -5,7 +5,6 @@ import type {
     ContentBlockDto,
     ContentBlockUpsertRequest,
     CourseItemUpsertRequest,
-    CourseItemSummary,
     CourseModuleSummary,
     CourseUpsertRequest,
     HintDto,
@@ -22,18 +21,12 @@ import type {
     TestCaseUpsertRequest,
     ModuleUpsertRequest,
 } from "../bffContracts";
-import { readArray, unwrapListResponse } from "../responseParsing";
+import { normalizeCourseModuleSummary, readArray, unwrapListResponse } from "../responseParsing";
 
 function normalizeTeacherCourseDetails(course: TeacherCourseDetails): TeacherCourseDetails {
     return {
         ...course,
-        modules: readArray<CourseModuleSummary>(course.modules).map((module) => ({
-            ...module,
-            deadlineType: module.deadlineType ?? "NONE",
-            deadlineAt: module.deadlineAt ?? null,
-            timeLimitMinutes: module.timeLimitMinutes ?? null,
-            items: readArray<CourseItemSummary>(module.items),
-        })),
+        modules: readArray<CourseModuleSummary>(course.modules).map(normalizeCourseModuleSummary),
     };
 }
 

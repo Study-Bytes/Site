@@ -1,4 +1,5 @@
 import { ApiError } from "./apiError";
+import type { CourseItemSummary, CourseModuleSummary, ModuleDeadlineType } from "./bffContracts";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -8,6 +9,20 @@ function isRecord(value: unknown): value is UnknownRecord {
 
 export function readArray<T>(value: unknown): T[] {
     return Array.isArray(value) ? value as T[] : [];
+}
+
+export function normalizeCourseModuleSummary(module: CourseModuleSummary): CourseModuleSummary {
+    const deadlineAt = module.deadlineAt ?? null;
+    const timeLimitMinutes = module.timeLimitMinutes ?? null;
+    const deadlineType = (module.deadlineType ?? (deadlineAt ? "ABSOLUTE" : timeLimitMinutes !== null ? "RELATIVE_FROM_START" : "NONE")) as ModuleDeadlineType;
+
+    return {
+        ...module,
+        deadlineType,
+        deadlineAt,
+        timeLimitMinutes,
+        items: readArray<CourseItemSummary>(module.items),
+    };
 }
 
 export function unwrapListResponse<T>(response: unknown, label: string, keys: string[] = ["items", "content", "courses", "data"]): T[] {

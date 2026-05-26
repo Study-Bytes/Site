@@ -1,19 +1,13 @@
 import { env } from "../../config/env";
 import { mockBff } from "../../mocks/mockBff";
 import { request } from "../apiClient";
-import type { CourseItemSummary, CourseModerationReviewRequest, CourseModuleSummary, TeacherCourseDetails, TeacherCourseQuery, TeacherCourseSummary } from "../bffContracts";
-import { readArray, unwrapListResponse } from "../responseParsing";
+import type { CourseModerationReviewRequest, CourseModuleSummary, TeacherCourseDetails, TeacherCourseQuery, TeacherCourseSummary } from "../bffContracts";
+import { normalizeCourseModuleSummary, readArray, unwrapListResponse } from "../responseParsing";
 
 function normalizeTeacherCourseDetails(course: TeacherCourseDetails): TeacherCourseDetails {
     return {
         ...course,
-        modules: readArray<CourseModuleSummary>(course.modules).map((module) => ({
-            ...module,
-            deadlineType: module.deadlineType ?? "NONE",
-            deadlineAt: module.deadlineAt ?? null,
-            timeLimitMinutes: module.timeLimitMinutes ?? null,
-            items: readArray<CourseItemSummary>(module.items),
-        })),
+        modules: readArray<CourseModuleSummary>(course.modules).map(normalizeCourseModuleSummary),
     };
 }
 

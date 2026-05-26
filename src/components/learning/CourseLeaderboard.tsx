@@ -14,7 +14,7 @@ function clampProgress(value: number) {
 }
 
 function displayName(entry: CourseLeaderboardEntry, isRu: boolean) {
-    return entry.fullName?.trim() || (isRu ? `Студент #${entry.userId}` : `Student #${entry.userId}`);
+    return entry.fullName?.trim() || (entry.userId ? `#${entry.userId}` : isRu ? "Пользователь" : "User");
 }
 
 function initials(name: string) {
@@ -26,12 +26,28 @@ function initials(name: string) {
         .join("");
 }
 
-function rankLabel(rank: number, isRu: boolean) {
-    return isRu ? `${rank} место` : `#${rank}`;
+function validRank(rank: number | null | undefined) {
+    return typeof rank === "number" && Number.isFinite(rank) && rank > 0 ? rank : null;
 }
 
-function isTopPlace(rank: number) {
-    return rank >= 1 && rank <= 3;
+function rankLabel(rank: number | null | undefined, isRu: boolean) {
+    const value = validRank(rank);
+    if (!value) return isRu ? "Без места" : "Unranked";
+    return isRu ? `${value} место` : `#${value}`;
+}
+
+function isTopPlace(rank: number | null | undefined) {
+    const value = validRank(rank);
+    return Boolean(value && value <= 3);
+}
+
+function dedupeByUser(entries: CourseLeaderboardEntry[]) {
+    const seen = new Set<number>();
+    return entries.filter((entry) => {
+        if (seen.has(entry.userId)) return false;
+        seen.add(entry.userId);
+        return true;
+    });
 }
 
 function LeaderboardRow({ entry, isCurrentUser, compact = false }: { entry: CourseLeaderboardEntry; isCurrentUser: boolean; compact?: boolean }) {
@@ -39,12 +55,13 @@ function LeaderboardRow({ entry, isCurrentUser, compact = false }: { entry: Cour
     const isRu = locale === "ru";
     const name = displayName(entry, isRu);
     const progress = clampProgress(entry.progressPercent);
+    const rank = validRank(entry.rank);
 
     return (
         <Box
             sx={{
                 display: "grid",
-                gridTemplateColumns: "auto minmax(0, 1fr) auto",
+                gridTemplateColumns: "auto minmax(0, 1fr)",
                 gap: 1.2,
                 alignItems: "center",
                 py: compact ? 1.2 : 1.35,
@@ -62,35 +79,36 @@ function LeaderboardRow({ entry, isCurrentUser, compact = false }: { entry: Cour
                         display: "grid",
                         placeItems: "center",
                         fontWeight: 950,
-                        color: isTopPlace(entry.rank) ? "primary.contrastText" : "text.primary",
-                        bgcolor: isTopPlace(entry.rank) ? "primary.main" : "action.selected",
+                        color: isTopPlace(rank) ? "primary.contrastText" : "text.primary",
+                        bgcolor: isTopPlace(rank) ? "primary.main" : "action.selected",
                     }}
                 >
-                    {isTopPlace(entry.rank) ? <EmojiEventsRoundedIcon fontSize="small" /> : entry.rank}
+                    {isTopPlace(rank) ? <EmojiEventsRoundedIcon fontSize="small" /> : rank ?? "-"}
                 </Box>
             </Tooltip>
 
             <Stack spacing={0.75} sx={{ minWidth: 0 }}>
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                    <Avatar src={entry.avatarUrl ?? undefined} sx={{ width: 30, height: 30, fontSize: 13, fontWeight: 900 }}>
+                    <Avatar src={entry.avatarUrl ?? undefined} sx={{ width: 28, height: 28, fontSize: 12, fontWeight: 900, flex: "0 0 auto" }}>
                         {initials(name) || <PersonRoundedIcon fontSize="small" />}
                     </Avatar>
-                    <Box sx={{ minWidth: 0 }}>
-                        <Stack direction="row" spacing={0.7} alignItems="center" sx={{ minWidth: 0 }}>
-                            <Typography noWrap sx={{ fontWeight: 900, minWidth: 0 }}>
+                    <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                            <Typography noWrap sx={{ fontWeight: 900, minWidth: 0, flexGrow: 1 }}>
                                 {name}
+                            </Typography>
+                            <Typography sx={{ fontWeight: 950, whiteSpace: "nowrap", flex: "0 0 auto" }}>{progress}%</Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={0.7} alignItems="center" sx={{ minWidth: 0 }}>
+                            <Typography noWrap variant="caption" sx={{ color: "text.secondary", fontWeight: 800, minWidth: 0 }}>
+                                {rankLabel(entry.rank, isRu)}
                             </Typography>
                             {isCurrentUser ? <Chip size="small" label={isRu ? "Вы" : "You"} color="primary" variant="outlined" sx={{ height: 22, fontWeight: 900 }} /> : null}
                         </Stack>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800 }}>
-                            {rankLabel(entry.rank, isRu)}
-                        </Typography>
                     </Box>
                 </Stack>
                 <LinearProgress variant="determinate" value={progress} sx={{ height: 6, borderRadius: 999 }} />
             </Stack>
-
-            <Typography sx={{ fontWeight: 950, whiteSpace: "nowrap" }}>{progress}%</Typography>
         </Box>
     );
 }
@@ -126,7 +144,7 @@ export function CourseLeaderboard({
 }) {
     const { locale } = useI18n();
     const isRu = locale === "ru";
-    const returnedTopEntries = leaderboard?.top ?? [];
+    const returnedTopEntries = dedupeByUser(leaderboard?.top ?? []);
     const topEntries = returnedTopEntries.slice(0, leaderboardLimit);
     const currentUser = leaderboard?.currentUser ?? null;
     const currentUserInTop = Boolean(currentUser && returnedTopEntries.some((entry) => entry.userId === currentUser.userId));
@@ -164,8 +182,8 @@ export function CourseLeaderboard({
 
                 {!isLoading && !error && topEntries.length > 0 ? (
                     <Stack divider={<Divider flexItem />} spacing={0}>
-                        {topEntries.map((entry) => (
-                            <LeaderboardRow key={entry.userId} entry={entry} isCurrentUser={currentUser?.userId === entry.userId} />
+                        {topEntries.map((entry, index) => (
+                            <LeaderboardRow key={`${entry.userId}-${entry.rank}-${index}`} entry={entry} isCurrentUser={currentUser?.userId === entry.userId} />
                         ))}
                     </Stack>
                 ) : null}
