@@ -117,10 +117,12 @@ GET  /api/v1/me
 ```http
 GET /api/v1/me
 PUT /api/v1/me/profile
+PUT /api/v1/me/settings
+POST /api/v1/me/avatar
 PUT /api/v1/me/password
 ```
 
-`PUT` endpoints can be implemented later if UserService does not support profile editing yet.
+`POST /api/v1/me/avatar` is the primary Site avatar flow. `PUT /api/v1/me/settings` with `avatarUrl` remains supported for the legacy URL-based flow.
 
 ### Public courses
 
@@ -319,15 +321,51 @@ Supported `source` values: `ACCOUNT_SETTING`, `ACCEPT_LANGUAGE`, `GEO_IP`, `FALL
 ```http
 GET /api/v1/me/settings
 PUT /api/v1/me/settings
+POST /api/v1/me/avatar
 ```
 
-Request:
+`PUT /api/v1/me/settings` request. This endpoint must keep accepting `avatarUrl` for URL-based avatars and for clearing the avatar with `null`.
 
 ```json
 {
   "fullName": "Roman Aksenov",
   "avatarUrl": null,
   "bio": "Java teacher",
+  "preferredLocale": "ru"
+}
+```
+
+`POST /api/v1/me/avatar` request:
+
+```http
+Content-Type: multipart/form-data
+Authorization: Bearer <access-token>
+
+file=<binary image>
+```
+
+Required BFF behavior:
+
+- Accept field name `file`.
+- Accept `image/png`, `image/jpeg`, `image/webp`, and `image/gif`.
+- Reject files larger than 5 MB with `413 PAYLOAD_TOO_LARGE`.
+- Reject unsupported media types with `415 UNSUPPORTED_MEDIA_TYPE`.
+- Store/process the file server-side and return the full updated `CurrentUser`.
+- Populate `CurrentUser.avatarUrl` with the public URL that Site can render in `<img>`.
+- Replace the previous avatar when a new file is uploaded.
+- Use the standard error shape for validation, auth, file size, and media type errors.
+
+Success response:
+
+```json
+{
+  "id": 1,
+  "email": "student@studybytes.dev",
+  "fullName": "Student Demo",
+  "role": "STUDENT",
+  "status": "ACTIVE",
+  "avatarUrl": "https://cdn.studybytes.example/avatars/1/avatar.webp",
+  "bio": "Learns programming through StudyBytes.",
   "preferredLocale": "ru"
 }
 ```

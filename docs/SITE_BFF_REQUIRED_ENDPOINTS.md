@@ -54,10 +54,14 @@ TEACHER
 GET /api/v1/i18n/default-locale
 PUT /api/v1/me/settings
 PUT /api/v1/me/profile
+POST /api/v1/me/avatar
 PUT /api/v1/me/password
 ```
 
 `PUT /api/v1/me/settings` is used by the language/account settings flow.
+It must continue accepting `avatarUrl` so the Site can preserve the old URL-based avatar flow.
+
+`POST /api/v1/me/avatar` is the default avatar flow in the Site. It must accept `multipart/form-data` with a single field named `file`, allow PNG/JPEG/WebP/GIF up to 5 MB, replace the previous avatar, and return the full updated `CurrentUser` with `avatarUrl` set to a renderable public URL.
 
 ## Public Courses
 

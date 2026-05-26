@@ -1,5 +1,7 @@
 import { Chip } from "@mui/material";
 import type { CourseItemType } from "../../api/bffContracts";
+import { useI18n } from "../../i18n/useI18n";
+import { courseItemTypeLabel } from "../../utils/courseLabels";
 
 const itemColor: Record<CourseItemType, "default" | "primary" | "secondary" | "info" | "success"> = {
     THEORY: "default",
@@ -10,5 +12,6 @@ const itemColor: Record<CourseItemType, "default" | "primary" | "secondary" | "i
 };
 
 export function ItemTypeBadge({ itemType }: { itemType: CourseItemType }) {
-    return <Chip size="small" color={itemColor[itemType]} label={itemType} sx={{ fontWeight: 800 }} />;
+    const { locale } = useI18n();
+    return <Chip size="small" color={itemColor[itemType]} label={courseItemTypeLabel(itemType, locale === "ru")} sx={{ fontWeight: 800 }} />;
 }

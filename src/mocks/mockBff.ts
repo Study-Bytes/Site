@@ -378,6 +378,21 @@ function persistSession(user: CurrentUser | null) {
     else localStorage.removeItem(currentUserKey);
 }
 
+const allowedAvatarFileTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const maxAvatarFileBytes = 5 * 1024 * 1024;
+
+function readAvatarFile(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result === "string") resolve(reader.result);
+            else reject(new ApiError("Failed to read avatar file", 400, [{ field: "file", message: "Avatar file could not be read." }], "INVALID_AVATAR_FILE"));
+        };
+        reader.onerror = () => reject(new ApiError("Failed to read avatar file", 400, [{ field: "file", message: "Avatar file could not be read." }], "INVALID_AVATAR_FILE"));
+        reader.readAsDataURL(file);
+    });
+}
+
 function loadEnrolledCourseIds() {
     const raw = localStorage.getItem(enrolledCoursesKey);
     if (!raw) return [101, 102];
@@ -581,6 +596,23 @@ export const mockBff = {
         account.avatarUrl = request.avatarUrl ?? null;
         account.bio = request.bio ?? null;
         if (request.preferredLocale) account.preferredLocale = request.preferredLocale;
+        const updated: CurrentUser = { id: account.id, email: account.email, fullName: account.fullName, role: account.role, status: account.status, avatarUrl: account.avatarUrl, bio: account.bio, preferredLocale: account.preferredLocale };
+        persistSession(updated);
+        return delay(updated);
+    },
+
+    async uploadAvatar(file: File): Promise<CurrentUser> {
+        const user = requireUser();
+        const account = mockAccounts.find((item) => item.id === user.id);
+        if (!account) throw new ApiError("User not found", 404);
+        if (!allowedAvatarFileTypes.has(file.type)) {
+            throw new ApiError("Unsupported avatar file type", 415, [{ field: "file", message: "Use PNG, JPEG, WebP, or GIF." }], "UNSUPPORTED_MEDIA_TYPE");
+        }
+        if (file.size > maxAvatarFileBytes) {
+            throw new ApiError("Avatar file is too large", 413, [{ field: "file", message: "Avatar file must be 5 MB or smaller." }], "PAYLOAD_TOO_LARGE");
+        }
+
+        account.avatarUrl = await readAvatarFile(file);
         const updated: CurrentUser = { id: account.id, email: account.email, fullName: account.fullName, role: account.role, status: account.status, avatarUrl: account.avatarUrl, bio: account.bio, preferredLocale: account.preferredLocale };
         persistSession(updated);
         return delay(updated);

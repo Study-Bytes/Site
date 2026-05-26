@@ -1,5 +1,7 @@
 import { Chip } from "@mui/material";
 import type { CourseStatus } from "../../api/bffContracts";
+import { useI18n } from "../../i18n/useI18n";
+import { courseStatusLabel } from "../../utils/courseLabels";
 
 const statusColor: Record<CourseStatus, "default" | "success" | "warning" | "info" | "error"> = {
     DRAFT: "warning",
@@ -9,14 +11,7 @@ const statusColor: Record<CourseStatus, "default" | "success" | "warning" | "inf
     ARCHIVED: "default",
 };
 
-const statusLabel: Record<CourseStatus, string> = {
-    DRAFT: "Draft",
-    PENDING_REVIEW: "Pending review",
-    CHANGES_REQUESTED: "Changes requested",
-    PUBLISHED: "Published",
-    ARCHIVED: "Archived",
-};
-
 export function StatusBadge({ status }: { status: CourseStatus }) {
-    return <Chip size="small" label={statusLabel[status]} color={statusColor[status]} sx={{ fontWeight: 800 }} />;
+    const { locale } = useI18n();
+    return <Chip size="small" label={courseStatusLabel(status, locale === "ru")} color={statusColor[status]} sx={{ fontWeight: 800 }} />;
 }

@@ -7,12 +7,13 @@ import { Link as RouterLink } from "react-router-dom";
 import type { CourseCatalogItem } from "../../api/bffContracts";
 import { useI18n } from "../../i18n/useI18n";
 import { formatDuration } from "../../utils/courseFormat";
+import { courseAccessLabel } from "../../utils/courseLabels";
 import { DifficultyBadge } from "../ui/DifficultyBadge";
 
 export function CourseCard({ course, compact = false }: { course: CourseCatalogItem; compact?: boolean }) {
     const { locale } = useI18n();
     const isRu = locale === "ru";
-    const accessLabel = course.accessType === "PUBLIC" ? (isRu ? "Открытый курс" : "Public course") : course.accessType;
+    const accessLabel = courseAccessLabel(course.accessType, isRu);
 
     return (
         <Card

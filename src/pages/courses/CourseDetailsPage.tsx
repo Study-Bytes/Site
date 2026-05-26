@@ -34,6 +34,7 @@ import { ItemTypeBadge } from "../../components/ui/ItemTypeBadge";
 import { LoadingState } from "../../components/ui/LoadingState";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCourseId } from "../../utils/courseFormat";
+import { courseStatusLabel } from "../../utils/courseLabels";
 import { deadlineTypeLabel, formatDateTime } from "../../utils/moduleDeadlines";
 
 function CourseMetric({ label, value }: { label: string; value: string | number }) {
@@ -252,7 +253,7 @@ export default function CourseDetailsPage() {
                                     <CourseMetric label={isRu ? "Модули" : "Modules"} value={moduleCount} />
                                     <CourseMetric label={isRu ? "Уроки" : "Items"} value={itemCount} />
                                     <CourseMetric label={isRu ? "Длительность" : "Duration"} value={formatDuration(course.estimatedMinutes)} />
-                                    <CourseMetric label={isRu ? "Статус" : "Status"} value={course.status} />
+                                    <CourseMetric label={isRu ? "Статус" : "Status"} value={courseStatusLabel(course.status, isRu)} />
                                 </Box>
                             </Stack>
 

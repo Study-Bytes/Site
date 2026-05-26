@@ -15,6 +15,7 @@ import { LoadingState } from "../../components/ui/LoadingState";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration } from "../../utils/courseFormat";
+import { courseAccessLabel, courseDifficultyLabel, courseStatusLabel } from "../../utils/courseLabels";
 import { useI18n } from "../../i18n/useI18n";
 
 const statusOptions: Array<"" | CourseStatus> = ["", "DRAFT", "PENDING_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED"];
@@ -76,7 +77,7 @@ export default function TeacherCoursesPage() {
         try {
             setCourses(await teacherApi.listCourses(buildQuery(nextFilters)));
         } catch (requestError) {
-            setError(getErrorMessage(requestError, "Failed to load teacher courses"));
+            setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить курсы преподавателя" : "Failed to load teacher courses"));
         } finally {
             setIsLoading(false);
         }
@@ -98,7 +99,12 @@ export default function TeacherCoursesPage() {
             const updated = action === "submit" ? await teacherApi.submitCourseForReview(courseId) : await teacherApi.archiveCourse(courseId);
             updateCourseInList({ ...updated, updatedAt: updated.updatedAt });
         } catch (requestError) {
-            const message = getErrorMessage(requestError, action === "submit" ? "Failed to submit course for review" : "Failed to archive course");
+            const message = getErrorMessage(
+                requestError,
+                action === "submit"
+                    ? (isRu ? "Не удалось отправить курс на модерацию" : "Failed to submit course for review")
+                    : (isRu ? "Не удалось архивировать курс" : "Failed to archive course"),
+            );
             setActionError(message);
             if (requestError instanceof ApiError && requestError.validationErrors.length > 0) {
                 setActionError(`${message}: ${requestError.validationErrors.map((item) => item.message).join("; ")}`);
@@ -153,7 +159,7 @@ export default function TeacherCoursesPage() {
                             <TextField select label={isRu ? "Статус" : "Status"} value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as FilterState["status"] }))}>
                                 {statusOptions.map((value) => (
                                     <MenuItem key={value || "all"} value={value}>
-                                        {value || (isRu ? "Все статусы" : "All statuses")}
+                                        {value ? courseStatusLabel(value, isRu) : (isRu ? "Все статусы" : "All statuses")}
                                     </MenuItem>
                                 ))}
                             </TextField>
@@ -165,14 +171,14 @@ export default function TeacherCoursesPage() {
                             >
                                 {difficultyOptions.map((value) => (
                                     <MenuItem key={value || "all"} value={value}>
-                                        {value || (isRu ? "Любая сложность" : "All difficulties")}
+                                        {value ? courseDifficultyLabel(value, isRu) : (isRu ? "Любая сложность" : "All difficulties")}
                                     </MenuItem>
                                 ))}
                             </TextField>
                             <TextField select label={isRu ? "Доступ" : "Access type"} value={filters.accessType} onChange={(event) => setFilters((current) => ({ ...current, accessType: event.target.value as FilterState["accessType"] }))}>
                                 {accessTypeOptions.map((value) => (
                                     <MenuItem key={value || "all"} value={value}>
-                                        {value || (isRu ? "Любой доступ" : "All access types")}
+                                        {value ? courseAccessLabel(value, isRu) : (isRu ? "Любой доступ" : "All access types")}
                                     </MenuItem>
                                 ))}
                             </TextField>

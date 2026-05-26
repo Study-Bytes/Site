@@ -1,12 +1,9 @@
 import { Chip } from "@mui/material";
 import type { CourseAccessType } from "../../api/bffContracts";
-
-const accessLabel: Record<CourseAccessType, string> = {
-    PUBLIC: "Public",
-    UNLISTED: "Unlisted",
-    PRIVATE: "Private",
-};
+import { useI18n } from "../../i18n/useI18n";
+import { courseAccessLabel } from "../../utils/courseLabels";
 
 export function AccessTypeBadge({ accessType }: { accessType: CourseAccessType }) {
-    return <Chip size="small" variant="outlined" label={accessLabel[accessType]} sx={{ fontWeight: 800 }} />;
+    const { locale } = useI18n();
+    return <Chip size="small" variant="outlined" label={courseAccessLabel(accessType, locale === "ru")} sx={{ fontWeight: 800 }} />;
 }

@@ -55,7 +55,31 @@ import { ErrorState } from "../../components/ui/ErrorState";
 import { ValidationErrorPanel } from "../../components/ui/ValidationErrorPanel";
 import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
+import { courseItemTypeLabel } from "../../utils/courseLabels";
 import { parseRouteCourseId } from "../../utils/courseFormat";
+
+function contentBlockTypeLabel(type: ContentBlockType, isRu: boolean) {
+    const labels: Record<ContentBlockType, { ru: string; en: string }> = {
+        TEXT: { ru: "Текст", en: "Text" },
+        VIDEO: { ru: "Видео", en: "Video" },
+        IMAGE: { ru: "Изображение", en: "Image" },
+        CODE: { ru: "Код", en: "Code" },
+        EMBED: { ru: "Embed", en: "Embed" },
+        FILE: { ru: "Файл", en: "File" },
+    };
+    return isRu ? labels[type].ru : labels[type].en;
+}
+
+function testVisibilityLabel(value: TestCaseVisibility, isRu: boolean) {
+    if (value === "OPEN") return isRu ? "Открытый" : "Open";
+    return isRu ? "Скрытый" : "Hidden";
+}
+
+function comparisonModeLabel(value: ComparisonMode, isRu: boolean) {
+    if (value === "EXACT") return isRu ? "Точное совпадение" : "Exact match";
+    if (value === "IGNORE_WHITESPACE") return isRu ? "Игнорировать пробелы" : "Ignore whitespace";
+    return isRu ? "Своя проверка" : "Custom checker";
+}
 
 function formFromItem(item: TeacherItemDetails): CourseItemUpsertRequest {
     return {
@@ -93,16 +117,16 @@ function normalizeItemForm(input: CourseItemUpsertRequest): CourseItemUpsertRequ
     };
 }
 
-function validateItemForm(input: CourseItemUpsertRequest): ApiValidationError[] {
+function validateItemForm(input: CourseItemUpsertRequest, isRu = false): ApiValidationError[] {
     const item = normalizeItemForm(input);
     const errors: ApiValidationError[] = [];
-    if (!item.title) errors.push({ field: "title", message: "Title is required" });
-    if (!Number.isFinite(item.orderIndex) || item.orderIndex < 0) errors.push({ field: "orderIndex", message: "Order index must be non-negative" });
-    if ((item.itemType === "CODING" || item.itemType === "SQL") && !item.language) errors.push({ field: "language", message: "Language is required for CODING and SQL items" });
+    if (!item.title) errors.push({ field: "title", message: isRu ? "Укажите название урока" : "Title is required" });
+    if (!Number.isFinite(item.orderIndex) || item.orderIndex < 0) errors.push({ field: "orderIndex", message: isRu ? "Порядок должен быть неотрицательным числом" : "Order index must be non-negative" });
+    if ((item.itemType === "CODING" || item.itemType === "SQL") && !item.language) errors.push({ field: "language", message: isRu ? "Для CODING и SQL нужен язык" : "Language is required for CODING and SQL items" });
     for (const field of ["timeLimitMs", "memoryLimitMb", "outputLimitKb"] as const) {
         const value = item[field];
         if ((item.itemType === "CODING" || item.itemType === "SQL") && (value === null || !Number.isFinite(value) || value < 0)) {
-            errors.push({ field, message: `${field} must be non-negative` });
+            errors.push({ field, message: isRu ? `${field} должен быть неотрицательным` : `${field} must be non-negative` });
         }
     }
     return errors;
@@ -195,7 +219,7 @@ export default function TeacherItemEditorPage() {
 
     const loadItem = async () => {
         if (!parsedItemId) {
-            setError("Invalid item id");
+            setError(isRu ? "Некорректный id урока" : "Invalid item id");
             setIsLoading(false);
             return;
         }
@@ -205,7 +229,7 @@ export default function TeacherItemEditorPage() {
             const loaded = await teacherApi.getItem(parsedItemId);
             applyItem(loaded);
         } catch (requestError) {
-            setError(getErrorMessage(requestError, "Failed to load item"));
+            setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить урок" : "Failed to load item"));
         } finally {
             setIsLoading(false);
         }
@@ -235,16 +259,16 @@ export default function TeacherItemEditorPage() {
         if (!form || !parsedItemId) return;
         setSuccessMessage(null);
         setError(null);
-        const errors = validateItemForm(form);
+        const errors = validateItemForm(form, isRu);
         setValidationErrors(errors);
         if (errors.length > 0) return;
         setSavingSection("metadata");
         try {
             const updated = await teacherApi.updateItem(parsedItemId, normalizeItemForm(form));
             applyItem(updated);
-            setSuccessMessage("Item metadata saved");
+            setSuccessMessage(isRu ? "Настройки урока сохранены" : "Item metadata saved");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to save item metadata");
+            handleApiError(requestError, isRu ? "Не удалось сохранить настройки урока" : "Failed to save item metadata");
         } finally {
             setSavingSection(null);
         }
@@ -258,9 +282,9 @@ export default function TeacherItemEditorPage() {
         try {
             const updated = await teacherApi.replaceContentBlocks(parsedItemId, reindexContentBlocks(contentBlocks).map(blockToRequest));
             applyItem(updated);
-            setSuccessMessage("Content blocks saved");
+            setSuccessMessage(isRu ? "Материалы сохранены" : "Content blocks saved");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to save content blocks");
+            handleApiError(requestError, isRu ? "Не удалось сохранить материалы" : "Failed to save content blocks");
         } finally {
             setSavingSection(null);
         }
@@ -274,9 +298,9 @@ export default function TeacherItemEditorPage() {
         try {
             const updated = await teacherApi.replaceHints(parsedItemId, reindexHints(hints).map(hintToRequest));
             applyItem(updated);
-            setSuccessMessage("Hints saved");
+            setSuccessMessage(isRu ? "Подсказки сохранены" : "Hints saved");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to save hints");
+            handleApiError(requestError, isRu ? "Не удалось сохранить подсказки" : "Failed to save hints");
         } finally {
             setSavingSection(null);
         }
@@ -290,9 +314,9 @@ export default function TeacherItemEditorPage() {
         try {
             const updated = await teacherApi.replaceTestCases(parsedItemId, reindexTestCases(testCases).map(testCaseToRequest));
             applyItem(updated);
-            setSuccessMessage("Test cases saved");
+            setSuccessMessage(isRu ? "Тесты сохранены" : "Test cases saved");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to save test cases");
+            handleApiError(requestError, isRu ? "Не удалось сохранить тесты" : "Failed to save test cases");
         } finally {
             setSavingSection(null);
         }
@@ -306,9 +330,9 @@ export default function TeacherItemEditorPage() {
         try {
             const updated = await teacherApi.replaceOptions(parsedItemId, reindexOptions(options).map(optionToRequest));
             applyItem(updated);
-            setSuccessMessage("Quiz options saved");
+            setSuccessMessage(isRu ? "Варианты ответа сохранены" : "Quiz options saved");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to save quiz options");
+            handleApiError(requestError, isRu ? "Не удалось сохранить варианты ответа" : "Failed to save quiz options");
         } finally {
             setSavingSection(null);
         }
@@ -333,7 +357,7 @@ export default function TeacherItemEditorPage() {
     if (!item || !form) {
         return (
             <PageContainer>
-                <ErrorState message="Item was not found" />
+                <ErrorState message={isRu ? "Урок не найден" : "Item was not found"} />
             </PageContainer>
         );
     }
@@ -380,11 +404,9 @@ export default function TeacherItemEditorPage() {
                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                             <TextField label={isRu ? "Название урока" : "Title"} value={form.title} onChange={(event) => updateForm("title", event.target.value)} required fullWidth />
                             <TextField select label={isRu ? "Тип урока" : "Item type"} value={form.itemType} onChange={(event) => updateForm("itemType", event.target.value as CourseItemType)} fullWidth>
-                                <MenuItem value="THEORY">THEORY</MenuItem>
-                                <MenuItem value="QUIZ">QUIZ</MenuItem>
-                                <MenuItem value="CODING">CODING</MenuItem>
-                                <MenuItem value="SQL">SQL</MenuItem>
-                                <MenuItem value="FILE">FILE</MenuItem>
+                                {(["THEORY", "QUIZ", "CODING", "SQL", "FILE"] as CourseItemType[]).map((type) => (
+                                    <MenuItem key={type} value={type}>{courseItemTypeLabel(type, isRu)}</MenuItem>
+                                ))}
                             </TextField>
                             <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={form.orderIndex} onChange={(event) => updateForm("orderIndex", Number(event.target.value))} fullWidth />
                         </Stack>
@@ -404,20 +426,20 @@ export default function TeacherItemEditorPage() {
                             <TextField label={isRu ? "Стартовый код" : "Starter code"} multiline minRows={8} value={form.starterCode ?? ""} onChange={(event) => updateForm("starterCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />
                             <TextField label={isRu ? "Эталонное решение" : "Solution code"} multiline minRows={8} value={form.solutionCode ?? ""} onChange={(event) => updateForm("solutionCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />
                             <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                <TextField label="timeLimitMs" type="number" value={form.timeLimitMs ?? 2000} onChange={(event) => updateForm("timeLimitMs", Number(event.target.value))} fullWidth />
-                                <TextField label="memoryLimitMb" type="number" value={form.memoryLimitMb ?? 256} onChange={(event) => updateForm("memoryLimitMb", Number(event.target.value))} fullWidth />
-                                <TextField label="outputLimitKb" type="number" value={form.outputLimitKb ?? 128} onChange={(event) => updateForm("outputLimitKb", Number(event.target.value))} fullWidth />
+                                <TextField label={isRu ? "Лимит времени, мс" : "Time limit, ms"} type="number" value={form.timeLimitMs ?? 2000} onChange={(event) => updateForm("timeLimitMs", Number(event.target.value))} fullWidth />
+                                <TextField label={isRu ? "Память, МБ" : "Memory, MB"} type="number" value={form.memoryLimitMb ?? 256} onChange={(event) => updateForm("memoryLimitMb", Number(event.target.value))} fullWidth />
+                                <TextField label={isRu ? "Лимит вывода, КБ" : "Output limit, KB"} type="number" value={form.outputLimitKb ?? 128} onChange={(event) => updateForm("outputLimitKb", Number(event.target.value))} fullWidth />
                             </Stack>
-                            <TextField select label="comparisonMode" value={form.comparisonMode} onChange={(event) => updateForm("comparisonMode", event.target.value as ComparisonMode)}>
-                                <MenuItem value="EXACT">EXACT</MenuItem>
-                                <MenuItem value="IGNORE_WHITESPACE">IGNORE_WHITESPACE</MenuItem>
-                                <MenuItem value="CUSTOM">CUSTOM</MenuItem>
+                            <TextField select label={isRu ? "Режим сравнения" : "Comparison mode"} value={form.comparisonMode} onChange={(event) => updateForm("comparisonMode", event.target.value as ComparisonMode)}>
+                                {(["EXACT", "IGNORE_WHITESPACE", "CUSTOM"] as ComparisonMode[]).map((mode) => (
+                                    <MenuItem key={mode} value={mode}>{comparisonModeLabel(mode, isRu)}</MenuItem>
+                                ))}
                             </TextField>
                             <Stack direction={{ xs: "column", md: "row" }} spacing={1} flexWrap="wrap" useFlexGap>
-                                <FormControlLabel control={<Switch checked={form.networkDisabled} onChange={(event) => updateForm("networkDisabled", event.target.checked)} />} label="networkDisabled" />
-                                <FormControlLabel control={<Switch checked={form.readOnlyFs} onChange={(event) => updateForm("readOnlyFs", event.target.checked)} />} label="readOnlyFs" />
-                                <FormControlLabel control={<Switch checked={form.normalizeLineEndings} onChange={(event) => updateForm("normalizeLineEndings", event.target.checked)} />} label="normalizeLineEndings" />
-                                <FormControlLabel control={<Switch checked={form.trimTrailingWhitespaces} onChange={(event) => updateForm("trimTrailingWhitespaces", event.target.checked)} />} label="trimTrailingWhitespaces" />
+                                <FormControlLabel control={<Switch checked={form.networkDisabled} onChange={(event) => updateForm("networkDisabled", event.target.checked)} />} label={isRu ? "Запретить сеть" : "Network disabled"} />
+                                <FormControlLabel control={<Switch checked={form.readOnlyFs} onChange={(event) => updateForm("readOnlyFs", event.target.checked)} />} label={isRu ? "Файловая система только для чтения" : "Read-only filesystem"} />
+                                <FormControlLabel control={<Switch checked={form.normalizeLineEndings} onChange={(event) => updateForm("normalizeLineEndings", event.target.checked)} />} label={isRu ? "Нормализовать переносы строк" : "Normalize line endings"} />
+                                <FormControlLabel control={<Switch checked={form.trimTrailingWhitespaces} onChange={(event) => updateForm("trimTrailingWhitespaces", event.target.checked)} />} label={isRu ? "Обрезать пробелы в конце" : "Trim trailing whitespaces"} />
                             </Stack>
                             <Button variant="contained" startIcon={<SaveRoundedIcon />} onClick={() => void saveMetadata()} disabled={savingSection === "metadata"}>
                                 {isRu ? "Сохранить проверку" : "Save execution settings"}
@@ -432,32 +454,29 @@ export default function TeacherItemEditorPage() {
                         {contentBlocks.map((block, index) => (
                             <Accordion key={block.id} defaultExpanded={index === 0} variant="outlined" sx={{ borderRadius: 1.25, "&:before": { display: "none" } }}>
                                 <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
-                                    <Typography sx={{ fontWeight: 900 }}>{block.title || `${block.blockType} block #${index + 1}`}</Typography>
+                                    <Typography sx={{ fontWeight: 900 }}>{block.title || `${contentBlockTypeLabel(block.blockType, isRu)} #${index + 1}`}</Typography>
                                 </AccordionSummary>
                                 <AccordionDetails>
                                     <Stack spacing={2}>
                                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                            <TextField select label={isRu ? "Тип блока" : "blockType"} value={block.blockType} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, blockType: event.target.value as ContentBlockType } : entry))} fullWidth>
-                                                <MenuItem value="TEXT">TEXT</MenuItem>
-                                                <MenuItem value="VIDEO">VIDEO</MenuItem>
-                                                <MenuItem value="IMAGE">IMAGE</MenuItem>
-                                                <MenuItem value="CODE">CODE</MenuItem>
-                                                <MenuItem value="EMBED">EMBED</MenuItem>
-                                                <MenuItem value="FILE">FILE</MenuItem>
+                                            <TextField select label={isRu ? "Тип материала" : "Block type"} value={block.blockType} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, blockType: event.target.value as ContentBlockType } : entry))} fullWidth>
+                                                {(["TEXT", "VIDEO", "IMAGE", "CODE", "EMBED", "FILE"] as ContentBlockType[]).map((type) => (
+                                                    <MenuItem key={type} value={type}>{contentBlockTypeLabel(type, isRu)}</MenuItem>
+                                                ))}
                                             </TextField>
-                                            <TextField label={isRu ? "Порядок" : "orderIndex"} type="number" value={block.orderIndex} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} fullWidth />
+                                            <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={block.orderIndex} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} fullWidth />
                                         </Stack>
                                         <TextField label={isRu ? "Заголовок" : "Title"} value={block.title ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, title: event.target.value } : entry))} />
-                                        <TextField label={isRu ? "Текст / код блока" : "textContent"} multiline minRows={4} value={block.textContent ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, textContent: event.target.value } : entry))} />
+                                        <TextField label={isRu ? "Текст, описание или код" : "Text, description or code"} multiline minRows={4} value={block.textContent ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, textContent: event.target.value } : entry))} />
                                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                            <TextField label="url" value={block.url ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, url: event.target.value } : entry))} fullWidth />
-                                            <TextField label="language" value={block.language ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, language: event.target.value } : entry))} fullWidth />
+                                            <TextField label={isRu ? "URL материала" : "Media URL"} helperText={isRu ? "Для изображения, видео, embed или файла укажите ссылку." : "Use this for image, video, embed or file links."} value={block.url ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, url: event.target.value } : entry))} fullWidth />
+                                            <TextField label={isRu ? "Язык кода" : "Code language"} value={block.language ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, language: event.target.value } : entry))} fullWidth />
                                         </Stack>
-                                        <TextField label="metadataJson" multiline minRows={3} value={block.metadataJson ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, metadataJson: event.target.value } : entry))} />
+                                        <TextField label={isRu ? "Метаданные JSON" : "Metadata JSON"} multiline minRows={3} value={block.metadataJson ?? ""} onChange={(event) => setContentBlocks((current) => current.map((entry, i) => i === index ? { ...entry, metadataJson: event.target.value } : entry))} />
                                         <Stack direction="row" spacing={0.5}>
-                                            <Tooltip title="Move up"><span><IconButton disabled={index === 0} onClick={() => setContentBlocks((current) => reindexContentBlocks(move(current, index, -1)))}><ArrowUpwardRoundedIcon /></IconButton></span></Tooltip>
-                                            <Tooltip title="Move down"><span><IconButton disabled={index === contentBlocks.length - 1} onClick={() => setContentBlocks((current) => reindexContentBlocks(move(current, index, 1)))}><ArrowDownwardRoundedIcon /></IconButton></span></Tooltip>
-                                            <Tooltip title="Delete block"><IconButton color="error" onClick={() => window.confirm("Delete this content block?") && setContentBlocks((current) => reindexContentBlocks(current.filter((_, i) => i !== index)))}><DeleteRoundedIcon /></IconButton></Tooltip>
+                                            <Tooltip title={isRu ? "Поднять" : "Move up"}><span><IconButton disabled={index === 0} onClick={() => setContentBlocks((current) => reindexContentBlocks(move(current, index, -1)))}><ArrowUpwardRoundedIcon /></IconButton></span></Tooltip>
+                                            <Tooltip title={isRu ? "Опустить" : "Move down"}><span><IconButton disabled={index === contentBlocks.length - 1} onClick={() => setContentBlocks((current) => reindexContentBlocks(move(current, index, 1)))}><ArrowDownwardRoundedIcon /></IconButton></span></Tooltip>
+                                            <Tooltip title={isRu ? "Удалить материал" : "Delete block"}><IconButton color="error" onClick={() => window.confirm(isRu ? "Удалить этот материал?" : "Delete this content block?") && setContentBlocks((current) => reindexContentBlocks(current.filter((_, i) => i !== index)))}><DeleteRoundedIcon /></IconButton></Tooltip>
                                         </Stack>
                                     </Stack>
                                 </AccordionDetails>
@@ -480,13 +499,13 @@ export default function TeacherItemEditorPage() {
                             <Paper key={hint.id} variant="outlined" sx={{ p: 2, borderRadius: 1.25 }}>
                                 <Stack spacing={2}>
                                     <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                        <TextField label={isRu ? "Порядок" : "orderIndex"} type="number" value={hint.orderIndex} onChange={(event) => setHints((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} sx={{ maxWidth: { md: 180 } }} />
+                                        <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={hint.orderIndex} onChange={(event) => setHints((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} sx={{ maxWidth: { md: 180 } }} />
                                         <TextField label={isRu ? "Текст подсказки" : "Hint text"} value={hint.text} onChange={(event) => setHints((current) => current.map((entry, i) => i === index ? { ...entry, text: event.target.value } : entry))} fullWidth />
                                     </Stack>
                                     <Stack direction="row" spacing={0.5}>
                                         <IconButton disabled={index === 0} onClick={() => setHints((current) => reindexHints(move(current, index, -1)))}><ArrowUpwardRoundedIcon /></IconButton>
                                         <IconButton disabled={index === hints.length - 1} onClick={() => setHints((current) => reindexHints(move(current, index, 1)))}><ArrowDownwardRoundedIcon /></IconButton>
-                                        <IconButton color="error" onClick={() => window.confirm("Delete this hint?") && setHints((current) => reindexHints(current.filter((_, i) => i !== index)))}><DeleteRoundedIcon /></IconButton>
+                                        <IconButton color="error" onClick={() => window.confirm(isRu ? "Удалить эту подсказку?" : "Delete this hint?") && setHints((current) => reindexHints(current.filter((_, i) => i !== index)))}><DeleteRoundedIcon /></IconButton>
                                     </Stack>
                                 </Stack>
                             </Paper>
@@ -510,19 +529,20 @@ export default function TeacherItemEditorPage() {
                                 <Paper key={testCase.id} variant="outlined" sx={{ p: 2, borderRadius: 1.25 }}>
                                     <Stack spacing={2}>
                                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                            <TextField label="testKey" value={testCase.testKey} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, testKey: event.target.value } : entry))} fullWidth />
-                                            <TextField label={isRu ? "Порядок" : "orderIndex"} type="number" value={testCase.orderIndex} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} fullWidth />
-                                            <TextField select label={isRu ? "Видимость" : "visibility"} value={testCase.visibility} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, visibility: event.target.value as TestCaseVisibility } : entry))} fullWidth>
-                                                <MenuItem value="OPEN">OPEN</MenuItem>
-                                                <MenuItem value="HIDDEN">HIDDEN</MenuItem>
+                                            <TextField label={isRu ? "Ключ теста" : "Test key"} value={testCase.testKey} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, testKey: event.target.value } : entry))} fullWidth />
+                                            <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={testCase.orderIndex} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} fullWidth />
+                                            <TextField select label={isRu ? "Видимость" : "Visibility"} value={testCase.visibility} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, visibility: event.target.value as TestCaseVisibility } : entry))} fullWidth>
+                                                {(["OPEN", "HIDDEN"] as TestCaseVisibility[]).map((value) => (
+                                                    <MenuItem key={value} value={value}>{testVisibilityLabel(value, isRu)}</MenuItem>
+                                                ))}
                                             </TextField>
                                         </Stack>
-                                        <TextField label="inputData" multiline minRows={3} value={testCase.inputData ?? ""} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, inputData: event.target.value } : entry))} />
-                                        <TextField label="expectedOutput" multiline minRows={3} value={testCase.expectedOutput ?? ""} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, expectedOutput: event.target.value } : entry))} />
+                                        <TextField label={isRu ? "Входные данные" : "Input data"} multiline minRows={3} value={testCase.inputData ?? ""} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, inputData: event.target.value } : entry))} />
+                                        <TextField label={isRu ? "Ожидаемый вывод" : "Expected output"} multiline minRows={3} value={testCase.expectedOutput ?? ""} onChange={(event) => setTestCases((current) => current.map((entry, i) => i === index ? { ...entry, expectedOutput: event.target.value } : entry))} />
                                         <Stack direction="row" spacing={0.5}>
                                             <IconButton disabled={index === 0} onClick={() => setTestCases((current) => reindexTestCases(move(current, index, -1)))}><ArrowUpwardRoundedIcon /></IconButton>
                                             <IconButton disabled={index === testCases.length - 1} onClick={() => setTestCases((current) => reindexTestCases(move(current, index, 1)))}><ArrowDownwardRoundedIcon /></IconButton>
-                                            <IconButton color="error" onClick={() => window.confirm("Delete this test case?") && setTestCases((current) => reindexTestCases(current.filter((_, i) => i !== index)))}><DeleteRoundedIcon /></IconButton>
+                                            <IconButton color="error" onClick={() => window.confirm(isRu ? "Удалить этот тест?" : "Delete this test case?") && setTestCases((current) => reindexTestCases(current.filter((_, i) => i !== index)))}><DeleteRoundedIcon /></IconButton>
                                         </Stack>
                                     </Stack>
                                 </Paper>
@@ -547,8 +567,8 @@ export default function TeacherItemEditorPage() {
                                 <Paper key={option.id} variant="outlined" sx={{ p: 2, borderRadius: 1.25 }}>
                                     <Stack spacing={2}>
                                         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                            <TextField label="label" value={option.label ?? ""} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))} sx={{ maxWidth: { md: 160 } }} />
-                                            <TextField label={isRu ? "Порядок" : "orderIndex"} type="number" value={option.orderIndex} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} sx={{ maxWidth: { md: 160 } }} />
+                                            <TextField label={isRu ? "Метка" : "Label"} value={option.label ?? ""} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))} sx={{ maxWidth: { md: 160 } }} />
+                                            <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={option.orderIndex} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, orderIndex: Number(event.target.value) } : entry))} sx={{ maxWidth: { md: 160 } }} />
                                             <FormControlLabel control={<Checkbox checked={Boolean(option.correct)} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, correct: event.target.checked } : entry))} />} label={isRu ? "правильный" : "correct"} />
                                         </Stack>
                                         <TextField label={isRu ? "Текст варианта" : "Option text"} value={option.text} onChange={(event) => setOptions((current) => current.map((entry, i) => i === index ? { ...entry, text: event.target.value } : entry))} />
@@ -556,7 +576,7 @@ export default function TeacherItemEditorPage() {
                                         <Stack direction="row" spacing={0.5}>
                                             <IconButton disabled={index === 0} onClick={() => setOptions((current) => reindexOptions(move(current, index, -1)))}><ArrowUpwardRoundedIcon /></IconButton>
                                             <IconButton disabled={index === options.length - 1} onClick={() => setOptions((current) => reindexOptions(move(current, index, 1)))}><ArrowDownwardRoundedIcon /></IconButton>
-                                            <IconButton color="error" onClick={() => window.confirm("Delete this quiz option?") && setOptions((current) => reindexOptions(current.filter((_, i) => i !== index)))}><DeleteRoundedIcon /></IconButton>
+                                            <IconButton color="error" onClick={() => window.confirm(isRu ? "Удалить этот вариант ответа?" : "Delete this quiz option?") && setOptions((current) => reindexOptions(current.filter((_, i) => i !== index)))}><DeleteRoundedIcon /></IconButton>
                                         </Stack>
                                     </Stack>
                                 </Paper>

@@ -96,22 +96,31 @@ async function parseError(response: Response): Promise<ApiError> {
     return new ApiError(message, response.status, validationErrors, code, requestId);
 }
 
-function createHeaders(includeAuth: boolean) {
+function isFormDataBody(body: unknown): body is FormData {
+    return typeof FormData !== "undefined" && body instanceof FormData;
+}
+
+function createHeaders(includeAuth: boolean, body?: unknown) {
     const accessToken = getStoredAccessToken();
-    const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-    };
+    const headers: Record<string, string> = {};
+    if (!isFormDataBody(body)) headers["Content-Type"] = "application/json";
     if (includeAuth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
     return headers;
 }
 
-function createFetchOptions(options: RequestOptions) {
+function createRequestBody(body: unknown): BodyInit | undefined {
+    if (body === undefined) return undefined;
+    if (isFormDataBody(body)) return body;
+    return JSON.stringify(body);
+}
+
+function createFetchOptions(options: RequestOptions): RequestInit {
     const includeAuth = options.auth !== "none";
     return {
         method: options.method ?? "GET",
         credentials: includeAuth ? "include" as RequestCredentials : "omit" as RequestCredentials,
-        headers: createHeaders(includeAuth),
-        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        headers: createHeaders(includeAuth, options.body),
+        body: createRequestBody(options.body),
     };
 }
 

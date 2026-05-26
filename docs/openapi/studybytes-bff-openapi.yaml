@@ -158,6 +158,54 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /me/avatar:
+    post:
+      tags:
+      - Profile
+      summary: Upload current user avatar
+      description: Primary avatar update flow used by Site. Accepts a multipart image file and returns the updated current user with avatarUrl populated by the BFF.
+      operationId: uploadAvatar
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PNG, JPEG, WebP, or GIF image, up to 5 MB.
+      responses:
+        '200':
+          description: Avatar uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: Payload Too Large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '415':
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /me/password:
     put:
       tags:

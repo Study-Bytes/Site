@@ -67,6 +67,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { ValidationErrorPanel } from "../../components/ui/ValidationErrorPanel";
 import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
+import { courseItemTypeLabel } from "../../utils/courseLabels";
 import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCourseId } from "../../utils/courseFormat";
 import { deadlineTypeLabel, formatDateTime, normalizeModuleDraft } from "../../utils/moduleDeadlines";
 
@@ -151,16 +152,16 @@ function normalizeForm(form: CourseUpsertRequest): CourseUpsertRequest {
     };
 }
 
-function validateForm(form: CourseUpsertRequest): ApiValidationError[] {
+function validateForm(form: CourseUpsertRequest, isRu = false): ApiValidationError[] {
     const normalized = normalizeForm(form);
     const errors: ApiValidationError[] = [];
-    if (!normalized.title) errors.push({ field: "title", message: "Title is required" });
-    if (!normalized.slug) errors.push({ field: "slug", message: "Slug is required" });
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized.slug)) errors.push({ field: "slug", message: "Use lowercase letters, numbers and hyphens" });
-    if (!normalized.shortDescription) errors.push({ field: "shortDescription", message: "Short description is required" });
-    if (!normalized.description) errors.push({ field: "description", message: "Description is required" });
+    if (!normalized.title) errors.push({ field: "title", message: isRu ? "Укажите название курса" : "Title is required" });
+    if (!normalized.slug) errors.push({ field: "slug", message: isRu ? "Укажите slug" : "Slug is required" });
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized.slug)) errors.push({ field: "slug", message: isRu ? "Используйте строчные латинские буквы, цифры и дефисы" : "Use lowercase letters, numbers and hyphens" });
+    if (!normalized.shortDescription) errors.push({ field: "shortDescription", message: isRu ? "Укажите краткое описание" : "Short description is required" });
+    if (!normalized.description) errors.push({ field: "description", message: isRu ? "Укажите полное описание" : "Description is required" });
     if (normalized.estimatedMinutes !== null && (!Number.isFinite(normalized.estimatedMinutes) || normalized.estimatedMinutes < 0)) {
-        errors.push({ field: "estimatedMinutes", message: "Estimated minutes must be non-negative" });
+        errors.push({ field: "estimatedMinutes", message: isRu ? "Оценка длительности должна быть неотрицательной" : "Estimated minutes must be non-negative" });
     }
     return errors;
 }
@@ -187,28 +188,28 @@ function normalizeItemDraft(input: CourseItemUpsertRequest): CourseItemUpsertReq
     };
 }
 
-function validateModuleDraft(input: ModuleUpsertRequest): ApiValidationError[] {
+function validateModuleDraft(input: ModuleUpsertRequest, isRu = false): ApiValidationError[] {
     const module = normalizeModuleDraft(input);
     const errors: ApiValidationError[] = [];
-    if (!module.title) errors.push({ field: "module.title", message: "Module title is required" });
-    if (!Number.isFinite(module.orderIndex) || module.orderIndex < 0) errors.push({ field: "module.orderIndex", message: "Order index must be non-negative" });
-    if (module.deadlineType === "ABSOLUTE" && !module.deadlineAt) errors.push({ field: "module.deadlineAt", message: "Deadline date is required" });
+    if (!module.title) errors.push({ field: "module.title", message: isRu ? "Укажите название модуля" : "Module title is required" });
+    if (!Number.isFinite(module.orderIndex) || module.orderIndex < 0) errors.push({ field: "module.orderIndex", message: isRu ? "Порядок должен быть неотрицательным числом" : "Order index must be non-negative" });
+    if (module.deadlineType === "ABSOLUTE" && !module.deadlineAt) errors.push({ field: "module.deadlineAt", message: isRu ? "Укажите дату дедлайна" : "Deadline date is required" });
     if (module.deadlineType === "RELATIVE_FROM_START" && (!module.timeLimitMinutes || module.timeLimitMinutes <= 0)) {
-        errors.push({ field: "module.timeLimitMinutes", message: "Time limit must be greater than zero" });
+        errors.push({ field: "module.timeLimitMinutes", message: isRu ? "Лимит времени должен быть больше нуля" : "Time limit must be greater than zero" });
     }
     return errors;
 }
 
-function validateItemDraft(input: CourseItemUpsertRequest): ApiValidationError[] {
+function validateItemDraft(input: CourseItemUpsertRequest, isRu = false): ApiValidationError[] {
     const item = normalizeItemDraft(input);
     const errors: ApiValidationError[] = [];
-    if (!item.title) errors.push({ field: "item.title", message: "Item title is required" });
-    if (!Number.isFinite(item.orderIndex) || item.orderIndex < 0) errors.push({ field: "item.orderIndex", message: "Order index must be non-negative" });
-    if ((item.itemType === "CODING" || item.itemType === "SQL") && !item.language) errors.push({ field: "item.language", message: "Language is required for CODING and SQL items" });
+    if (!item.title) errors.push({ field: "item.title", message: isRu ? "Укажите название урока" : "Item title is required" });
+    if (!Number.isFinite(item.orderIndex) || item.orderIndex < 0) errors.push({ field: "item.orderIndex", message: isRu ? "Порядок должен быть неотрицательным числом" : "Order index must be non-negative" });
+    if ((item.itemType === "CODING" || item.itemType === "SQL") && !item.language) errors.push({ field: "item.language", message: isRu ? "Для CODING и SQL нужен язык" : "Language is required for CODING and SQL items" });
     for (const field of ["timeLimitMs", "memoryLimitMb", "outputLimitKb"] as const) {
         const value = item[field];
         if ((item.itemType === "CODING" || item.itemType === "SQL") && (value === null || !Number.isFinite(value) || value < 0)) {
-            errors.push({ field: `item.${field}`, message: `${field} must be non-negative` });
+            errors.push({ field: `item.${field}`, message: isRu ? `${field} должен быть неотрицательным` : `${field} must be non-negative` });
         }
     }
     return errors;
@@ -312,11 +313,11 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         setIsLoading(true);
         setError(null);
         try {
-            const loaded = await teacherApi.getCourse(parsedCourseId);
+        const loaded = await teacherApi.getCourse(parsedCourseId);
             setCourse(loaded);
             setForm(toForm(loaded));
         } catch (requestError) {
-            setError(getErrorMessage(requestError, "Failed to load course"));
+            setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить курс" : "Failed to load course"));
         } finally {
             setIsLoading(false);
         }
@@ -355,7 +356,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
     const submitForm = async () => {
         setSuccessMessage(null);
         setError(null);
-        const errors = validateForm(form);
+        const errors = validateForm(form, isRu);
         setValidationErrors(errors);
         if (errors.length > 0) return;
 
@@ -365,7 +366,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
             if (isCreate) {
                 const created = await teacherApi.createCourse(payload);
                 setCourse(created);
-                setSuccessMessage("Course draft created");
+                setSuccessMessage(isRu ? "Черновик курса создан" : "Course draft created");
                 navigate(`/teacher/courses/${created.id}/edit`, { replace: true });
                 return;
             }
@@ -373,9 +374,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
             const updated = await teacherApi.updateCourse(parsedCourseId, payload);
             setCourse(updated);
             setForm(toForm(updated));
-            setSuccessMessage("Course metadata saved");
+            setSuccessMessage(isRu ? "Описание курса сохранено" : "Course metadata saved");
         } catch (requestError) {
-            handleApiError(requestError, isCreate ? "Failed to create course" : "Failed to save course");
+            handleApiError(requestError, isCreate ? (isRu ? "Не удалось создать курс" : "Failed to create course") : (isRu ? "Не удалось сохранить курс" : "Failed to save course"));
         } finally {
             setIsSaving(false);
         }
@@ -391,9 +392,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
             const updated = nextAction === "submit" ? await teacherApi.submitCourseForReview(course.id) : await teacherApi.archiveCourse(course.id);
             setCourse(updated);
             setForm(toForm(updated));
-            setSuccessMessage(nextAction === "submit" ? "Course submitted for review" : "Course archived");
+            setSuccessMessage(nextAction === "submit" ? (isRu ? "Курс отправлен на модерацию" : "Course submitted for review") : (isRu ? "Курс архивирован" : "Course archived"));
         } catch (requestError) {
-            handleApiError(requestError, nextAction === "submit" ? "Failed to submit course for review" : "Failed to archive course");
+            handleApiError(requestError, nextAction === "submit" ? (isRu ? "Не удалось отправить курс на модерацию" : "Failed to submit course for review") : (isRu ? "Не удалось архивировать курс" : "Failed to archive course"));
         } finally {
             setAction(null);
         }
@@ -409,7 +410,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
 
     const saveModule = async () => {
         if (!course || !moduleDialog) return;
-        const errors = validateModuleDraft(moduleDialog.draft);
+        const errors = validateModuleDraft(moduleDialog.draft, isRu);
         setValidationErrors(errors);
         if (errors.length > 0) return;
         setAction("module");
@@ -419,28 +420,28 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
             if (moduleDialog.mode === "create") {
                 await teacherApi.createModule(course.id, payload);
                 setModuleDialog(null);
-                await refreshAfterMutation("Module created");
+                await refreshAfterMutation(isRu ? "Модуль создан" : "Module created");
             } else if (moduleDialog.moduleId) {
                 await teacherApi.updateModule(moduleDialog.moduleId, payload);
                 setModuleDialog(null);
-                await refreshAfterMutation("Module saved");
+                await refreshAfterMutation(isRu ? "Модуль сохранён" : "Module saved");
             }
         } catch (requestError) {
-            handleApiError(requestError, "Failed to save module");
+            handleApiError(requestError, isRu ? "Не удалось сохранить модуль" : "Failed to save module");
         } finally {
             setAction(null);
         }
     };
 
     const deleteModule = async (moduleId: number) => {
-        if (!window.confirm("Delete this module and all its items?")) return;
+        if (!window.confirm(isRu ? "Удалить этот модуль и все его уроки?" : "Delete this module and all its items?")) return;
         setAction(`delete-module-${moduleId}`);
         setError(null);
         try {
             await teacherApi.deleteModule(moduleId);
-            await refreshAfterMutation("Module deleted");
+            await refreshAfterMutation(isRu ? "Модуль удалён" : "Module deleted");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to delete module");
+            handleApiError(requestError, isRu ? "Не удалось удалить модуль" : "Failed to delete module");
         } finally {
             setAction(null);
         }
@@ -458,9 +459,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         setError(null);
         try {
             await teacherApi.reorderModules(course.id, { orderedModuleIds: copy.map((module) => module.id) });
-            await refreshAfterMutation("Modules reordered");
+            await refreshAfterMutation(isRu ? "Порядок модулей обновлён" : "Modules reordered");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to reorder modules");
+            handleApiError(requestError, isRu ? "Не удалось изменить порядок модулей" : "Failed to reorder modules");
         } finally {
             setAction(null);
         }
@@ -478,7 +479,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
             const details = await teacherApi.getItem(item.id);
             setItemDialog({ mode: "edit", moduleId, itemId: item.id, draft: itemDraftFromDetails(details) });
         } catch (requestError) {
-            handleApiError(requestError, "Failed to load item");
+            handleApiError(requestError, isRu ? "Не удалось загрузить урок" : "Failed to load item");
         } finally {
             setAction(null);
         }
@@ -486,7 +487,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
 
     const saveItem = async () => {
         if (!itemDialog) return;
-        const errors = validateItemDraft(itemDialog.draft);
+        const errors = validateItemDraft(itemDialog.draft, isRu);
         setValidationErrors(errors);
         if (errors.length > 0) return;
         setAction("item");
@@ -496,28 +497,28 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
             if (itemDialog.mode === "create") {
                 await teacherApi.createItem(itemDialog.moduleId, payload);
                 setItemDialog(null);
-                await refreshAfterMutation("Item created");
+                await refreshAfterMutation(isRu ? "Урок создан" : "Item created");
             } else if (itemDialog.itemId) {
                 await teacherApi.updateItem(itemDialog.itemId, payload);
                 setItemDialog(null);
-                await refreshAfterMutation("Item saved");
+                await refreshAfterMutation(isRu ? "Урок сохранён" : "Item saved");
             }
         } catch (requestError) {
-            handleApiError(requestError, "Failed to save item");
+            handleApiError(requestError, isRu ? "Не удалось сохранить урок" : "Failed to save item");
         } finally {
             setAction(null);
         }
     };
 
     const deleteItem = async (itemId: number) => {
-        if (!window.confirm("Delete this course item?")) return;
+        if (!window.confirm(isRu ? "Удалить этот урок?" : "Delete this course item?")) return;
         setAction(`delete-item-${itemId}`);
         setError(null);
         try {
             await teacherApi.deleteItem(itemId);
-            await refreshAfterMutation("Item deleted");
+            await refreshAfterMutation(isRu ? "Урок удалён" : "Item deleted");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to delete item");
+            handleApiError(requestError, isRu ? "Не удалось удалить урок" : "Failed to delete item");
         } finally {
             setAction(null);
         }
@@ -534,9 +535,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         setError(null);
         try {
             await teacherApi.reorderItems(module.id, { orderedItemIds: copy.map((item) => item.id) });
-            await refreshAfterMutation("Items reordered");
+            await refreshAfterMutation(isRu ? "Порядок уроков обновлён" : "Items reordered");
         } catch (requestError) {
-            handleApiError(requestError, "Failed to reorder items");
+            handleApiError(requestError, isRu ? "Не удалось изменить порядок уроков" : "Failed to reorder items");
         } finally {
             setAction(null);
         }
@@ -608,7 +609,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                         >
                             <Stack spacing={2}>
                                 <TextField label={isRu ? "Название" : "Title"} value={form.title} onChange={(event) => updateField("title", event.target.value)} required disabled={isEditingLocked} />
-                                <TextField label="Slug" value={form.slug} onChange={(event) => updateField("slug", event.target.value)} helperText={isRu ? "URL-адрес латиницей, например java-core" : "Lowercase URL slug, for example java-core"} required disabled={isEditingLocked} />
+                                <TextField label={isRu ? "URL-адрес" : "Slug"} value={form.slug} onChange={(event) => updateField("slug", event.target.value)} helperText={isRu ? "URL-адрес латиницей, например java-core" : "Lowercase URL slug, for example java-core"} required disabled={isEditingLocked} />
                                 <TextField label={isRu ? "Краткое описание" : "Short description"} value={form.shortDescription} onChange={(event) => updateField("shortDescription", event.target.value)} required disabled={isEditingLocked} />
                                 <TextField label={isRu ? "Полное описание" : "Description"} multiline minRows={4} value={form.description} onChange={(event) => updateField("description", event.target.value)} required disabled={isEditingLocked} />
                                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
@@ -1038,11 +1039,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                     const nextType = event.target.value as CourseItemType;
                                     setItemDialog({ ...itemDialog, draft: normalizeItemDraft({ ...itemDialog.draft, itemType: nextType }) });
                                 }} fullWidth>
-                                    <MenuItem value="THEORY">THEORY</MenuItem>
-                                    <MenuItem value="QUIZ">QUIZ</MenuItem>
-                                    <MenuItem value="CODING">CODING</MenuItem>
-                                    <MenuItem value="SQL">SQL</MenuItem>
-                                    <MenuItem value="FILE">FILE</MenuItem>
+                                    {(["THEORY", "QUIZ", "CODING", "SQL", "FILE"] as CourseItemType[]).map((type) => (
+                                        <MenuItem key={type} value={type}>{courseItemTypeLabel(type, isRu)}</MenuItem>
+                                    ))}
                                 </TextField>
                             </Stack>
                             <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={itemDialog.draft.orderIndex} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, orderIndex: Number(event.target.value) } })} />
@@ -1051,9 +1050,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                 <Stack spacing={2}>
                                     <TextField label={isRu ? "Язык" : "Language"} helperText={isRu ? "Например: java, python или sql." : "For example: java, python or sql."} value={itemDialog.draft.language ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, language: event.target.value } })} required />
                                     <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                        <TextField label="timeLimitMs" type="number" value={itemDialog.draft.timeLimitMs ?? 2000} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, timeLimitMs: Number(event.target.value) } })} fullWidth />
-                                        <TextField label="memoryLimitMb" type="number" value={itemDialog.draft.memoryLimitMb ?? 256} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, memoryLimitMb: Number(event.target.value) } })} fullWidth />
-                                        <TextField label="outputLimitKb" type="number" value={itemDialog.draft.outputLimitKb ?? 128} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, outputLimitKb: Number(event.target.value) } })} fullWidth />
+                                        <TextField label={isRu ? "Лимит времени, мс" : "Time limit, ms"} type="number" value={itemDialog.draft.timeLimitMs ?? 2000} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, timeLimitMs: Number(event.target.value) } })} fullWidth />
+                                        <TextField label={isRu ? "Память, МБ" : "Memory, MB"} type="number" value={itemDialog.draft.memoryLimitMb ?? 256} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, memoryLimitMb: Number(event.target.value) } })} fullWidth />
+                                        <TextField label={isRu ? "Лимит вывода, КБ" : "Output limit, KB"} type="number" value={itemDialog.draft.outputLimitKb ?? 128} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, outputLimitKb: Number(event.target.value) } })} fullWidth />
                                     </Stack>
                                 </Stack>
                             ) : null}

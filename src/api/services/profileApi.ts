@@ -14,6 +14,13 @@ export const profileApi = {
         return request<CurrentUser>("/me/settings", { method: "PUT", body: input });
     },
 
+    uploadAvatar(file: File): Promise<CurrentUser> {
+        if (env.useMockBff) return mockBff.uploadAvatar(file);
+        const body = new FormData();
+        body.append("file", file);
+        return request<CurrentUser>("/me/avatar", { method: "POST", body });
+    },
+
     changePassword(input: ChangePasswordRequest): Promise<void> {
         if (env.useMockBff) return mockBff.changePassword(input);
         return request<void>("/me/password", { method: "PUT", body: input });

@@ -27,6 +27,7 @@ import { LoadingState } from "../../components/ui/LoadingState";
 import { PageContainer } from "../../layouts/PageContainer";
 import { useSearchParams } from "react-router-dom";
 import { useI18n } from "../../i18n/useI18n";
+import { courseAccessLabel, courseDifficultyLabel } from "../../utils/courseLabels";
 
 type DifficultyFilter = CourseDifficulty | "ALL";
 type AccessFilter = CourseAccessType | "ALL";
@@ -71,6 +72,15 @@ function sortCourses(courses: CourseCatalogItem[], sort: SortOption) {
     if (sort === "DURATION_ASC") return sorted.sort((a, b) => (a.estimatedMinutes ?? Number.MAX_SAFE_INTEGER) - (b.estimatedMinutes ?? Number.MAX_SAFE_INTEGER));
     if (sort === "DURATION_DESC") return sorted.sort((a, b) => (b.estimatedMinutes ?? 0) - (a.estimatedMinutes ?? 0));
     return sorted;
+}
+
+function durationFilterLabel(duration: DurationFilter, isRu: boolean) {
+    const labels: Record<Exclude<DurationFilter, "ALL">, { ru: string; en: string }> = {
+        SHORT: { ru: "До 3 часов", en: "Up to 3 hours" },
+        MEDIUM: { ru: "3-8 часов", en: "3-8 hours" },
+        LONG: { ru: "8+ часов", en: "8+ hours" },
+    };
+    return duration === "ALL" ? (isRu ? "Любая длительность" : "Any duration") : (isRu ? labels[duration].ru : labels[duration].en);
 }
 
 export default function CoursesPage() {
@@ -260,10 +270,10 @@ export default function CoursesPage() {
                         {activeFilterCount > 0 ? (
                             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                                 {query.trim() ? <Chip label={`${isRu ? "Поиск" : "Search"}: ${query.trim()}`} onDelete={() => setSearchQuery("")} /> : null}
-                                {difficulty !== "ALL" ? <Chip label={`${isRu ? "Сложность" : "Difficulty"}: ${difficulty}`} onDelete={() => setDifficulty("ALL")} /> : null}
-                                {accessType !== "ALL" ? <Chip label={`${isRu ? "Доступ" : "Access"}: ${accessType}`} onDelete={() => setAccessType("ALL")} /> : null}
+                                {difficulty !== "ALL" ? <Chip label={`${isRu ? "Сложность" : "Difficulty"}: ${courseDifficultyLabel(difficulty, isRu)}`} onDelete={() => setDifficulty("ALL")} /> : null}
+                                {accessType !== "ALL" ? <Chip label={`${isRu ? "Доступ" : "Access"}: ${courseAccessLabel(accessType, isRu)}`} onDelete={() => setAccessType("ALL")} /> : null}
                                 {enrollment !== "ALL" ? <Chip label={enrollment === "OPEN" ? (isRu ? "Запись открыта" : "Enrollment open") : (isRu ? "Запись закрыта" : "Enrollment disabled")} onDelete={() => setEnrollment("ALL")} /> : null}
-                                {duration !== "ALL" ? <Chip label={`${isRu ? "Длительность" : "Duration"}: ${duration}`} onDelete={() => setDuration("ALL")} /> : null}
+                                {duration !== "ALL" ? <Chip label={`${isRu ? "Длительность" : "Duration"}: ${durationFilterLabel(duration, isRu)}`} onDelete={() => setDuration("ALL")} /> : null}
                             </Stack>
                         ) : null}
 
