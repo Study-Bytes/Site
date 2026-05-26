@@ -423,7 +423,7 @@ paths:
       - Learning
       operationId: getCourseLeaderboard
       summary: Get course progress leaderboard
-      description: Returns top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list.
+      description: Returns top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list. Teacher course owners and admins must be able to read the top list without enrollment; return currentUser as null when the staff user is not a participant.
       security:
       - BearerAuth: []
       parameters:

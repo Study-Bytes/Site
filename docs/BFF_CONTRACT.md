@@ -189,6 +189,8 @@ GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 
 The Site renders only 10 top rows. If `currentUser.userId` is already present in the returned top list, the Site highlights that top row and does not render a duplicate current-user row.
 
+Staff access requirement: `TEACHER` course owners and `ADMIN` users must be able to read this leaderboard even when they are not enrolled in the course. In that case return the top list and set `currentUser` to `null` if the staff user has no participant row; do not return `403 User is not enrolled in course`.
+
 Course module DTOs include deadline settings:
 
 ```json

@@ -336,7 +336,12 @@ export default function CourseDetailsPage() {
                                     {isRu ? "Смотреть программу курса можно без регистрации. Войди, чтобы записаться, сохранять прогресс и решать задания." : "You can view the course program without registration. Sign in to enroll, save progress and solve assignments."}
                                 </Typography>
                                 <CourseCta course={course} />
-                                {isAuthenticated ? <CourseLeaderboardPanel courseId={course.id} /> : null}
+                                {isAuthenticated ? (
+                                    <CourseLeaderboardPanel
+                                        courseId={course.id}
+                                        enrollmentRequiredMessage={isRu ? "Рейтинг появится после записи на курс." : "The leaderboard will be available after enrollment."}
+                                    />
+                                ) : null}
                                 <Divider />
                                 <Stack spacing={1.2}>
                                     <Stack direction="row" spacing={1} alignItems="center">

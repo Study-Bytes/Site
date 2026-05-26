@@ -118,7 +118,10 @@ export default function AdminCourseReviewPage() {
                             </Stack>
                         </Paper>
 
-                        <CourseLeaderboardPanel courseId={course.id} />
+                        <CourseLeaderboardPanel
+                            courseId={course.id}
+                            enrollmentRequiredMessage={isRu ? "Сервер пока требует запись на курс. Для админа рейтинг должен открываться без записи." : "The server still requires course enrollment. Admins should be able to view this leaderboard without enrollment."}
+                        />
 
                         <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
                             <Stack spacing={2}>

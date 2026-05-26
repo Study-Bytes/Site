@@ -4,7 +4,7 @@ import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import { useCallback, useEffect, useState } from "react";
-import { getErrorMessage } from "../../api/apiError";
+import { ApiError, getErrorMessage } from "../../api/apiError";
 import type { CourseLeaderboardEntry, CourseLeaderboardResponse } from "../../api/bffContracts";
 import { learningApi } from "../../api/services";
 import { useI18n } from "../../i18n/useI18n";
@@ -42,6 +42,10 @@ function rankLabel(rank: number | null | undefined, isRu: boolean) {
 function isTopPlace(rank: number | null | undefined) {
     const value = validRank(rank);
     return Boolean(value && value <= 3);
+}
+
+function isEnrollmentRequiredError(error: unknown) {
+    return error instanceof ApiError && error.status === 403 && /not enrolled/i.test(error.message);
 }
 
 function dedupeByUser(entries: CourseLeaderboardEntry[]) {
@@ -136,11 +140,15 @@ export function CourseLeaderboard({
     leaderboard,
     isLoading,
     error,
+    errorSeverity = "warning",
+    showRetry = true,
     onRetry,
 }: {
     leaderboard: CourseLeaderboardResponse | null;
     isLoading: boolean;
     error: string | null;
+    errorSeverity?: "info" | "warning";
+    showRetry?: boolean;
     onRetry: () => void;
 }) {
     const { locale } = useI18n();
@@ -168,10 +176,12 @@ export function CourseLeaderboard({
 
                 {!isLoading && error ? (
                     <Stack spacing={1.3} sx={{ p: 2 }}>
-                        <Alert severity="warning">{error}</Alert>
-                        <Button startIcon={<ReplayRoundedIcon />} onClick={onRetry} variant="outlined" size="small" sx={{ alignSelf: "flex-start" }}>
-                            {isRu ? "Повторить" : "Retry"}
-                        </Button>
+                        <Alert severity={errorSeverity}>{error}</Alert>
+                        {showRetry ? (
+                            <Button startIcon={<ReplayRoundedIcon />} onClick={onRetry} variant="outlined" size="small" sx={{ alignSelf: "flex-start" }}>
+                                {isRu ? "Повторить" : "Retry"}
+                            </Button>
+                        ) : null}
                     </Stack>
                 ) : null}
 
@@ -214,35 +224,52 @@ export function CourseLeaderboard({
     );
 }
 
-export function CourseLeaderboardPanel({ courseId, enabled = true }: { courseId: number | null | undefined; enabled?: boolean }) {
+export function CourseLeaderboardPanel({
+    courseId,
+    enabled = true,
+    enrollmentRequiredMessage,
+}: {
+    courseId: number | null | undefined;
+    enabled?: boolean;
+    enrollmentRequiredMessage?: string;
+}) {
     const { locale } = useI18n();
     const isRu = locale === "ru";
     const [leaderboard, setLeaderboard] = useState<CourseLeaderboardResponse | null>(null);
     const [isLoading, setIsLoading] = useState(Boolean(courseId && enabled));
     const [error, setError] = useState<string | null>(null);
+    const [isAccessNotice, setIsAccessNotice] = useState(false);
 
     const loadLeaderboard = useCallback(async () => {
         if (!courseId || !enabled) {
             setLeaderboard(null);
             setError(null);
+            setIsAccessNotice(false);
             setIsLoading(false);
             return;
         }
 
         setIsLoading(true);
         setError(null);
+        setIsAccessNotice(false);
         try {
             setLeaderboard(await learningApi.getCourseLeaderboard(courseId));
         } catch (requestError) {
-            setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить рейтинг курса" : "Failed to load course leaderboard"));
+            setLeaderboard(null);
+            if (isEnrollmentRequiredError(requestError)) {
+                setIsAccessNotice(true);
+                setError(enrollmentRequiredMessage ?? (isRu ? "Рейтинг доступен после записи на курс." : "Leaderboard is available after enrollment."));
+            } else {
+                setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить рейтинг курса" : "Failed to load course leaderboard"));
+            }
         } finally {
             setIsLoading(false);
         }
-    }, [courseId, enabled, isRu]);
+    }, [courseId, enabled, enrollmentRequiredMessage, isRu]);
 
     useEffect(() => {
         void loadLeaderboard();
     }, [loadLeaderboard]);
 
-    return <CourseLeaderboard leaderboard={leaderboard} isLoading={isLoading} error={error} onRetry={loadLeaderboard} />;
+    return <CourseLeaderboard leaderboard={leaderboard} isLoading={isLoading} error={error} errorSeverity={isAccessNotice ? "info" : "warning"} showRetry={!isAccessNotice} onRetry={loadLeaderboard} />;
 }

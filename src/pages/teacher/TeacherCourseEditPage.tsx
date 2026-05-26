@@ -959,7 +959,10 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                         </FormSectionCard>
                         {course ? (
                             <Box id="course-leaderboard-section" sx={{ scrollMarginTop: 96 }}>
-                                <CourseLeaderboardPanel courseId={course.id} />
+                                <CourseLeaderboardPanel
+                                    courseId={course.id}
+                                    enrollmentRequiredMessage={isRu ? "Сервер пока требует запись на курс. Для преподавателя рейтинг должен открываться без записи." : "The server still requires course enrollment. Teachers should be able to view this leaderboard without enrollment."}
+                                />
                             </Box>
                         ) : null}
                     </Stack>

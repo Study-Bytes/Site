@@ -99,6 +99,8 @@ These are frontend-facing learning endpoints. BFF may aggregate data from Learni
 
 `GET /api/v1/learn/courses/{courseId}/leaderboard` must return `CourseLeaderboardResponse`: top 10 enrolled users by `progressPercent` plus the current JWT user's own place. Ties must be ordered deterministically and must not expand the top 10 list. If the current user is already in the returned top list, the Site highlights that row and does not render a duplicate current-user row.
 
+Teacher course owners and admins use the same leaderboard widget for course statistics. BFF must allow `TEACHER`/`ADMIN` access without requiring enrollment in the course. If the staff user is not a participant, return `currentUser: null` instead of `403 User is not enrolled in course`.
+
 Module DTOs returned by course structure endpoints must include `deadlineType`, `deadlineAt`, and `timeLimitMinutes`. BFF must proxy module start and deadline-state endpoints to LearningService without changing response shape and must forward auth exactly like other learning endpoints.
 
 ## Teacher Courses and Editor
