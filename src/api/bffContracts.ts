@@ -63,6 +63,8 @@ export type CourseDifficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type CourseAccessType = "PUBLIC" | "UNLISTED" | "PRIVATE";
 export type CourseStatus = "DRAFT" | "PENDING_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
 export type CourseItemType = "THEORY" | "QUIZ" | "CODING" | "SQL" | "FILE";
+export type ModuleDeadlineType = "NONE" | "ABSOLUTE" | "RELATIVE_FROM_START";
+export type ModuleDeadlineStatus = "IN_PROGRESS_ON_TIME" | "OVERDUE" | "COMPLETED_ON_TIME" | "COMPLETED_LATE";
 export type ContentBlockType = "TEXT" | "VIDEO" | "IMAGE" | "CODE" | "EMBED" | "FILE";
 export type TestCaseVisibility = "OPEN" | "HIDDEN";
 export type ComparisonMode = "EXACT" | "IGNORE_WHITESPACE" | "CUSTOM";
@@ -128,6 +130,9 @@ export type CourseModuleSummary = {
     id: number;
     title: string;
     orderIndex: number;
+    deadlineType: ModuleDeadlineType;
+    deadlineAt: string | null;
+    timeLimitMinutes: number | null;
     items: CourseItemSummary[];
 };
 
@@ -195,6 +200,29 @@ export type LearningCourse = CourseDetails & {
     progressPercent: number;
     enrollmentStatus: LearningStatus;
     nextItemId: number | null;
+};
+
+export type ModuleStartResponse = {
+    courseId: number;
+    moduleId: number;
+    startedAt: string;
+    alreadyStarted: boolean;
+};
+
+export type ModuleDeadlineTaskCompletion = {
+    taskId: number;
+    completedAt: string;
+};
+
+export type ModuleDeadlineState = {
+    courseId: number;
+    moduleId: number;
+    deadlineAt: string;
+    moduleCompletedAt: string | null;
+    moduleCompletedBeforeDeadline: boolean | null;
+    deadlineStatus: ModuleDeadlineStatus;
+    tasksCompletedBeforeDeadline: ModuleDeadlineTaskCompletion[];
+    tasksCompletedAfterDeadline: ModuleDeadlineTaskCompletion[];
 };
 
 export type CourseLeaderboardEntry = {
@@ -318,6 +346,9 @@ export type CourseUpsertRequest = {
 export type ModuleUpsertRequest = {
     title: string;
     orderIndex: number;
+    deadlineType?: ModuleDeadlineType;
+    deadlineAt?: string | null;
+    timeLimitMinutes?: number | null;
 };
 
 export type ReorderModulesRequest = {

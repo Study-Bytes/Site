@@ -23,6 +23,7 @@ import ArchiveRoundedIcon from "@mui/icons-material/ArchiveRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
 import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import DragIndicatorRoundedIcon from "@mui/icons-material/DragIndicatorRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
@@ -44,6 +45,7 @@ import type {
     CourseItemUpsertRequest,
     CourseModuleSummary,
     CourseUpsertRequest,
+    ModuleDeadlineType,
     ModuleUpsertRequest,
     TeacherCourseDetails,
     TeacherItemDetails,
@@ -60,6 +62,7 @@ import { ValidationErrorPanel } from "../../components/ui/ValidationErrorPanel";
 import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCourseId } from "../../utils/courseFormat";
+import { deadlineTypeLabel, formatDateTime, normalizeModuleDraft } from "../../utils/moduleDeadlines";
 
 const defaultForm: CourseUpsertRequest = {
     title: "",
@@ -89,6 +92,14 @@ const defaultItemDraft = (orderIndex: number): CourseItemUpsertRequest => ({
     comparisonMode: "EXACT",
     normalizeLineEndings: true,
     trimTrailingWhitespaces: true,
+});
+
+const defaultModuleDraft = (orderIndex: number): ModuleUpsertRequest => ({
+    title: "",
+    orderIndex,
+    deadlineType: "NONE",
+    deadlineAt: null,
+    timeLimitMinutes: null,
 });
 
 type Props = {
@@ -171,9 +182,14 @@ function normalizeItemDraft(input: CourseItemUpsertRequest): CourseItemUpsertReq
 }
 
 function validateModuleDraft(input: ModuleUpsertRequest): ApiValidationError[] {
+    const module = normalizeModuleDraft(input);
     const errors: ApiValidationError[] = [];
-    if (!input.title.trim()) errors.push({ field: "module.title", message: "Module title is required" });
-    if (!Number.isFinite(input.orderIndex) || input.orderIndex < 0) errors.push({ field: "module.orderIndex", message: "Order index must be non-negative" });
+    if (!module.title) errors.push({ field: "module.title", message: "Module title is required" });
+    if (!Number.isFinite(module.orderIndex) || module.orderIndex < 0) errors.push({ field: "module.orderIndex", message: "Order index must be non-negative" });
+    if (module.deadlineType === "ABSOLUTE" && !module.deadlineAt) errors.push({ field: "module.deadlineAt", message: "Deadline date is required" });
+    if (module.deadlineType === "RELATIVE_FROM_START" && (!module.timeLimitMinutes || module.timeLimitMinutes <= 0)) {
+        errors.push({ field: "module.timeLimitMinutes", message: "Time limit must be greater than zero" });
+    }
     return errors;
 }
 
@@ -353,12 +369,13 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         setAction("module");
         setError(null);
         try {
+            const payload = normalizeModuleDraft(moduleDialog.draft);
             if (moduleDialog.mode === "create") {
-                await teacherApi.createModule(course.id, { title: moduleDialog.draft.title.trim(), orderIndex: Number(moduleDialog.draft.orderIndex) });
+                await teacherApi.createModule(course.id, payload);
                 setModuleDialog(null);
                 await refreshAfterMutation("Module created");
             } else if (moduleDialog.moduleId) {
-                await teacherApi.updateModule(moduleDialog.moduleId, { title: moduleDialog.draft.title.trim(), orderIndex: Number(moduleDialog.draft.orderIndex) });
+                await teacherApi.updateModule(moduleDialog.moduleId, payload);
                 setModuleDialog(null);
                 await refreshAfterMutation("Module saved");
             }
@@ -587,7 +604,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                             variant="contained"
                                             startIcon={<AddRoundedIcon />}
                                             disabled={isEditingLocked}
-                                            onClick={() => setModuleDialog({ mode: "create", draft: { title: "", orderIndex: course.modules.length } })}
+                                            onClick={() => setModuleDialog({ mode: "create", draft: defaultModuleDraft(course.modules.length) })}
                                         >
                                             {isRu ? "Добавить модуль" : "Add module"}
                                         </Button>
@@ -631,7 +648,19 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                                                     <Box sx={{ minWidth: 0 }}>
                                                                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                                                                             <Typography sx={{ fontWeight: 950, fontSize: 17 }}>{module.title}</Typography>
-                                                                            <Chip size="small" label={isRu ? `${items.length} уроков` : `${items.length} items`} />
+                                                                        <Chip size="small" label={isRu ? `${items.length} уроков` : `${items.length} items`} />
+                                                                        <Chip
+                                                                            size="small"
+                                                                            icon={<AccessTimeRoundedIcon />}
+                                                                            label={
+                                                                                module.deadlineType === "ABSOLUTE" && module.deadlineAt
+                                                                                    ? `${deadlineTypeLabel(module.deadlineType, isRu)}: ${formatDateTime(module.deadlineAt, locale)}`
+                                                                                    : module.deadlineType === "RELATIVE_FROM_START" && module.timeLimitMinutes
+                                                                                      ? `${deadlineTypeLabel(module.deadlineType, isRu)}: ${formatDuration(module.timeLimitMinutes)}`
+                                                                                      : deadlineTypeLabel(module.deadlineType, isRu)
+                                                                            }
+                                                                            variant="outlined"
+                                                                        />
                                                                         </Stack>
                                                                         <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.25 }}>
                                                                             {isRu ? `Модуль ${moduleIndex + 1} в учебной последовательности` : `Module ${moduleIndex + 1} in the learning sequence`}
@@ -648,7 +677,25 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                                                     <Tooltip title={isRu ? "Порядок" : "Sequence"}>
                                                                         <DragIndicatorRoundedIcon sx={{ color: "text.disabled" }} />
                                                                     </Tooltip>
-                                                                    <Button variant="text" size="small" startIcon={<EditRoundedIcon />} disabled={isEditingLocked} onClick={() => setModuleDialog({ mode: "edit", moduleId: module.id, draft: { title: module.title, orderIndex: module.orderIndex } })}>
+                                                                    <Button
+                                                                        variant="text"
+                                                                        size="small"
+                                                                        startIcon={<EditRoundedIcon />}
+                                                                        disabled={isEditingLocked}
+                                                                        onClick={() =>
+                                                                            setModuleDialog({
+                                                                                mode: "edit",
+                                                                                moduleId: module.id,
+                                                                                draft: {
+                                                                                    title: module.title,
+                                                                                    orderIndex: module.orderIndex,
+                                                                                    deadlineType: module.deadlineType,
+                                                                                    deadlineAt: module.deadlineAt,
+                                                                                    timeLimitMinutes: module.timeLimitMinutes,
+                                                                                },
+                                                                            })
+                                                                        }
+                                                                    >
                                                                         {isRu ? "Модуль" : "Module"}
                                                                     </Button>
                                                                     <Button variant="text" size="small" color="error" startIcon={<DeleteRoundedIcon />} disabled={isEditingLocked} onClick={() => void deleteModule(module.id)}>
@@ -792,6 +839,48 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                         <Stack spacing={2} sx={{ pt: 1 }}>
                             <TextField label={isRu ? "Название" : "Title"} value={moduleDialog.draft.title} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, title: event.target.value } })} required />
                             <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={moduleDialog.draft.orderIndex} onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, orderIndex: Number(event.target.value) } })} />
+                            <TextField
+                                select
+                                label={isRu ? "Тип дедлайна" : "Deadline type"}
+                                value={moduleDialog.draft.deadlineType ?? "NONE"}
+                                onChange={(event) => {
+                                    const deadlineType = event.target.value as ModuleDeadlineType;
+                                    setModuleDialog({
+                                        ...moduleDialog,
+                                        draft: normalizeModuleDraft({
+                                            ...moduleDialog.draft,
+                                            deadlineType,
+                                            deadlineAt: deadlineType === "ABSOLUTE" ? moduleDialog.draft.deadlineAt : null,
+                                            timeLimitMinutes: deadlineType === "RELATIVE_FROM_START" ? moduleDialog.draft.timeLimitMinutes ?? 120 : null,
+                                        }),
+                                    });
+                                }}
+                            >
+                                <MenuItem value="NONE">{isRu ? "Без дедлайна" : "No deadline"}</MenuItem>
+                                <MenuItem value="ABSOLUTE">{isRu ? "Конкретная дата" : "Fixed date"}</MenuItem>
+                                <MenuItem value="RELATIVE_FROM_START">{isRu ? "Таймер от старта" : "Timer from start"}</MenuItem>
+                            </TextField>
+                            {moduleDialog.draft.deadlineType === "ABSOLUTE" ? (
+                                <TextField
+                                    label={isRu ? "Дата и время дедлайна" : "Deadline date and time"}
+                                    type="datetime-local"
+                                    value={moduleDialog.draft.deadlineAt ?? ""}
+                                    onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, deadlineAt: event.target.value || null, timeLimitMinutes: null } })}
+                                    InputLabelProps={{ shrink: true }}
+                                    required
+                                />
+                            ) : null}
+                            {moduleDialog.draft.deadlineType === "RELATIVE_FROM_START" ? (
+                                <TextField
+                                    label={isRu ? "Лимит времени, минут" : "Time limit, minutes"}
+                                    type="number"
+                                    value={moduleDialog.draft.timeLimitMinutes ?? 120}
+                                    onChange={(event) => setModuleDialog({ ...moduleDialog, draft: { ...moduleDialog.draft, deadlineAt: null, timeLimitMinutes: Number(event.target.value) } })}
+                                    inputProps={{ min: 1 }}
+                                    helperText={isRu ? "Например, 120 минут для двух часов после старта модуля." : "For example, 120 minutes for two hours after module start."}
+                                    required
+                                />
+                            ) : null}
                         </Stack>
                     ) : null}
                 </DialogContent>

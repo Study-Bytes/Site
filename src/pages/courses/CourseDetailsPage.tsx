@@ -34,6 +34,7 @@ import { ItemTypeBadge } from "../../components/ui/ItemTypeBadge";
 import { LoadingState } from "../../components/ui/LoadingState";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration, getCourseItemCount, getCourseModuleCount, parseRouteCourseId } from "../../utils/courseFormat";
+import { deadlineTypeLabel, formatDateTime } from "../../utils/moduleDeadlines";
 
 function CourseMetric({ label, value }: { label: string; value: string | number }) {
     return (
@@ -301,6 +302,13 @@ export default function CourseDetailsPage() {
                                                 <Typography variant="body2" sx={{ color: "text.secondary" }}>
                                                     {isRu ? `${module.items.length} уроков` : `${module.items.length} item${module.items.length === 1 ? "" : "s"}`}
                                                 </Typography>
+                                                {module.deadlineType !== "NONE" ? (
+                                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                                        {deadlineTypeLabel(module.deadlineType, isRu)}
+                                                        {module.deadlineType === "ABSOLUTE" && module.deadlineAt ? ` · ${formatDateTime(module.deadlineAt, locale)}` : ""}
+                                                        {module.deadlineType === "RELATIVE_FROM_START" && module.timeLimitMinutes ? ` · ${formatDuration(module.timeLimitMinutes)}` : ""}
+                                                    </Typography>
+                                                ) : null}
                                             </Box>
                                         </Stack>
                                     </AccordionSummary>

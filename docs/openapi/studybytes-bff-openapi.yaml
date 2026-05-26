@@ -393,6 +393,72 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /learn/courses/{courseId}/modules/{moduleId}/start:
+    post:
+      tags:
+      - Learning
+      summary: Start current user's module timer
+      operationId: startModule
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      parameters:
+      - $ref: '#/components/parameters/CourseId'
+      - name: moduleId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Module start state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleStartResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /learn/courses/{courseId}/modules/{moduleId}/deadline-state:
+    get:
+      tags:
+      - Learning
+      summary: Get module deadline state
+      operationId: getModuleDeadlineState
+      security:
+      - BearerAuth: []
+      - CookieAuth: []
+      parameters:
+      - $ref: '#/components/parameters/CourseId'
+      - name: moduleId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: deadlineAt
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: Module deadline state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleDeadlineState'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /learn/courses/{courseId}/items/{itemId}:
     get:
       tags:
@@ -1618,6 +1684,19 @@ components:
       - CODING
       - SQL
       - FILE
+    ModuleDeadlineType:
+      type: string
+      enum:
+      - NONE
+      - ABSOLUTE
+      - RELATIVE_FROM_START
+    ModuleDeadlineStatus:
+      type: string
+      enum:
+      - IN_PROGRESS_ON_TIME
+      - OVERDUE
+      - COMPLETED_ON_TIME
+      - COMPLETED_LATE
     ContentBlockType:
       type: string
       enum:
@@ -1911,6 +1990,18 @@ components:
           type: integer
           format: int32
           example: 0
+        deadlineType:
+          $ref: '#/components/schemas/ModuleDeadlineType'
+        deadlineAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-06-01T23:59:00'
+        timeLimitMinutes:
+          type: integer
+          nullable: true
+          format: int32
+          example: 120
         items:
           type: array
           items:
@@ -1919,6 +2010,9 @@ components:
       - id
       - title
       - orderIndex
+      - deadlineType
+      - deadlineAt
+      - timeLimitMinutes
       - items
     CourseDetails:
       allOf:
@@ -2226,6 +2320,86 @@ components:
       - courseId
       - top
       - currentUser
+    ModuleStartResponse:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          format: int64
+          example: 1
+        moduleId:
+          type: integer
+          format: int64
+          example: 10
+        startedAt:
+          type: string
+          format: date-time
+          example: '2026-05-26T12:00:00'
+        alreadyStarted:
+          type: boolean
+          example: false
+      required:
+      - courseId
+      - moduleId
+      - startedAt
+      - alreadyStarted
+    ModuleDeadlineTaskCompletion:
+      type: object
+      properties:
+        taskId:
+          type: integer
+          format: int64
+          example: 101
+        completedAt:
+          type: string
+          format: date-time
+          example: '2026-05-30T18:45:00'
+      required:
+      - taskId
+      - completedAt
+    ModuleDeadlineState:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          format: int64
+          example: 1
+        moduleId:
+          type: integer
+          format: int64
+          example: 10
+        deadlineAt:
+          type: string
+          format: date-time
+          example: '2026-06-01T23:59:00'
+        moduleCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-06-02T10:15:00'
+        moduleCompletedBeforeDeadline:
+          type: boolean
+          nullable: true
+          example: false
+        deadlineStatus:
+          $ref: '#/components/schemas/ModuleDeadlineStatus'
+        tasksCompletedBeforeDeadline:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModuleDeadlineTaskCompletion'
+        tasksCompletedAfterDeadline:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModuleDeadlineTaskCompletion'
+      required:
+      - courseId
+      - moduleId
+      - deadlineAt
+      - moduleCompletedAt
+      - moduleCompletedBeforeDeadline
+      - deadlineStatus
+      - tasksCompletedBeforeDeadline
+      - tasksCompletedAfterDeadline
     LearningItem:
       type: object
       properties:
@@ -2607,6 +2781,18 @@ components:
           type: integer
           format: int32
           example: 0
+        deadlineType:
+          $ref: '#/components/schemas/ModuleDeadlineType'
+        deadlineAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-06-01T23:59:00'
+        timeLimitMinutes:
+          type: integer
+          nullable: true
+          format: int32
+          example: 120
       required:
       - title
       - orderIndex
