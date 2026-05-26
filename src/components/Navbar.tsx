@@ -1,5 +1,4 @@
 import {
-    Alert,
     AppBar,
     Avatar,
     BottomNavigation,
@@ -7,7 +6,6 @@ import {
     Box,
     Button,
     Chip,
-    Divider,
     IconButton,
     InputAdornment,
     ListItemButton,
@@ -16,24 +14,17 @@ import {
     Paper,
     Popover,
     Stack,
-    Tab,
-    Tabs,
     TextField,
     Toolbar,
     Typography,
 } from "@mui/material";
-import type { ChangeEvent, FormEvent, MouseEvent, ReactNode } from "react";
-import { useEffect, useState } from "react";
-import AccountCircleRoundedIcon from "@mui/icons-material/AccountCircleRounded";
+import type { FormEvent, MouseEvent, ReactNode } from "react";
+import { useState } from "react";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
-import CameraAltRoundedIcon from "@mui/icons-material/CameraAltRounded";
-import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
-import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
@@ -43,9 +34,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
-import { getErrorMessage } from "../api/apiError";
-import type { UserRole, UserStatus } from "../api/bffContracts";
-import { profileApi } from "../api/services";
+import type { UserRole } from "../api/bffContracts";
 import { useAuth } from "../auth/useAuth";
 import { useI18n } from "../i18n/useI18n";
 import { useColorMode } from "../theme/colorModeContext";
@@ -168,126 +157,26 @@ function SearchBox({ placeholder }: { placeholder?: string }) {
     );
 }
 
-type AccountMenuTab = "overview" | "avatar" | "account";
-type AvatarInputMode = "file" | "url";
-const avatarFileAccept = "image/png,image/jpeg,image/webp,image/gif";
-
 function userInitial(fullName: string | null | undefined, email: string) {
     return (fullName?.trim() || email).charAt(0).toUpperCase();
-}
-
-function roleLabel(role: UserRole, isRu: boolean) {
-    const labels: Record<UserRole, { ru: string; en: string }> = {
-        STUDENT: { ru: "Студент", en: "Student" },
-        TEACHER: { ru: "Преподаватель", en: "Teacher" },
-        ADMIN: { ru: "Администратор", en: "Admin" },
-    };
-    return isRu ? labels[role].ru : labels[role].en;
-}
-
-function userStatusLabel(status: UserStatus | undefined, isRu: boolean) {
-    const labels: Record<UserStatus, { ru: string; en: string }> = {
-        ACTIVE: { ru: "Активен", en: "Active" },
-        BLOCKED: { ru: "Заблокирован", en: "Blocked" },
-        DELETED: { ru: "Удалён", en: "Deleted" },
-    };
-    const resolvedStatus = status ?? "ACTIVE";
-    return isRu ? labels[resolvedStatus].ru : labels[resolvedStatus].en;
 }
 
 function AccountMenu() {
     const { locale, t } = useI18n();
     const isRu = locale === "ru";
-    const { user, logout, setCurrentUser } = useAuth();
+    const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-    const [activeTab, setActiveTab] = useState<AccountMenuTab>("overview");
-    const [avatarInputMode, setAvatarInputMode] = useState<AvatarInputMode>("file");
-    const [avatarDraft, setAvatarDraft] = useState("");
-    const [avatarFile, setAvatarFile] = useState<File | null>(null);
-    const [avatarFilePreview, setAvatarFilePreview] = useState<string | null>(null);
-    const [isSavingAvatar, setIsSavingAvatar] = useState(false);
-    const [avatarMessage, setAvatarMessage] = useState<{ severity: "success" | "error"; text: string } | null>(null);
-
-    useEffect(() => {
-        setAvatarDraft(user?.avatarUrl ?? "");
-    }, [user?.avatarUrl]);
-
-    useEffect(() => {
-        setAvatarInputMode("file");
-        setAvatarFile(null);
-        setAvatarMessage(null);
-    }, [user?.id]);
-
-    useEffect(() => {
-        if (!avatarFile) {
-            setAvatarFilePreview(null);
-            return;
-        }
-
-        const objectUrl = URL.createObjectURL(avatarFile);
-        setAvatarFilePreview(objectUrl);
-        return () => URL.revokeObjectURL(objectUrl);
-    }, [avatarFile]);
 
     const handleMenuOpen = (event: MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => {
         setAnchorEl(null);
-        setActiveTab("overview");
-        setAvatarMessage(null);
     };
 
     const handleLogout = async () => {
         await logout();
         handleMenuClose();
         navigate("/");
-    };
-
-    const handleAvatarFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
-        setAvatarFile(event.target.files?.[0] ?? null);
-        setAvatarMessage(null);
-        event.target.value = "";
-    };
-
-    const handleAvatarUpload = async () => {
-        if (!avatarFile) {
-            setAvatarMessage({ severity: "error", text: isRu ? "Выбери файл изображения." : "Choose an image file." });
-            return;
-        }
-
-        setIsSavingAvatar(true);
-        setAvatarMessage(null);
-        try {
-            const updatedUser = await profileApi.uploadAvatar(avatarFile);
-            setCurrentUser(updatedUser);
-            setAvatarFile(null);
-            setAvatarMessage({ severity: "success", text: isRu ? "Иконка профиля загружена." : "Profile icon uploaded." });
-        } catch (error) {
-            setAvatarMessage({ severity: "error", text: getErrorMessage(error, isRu ? "Не удалось загрузить иконку." : "Failed to upload profile icon.") });
-        } finally {
-            setIsSavingAvatar(false);
-        }
-    };
-
-    const handleAvatarUrlSave = async () => {
-        if (!user) return;
-
-        setIsSavingAvatar(true);
-        setAvatarMessage(null);
-        try {
-            const updatedUser = await profileApi.updateProfile({
-                fullName: user.fullName?.trim() || user.email,
-                avatarUrl: avatarDraft.trim() || null,
-                bio: user.bio?.trim() || null,
-                preferredLocale: user.preferredLocale ?? locale,
-            });
-            setCurrentUser(updatedUser);
-            setAvatarMessage({ severity: "success", text: isRu ? "Иконка профиля обновлена." : "Profile icon updated." });
-        } catch (error) {
-            setAvatarMessage({ severity: "error", text: getErrorMessage(error, isRu ? "Не удалось обновить иконку." : "Failed to update profile icon.") });
-        } finally {
-            setIsSavingAvatar(false);
-        }
     };
 
     if (!user) {
@@ -304,9 +193,9 @@ function AccountMenu() {
     }
 
     const displayName = user.fullName?.trim() || user.email;
-    const roleText = roleLabel(user.role, isRu);
     const workspaceLink = user.role === "ADMIN" ? "/admin" : user.role === "TEACHER" ? "/teacher/courses" : "/my-learning";
     const workspaceLabel = user.role === "ADMIN" ? t("nav.adminPanel") : user.role === "TEACHER" ? t("nav.teacherCabinet") : t("nav.myLearning");
+    const workspaceIcon = user.role === "STUDENT" ? <SchoolOutlinedIcon /> : <AdminPanelSettingsOutlinedIcon />;
     const open = Boolean(anchorEl);
 
     return (
@@ -325,7 +214,7 @@ function AccountMenu() {
                 slotProps={{
                     paper: {
                         sx: {
-                            width: { xs: "calc(100vw - 24px)", sm: 420 },
+                            width: { xs: "calc(100vw - 24px)", sm: 340 },
                             maxWidth: "calc(100vw - 24px)",
                             mt: 1,
                             overflow: "hidden",
@@ -336,160 +225,82 @@ function AccountMenu() {
                     },
                 }}
             >
-                <Box sx={{ bgcolor: (theme) => getStudyBytesColors(theme.palette.mode).surfaceContainerLow }}>
-                    <Stack direction="row" spacing={2} sx={{ p: 2.25, pb: 2 }} alignItems="center">
-                        <Avatar src={user.avatarUrl ?? undefined} sx={{ width: 58, height: 58, bgcolor: "secondary.main", fontSize: 22, fontWeight: 950, flex: "0 0 auto" }}>
+                <Stack
+                    direction="row"
+                    spacing={1.5}
+                    sx={{
+                        p: 2,
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                        bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(42,41,51,0.78)" : getStudyBytesColors(theme.palette.mode).surfaceContainerLow),
+                    }}
+                    alignItems="center"
+                >
+                    <Box sx={{ position: "relative", flex: "0 0 auto" }}>
+                        <Avatar src={user.avatarUrl ?? undefined} sx={{ width: 52, height: 52, bgcolor: "secondary.main", fontSize: 20, fontWeight: 950, border: (theme) => `1px solid ${theme.palette.divider}` }}>
                             {userInitial(user.fullName, user.email)}
                         </Avatar>
-                        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                            <Typography sx={{ fontWeight: 950, lineHeight: 1.2 }} noWrap>
-                                {displayName}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: "text.secondary" }} noWrap>
-                                {user.email}
-                            </Typography>
-                            <Stack direction="row" spacing={0.75} sx={{ mt: 1, flexWrap: "wrap", rowGap: 0.75 }}>
-                                <Chip size="small" label={roleText} color="primary" sx={{ fontWeight: 900 }} />
-                                <Chip size="small" label={userStatusLabel(user.status, isRu)} variant="outlined" sx={{ fontWeight: 800 }} />
-                            </Stack>
-                        </Box>
-                    </Stack>
-                </Box>
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                right: 1,
+                                bottom: 1,
+                                width: 12,
+                                height: 12,
+                                borderRadius: "50%",
+                                bgcolor: "info.main",
+                                border: (theme) => `2px solid ${theme.palette.background.paper}`,
+                            }}
+                        />
+                    </Box>
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ fontWeight: 950, lineHeight: 1.2 }} noWrap>
+                            {displayName}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "text.secondary" }} noWrap>
+                            {user.email}
+                        </Typography>
+                    </Box>
+                </Stack>
 
-                <Tabs
-                    value={activeTab}
-                    onChange={(_, value: AccountMenuTab) => setActiveTab(value)}
-                    variant="fullWidth"
+                <Stack
                     sx={{
-                        minHeight: 44,
-                        borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                        p: 1,
+                        bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(42,50,65,0.88)" : "background.paper"),
                         borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-                        "& .MuiTab-root": { minHeight: 44, px: 1, fontWeight: 900 },
+                        "& .MuiListItemButton-root": {
+                            borderRadius: 1,
+                            minHeight: 46,
+                            transition: "background-color 160ms ease, color 160ms ease, border-color 160ms ease",
+                        },
+                        "& .MuiListItemIcon-root": { minWidth: 40, color: "inherit" },
                     }}
                 >
-                    <Tab value="overview" icon={<AccountCircleRoundedIcon fontSize="small" />} iconPosition="start" label={isRu ? "Обзор" : "Overview"} />
-                    <Tab value="avatar" icon={<CameraAltRoundedIcon fontSize="small" />} iconPosition="start" label={isRu ? "Иконка" : "Icon"} />
-                    <Tab value="account" icon={<SettingsOutlinedIcon fontSize="small" />} iconPosition="start" label={isRu ? "Аккаунт" : "Account"} />
-                </Tabs>
+                    <ListItemButton component={RouterLink} to="/profile?tab=details" onClick={handleMenuClose}>
+                        <ListItemIcon>
+                            <PersonOutlineRoundedIcon />
+                        </ListItemIcon>
+                        <ListItemText primary={t("nav.profile")} primaryTypographyProps={{ fontWeight: 800 }} />
+                    </ListItemButton>
+                    <ListItemButton component={RouterLink} to={workspaceLink} onClick={handleMenuClose}>
+                        <ListItemIcon>{workspaceIcon}</ListItemIcon>
+                        <ListItemText primary={workspaceLabel} primaryTypographyProps={{ fontWeight: 800 }} />
+                    </ListItemButton>
+                    <ListItemButton component={RouterLink} to="/profile?tab=icon" onClick={handleMenuClose}>
+                        <ListItemIcon>
+                            <SettingsOutlinedIcon />
+                        </ListItemIcon>
+                        <ListItemText primary={isRu ? "Иконка и настройки" : "Icon settings"} primaryTypographyProps={{ fontWeight: 800 }} />
+                        <Chip size="small" label={isRu ? "Новое" : "New"} sx={{ height: 24, fontWeight: 900 }} />
+                    </ListItemButton>
+                </Stack>
 
-                <Box sx={{ p: 2 }}>
-                    {activeTab === "overview" ? (
-                        <Stack spacing={1.25}>
-                            <Button component={RouterLink} to="/profile" onClick={handleMenuClose} variant="contained" startIcon={<PersonOutlineRoundedIcon />} fullWidth>
-                                {t("nav.profile")}
-                            </Button>
-                            <Button component={RouterLink} to={workspaceLink} onClick={handleMenuClose} variant="outlined" startIcon={user.role === "STUDENT" ? <SchoolOutlinedIcon /> : <AdminPanelSettingsOutlinedIcon />} fullWidth>
-                                {workspaceLabel}
-                            </Button>
-                            <Divider sx={{ my: 0.75 }} />
-                            <Button onClick={handleLogout} color="error" startIcon={<LogoutRoundedIcon />} fullWidth>
-                                {t("nav.logout")}
-                            </Button>
-                        </Stack>
-                    ) : null}
-
-                    {activeTab === "avatar" ? (
-                        <Stack spacing={1.5}>
-                            {avatarMessage ? <Alert severity={avatarMessage.severity}>{avatarMessage.text}</Alert> : null}
-                            <Tabs
-                                value={avatarInputMode}
-                                onChange={(_, value: AvatarInputMode) => {
-                                    setAvatarInputMode(value);
-                                    setAvatarMessage(null);
-                                }}
-                                variant="fullWidth"
-                                sx={{ minHeight: 40, "& .MuiTab-root": { minHeight: 40, fontWeight: 900 } }}
-                            >
-                                <Tab value="file" icon={<CloudUploadRoundedIcon fontSize="small" />} iconPosition="start" label={isRu ? "Файл" : "File"} />
-                                <Tab value="url" icon={<LinkRoundedIcon fontSize="small" />} iconPosition="start" label={isRu ? "Ссылка" : "URL"} />
-                            </Tabs>
-
-                            {avatarInputMode === "file" ? (
-                                <>
-                                    <Stack direction="row" spacing={2} alignItems="center">
-                                        <Avatar src={avatarFilePreview ?? user.avatarUrl ?? undefined} sx={{ width: 72, height: 72, bgcolor: "secondary.main", fontSize: 26, fontWeight: 950, flex: "0 0 auto" }}>
-                                            {userInitial(user.fullName, user.email)}
-                                        </Avatar>
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Typography sx={{ fontWeight: 950 }}>{avatarFile?.name ?? (isRu ? "Выбери изображение" : "Choose an image")}</Typography>
-                                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                                {isRu ? "PNG, JPEG, WebP или GIF до 5 МБ." : "PNG, JPEG, WebP, or GIF up to 5 MB."}
-                                            </Typography>
-                                        </Box>
-                                    </Stack>
-                                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                        <Button component="label" variant="outlined" startIcon={<CloudUploadRoundedIcon />}>
-                                            {isRu ? "Выбрать файл" : "Choose file"}
-                                            <input hidden type="file" accept={avatarFileAccept} onChange={handleAvatarFileSelect} />
-                                        </Button>
-                                        <Button variant="contained" onClick={handleAvatarUpload} disabled={isSavingAvatar} startIcon={<CheckRoundedIcon />}>
-                                            {isSavingAvatar ? t("common.saving") : t("common.save")}
-                                        </Button>
-                                    </Stack>
-                                </>
-                            ) : null}
-
-                            {avatarInputMode === "url" ? (
-                                <>
-                                    <Stack direction="row" spacing={2} alignItems="center">
-                                        <Avatar src={avatarDraft.trim() || undefined} sx={{ width: 72, height: 72, bgcolor: "secondary.main", fontSize: 26, fontWeight: 950, flex: "0 0 auto" }}>
-                                            {userInitial(user.fullName, user.email)}
-                                        </Avatar>
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Typography sx={{ fontWeight: 950 }}>{isRu ? "Ссылка на иконку" : "Icon URL"}</Typography>
-                                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                                {isRu ? "Вставь прямую ссылку на изображение." : "Paste a direct image URL."}
-                                            </Typography>
-                                        </Box>
-                                    </Stack>
-                                    <TextField
-                                        size="small"
-                                        label={isRu ? "URL иконки" : "Icon URL"}
-                                        value={avatarDraft}
-                                        onChange={(event) => setAvatarDraft(event.target.value)}
-                                        placeholder="https://..."
-                                        InputProps={{
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <LinkRoundedIcon fontSize="small" />
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                    />
-                                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                        <Button onClick={() => setAvatarDraft("")}>{isRu ? "Убрать" : "Remove"}</Button>
-                                        <Button variant="contained" onClick={handleAvatarUrlSave} disabled={isSavingAvatar} startIcon={<CheckRoundedIcon />}>
-                                            {isSavingAvatar ? t("common.saving") : t("common.save")}
-                                        </Button>
-                                    </Stack>
-                                </>
-                            ) : null}
-                        </Stack>
-                    ) : null}
-
-                    {activeTab === "account" ? (
-                        <Stack spacing={1.5}>
-                            <Box>
-                                <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 800 }}>
-                                    {isRu ? "Роль" : "Role"}
-                                </Typography>
-                                <Typography sx={{ fontWeight: 950 }}>{roleText}</Typography>
-                            </Box>
-                            <Box>
-                                <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 800 }}>
-                                    {isRu ? "Язык" : "Language"}
-                                </Typography>
-                                <Typography sx={{ fontWeight: 950 }}>{locale === "ru" ? t("language.ru") : t("language.en")}</Typography>
-                            </Box>
-                            <Divider />
-                            <Button component={RouterLink} to="/profile" onClick={handleMenuClose} variant="outlined" startIcon={<SettingsOutlinedIcon />} fullWidth>
-                                {isRu ? "Открыть настройки" : "Open settings"}
-                            </Button>
-                            <Button onClick={handleLogout} color="error" startIcon={<LogoutRoundedIcon />} fullWidth>
-                                {t("nav.logout")}
-                            </Button>
-                        </Stack>
-                    ) : null}
+                <Box sx={{ p: 1, bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(42,50,65,0.72)" : "background.paper") }}>
+                    <ListItemButton onClick={handleLogout} sx={{ borderRadius: 1, justifyContent: "center", color: "error.main" }}>
+                        <ListItemIcon sx={{ minWidth: 34, color: "inherit" }}>
+                            <LogoutRoundedIcon />
+                        </ListItemIcon>
+                        <ListItemText primary={t("nav.logout")} primaryTypographyProps={{ fontWeight: 900 }} sx={{ flex: "0 0 auto" }} />
+                    </ListItemButton>
                 </Box>
             </Popover>
         </>
