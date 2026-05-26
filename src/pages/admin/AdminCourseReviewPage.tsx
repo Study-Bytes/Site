@@ -7,6 +7,7 @@ import { Link as RouterLink, useParams } from "react-router-dom";
 import { adminApi } from "../../api/services";
 import { getErrorMessage } from "../../api/apiError";
 import type { TeacherCourseDetails } from "../../api/bffContracts";
+import { CourseLeaderboardPanel } from "../../components/learning/CourseLeaderboard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
 import { ItemTypeBadge } from "../../components/ui/ItemTypeBadge";
@@ -116,6 +117,8 @@ export default function AdminCourseReviewPage() {
                                 <Alert severity={course.description ? "success" : "warning"}>{course.description ? (isRu ? "Полное описание заполнено" : "Full description is present") : (isRu ? "Полное описание отсутствует" : "Full description is missing")}</Alert>
                             </Stack>
                         </Paper>
+
+                        <CourseLeaderboardPanel courseId={course.id} />
 
                         <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
                             <Stack spacing={2}>

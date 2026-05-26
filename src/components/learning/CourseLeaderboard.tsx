@@ -3,7 +3,10 @@ import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
+import { useCallback, useEffect, useState } from "react";
+import { getErrorMessage } from "../../api/apiError";
 import type { CourseLeaderboardEntry, CourseLeaderboardResponse } from "../../api/bffContracts";
+import { learningApi } from "../../api/services";
 import { useI18n } from "../../i18n/useI18n";
 
 const leaderboardLimit = 10;
@@ -209,4 +212,37 @@ export function CourseLeaderboard({
             </Stack>
         </Paper>
     );
+}
+
+export function CourseLeaderboardPanel({ courseId, enabled = true }: { courseId: number | null | undefined; enabled?: boolean }) {
+    const { locale } = useI18n();
+    const isRu = locale === "ru";
+    const [leaderboard, setLeaderboard] = useState<CourseLeaderboardResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(Boolean(courseId && enabled));
+    const [error, setError] = useState<string | null>(null);
+
+    const loadLeaderboard = useCallback(async () => {
+        if (!courseId || !enabled) {
+            setLeaderboard(null);
+            setError(null);
+            setIsLoading(false);
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        try {
+            setLeaderboard(await learningApi.getCourseLeaderboard(courseId));
+        } catch (requestError) {
+            setError(getErrorMessage(requestError, isRu ? "Не удалось загрузить рейтинг курса" : "Failed to load course leaderboard"));
+        } finally {
+            setIsLoading(false);
+        }
+    }, [courseId, enabled, isRu]);
+
+    useEffect(() => {
+        void loadLeaderboard();
+    }, [loadLeaderboard]);
+
+    return <CourseLeaderboard leaderboard={leaderboard} isLoading={isLoading} error={error} onRetry={loadLeaderboard} />;
 }

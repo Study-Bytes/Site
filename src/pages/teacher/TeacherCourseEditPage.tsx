@@ -57,6 +57,7 @@ import type {
     TeacherItemDetails,
 } from "../../api/bffContracts";
 import { AccessTypeBadge } from "../../components/ui/AccessTypeBadge";
+import { CourseLeaderboardPanel } from "../../components/learning/CourseLeaderboard";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
@@ -804,6 +805,11 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                 </Stack>
                             )}
                         </FormSectionCard>
+                        {course ? (
+                            <Box id="course-leaderboard-section" sx={{ scrollMarginTop: 96 }}>
+                                <CourseLeaderboardPanel courseId={course.id} />
+                            </Box>
+                        ) : null}
                     </Stack>
 
                     {course && isInspectorOpen ? (
@@ -824,6 +830,9 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                         </Button>
                                         <Button component="a" href="#course-structure-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>
                                             {isRu ? "Структура" : "Structure"}
+                                        </Button>
+                                        <Button component="a" href="#course-leaderboard-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>
+                                            {isRu ? "Лидерборд" : "Leaderboard"}
                                         </Button>
                                         <Button component="a" href="#course-moderation-section" variant="text" size="small" sx={{ justifyContent: "flex-start" }}>
                                             {isRu ? "Модерация" : "Moderation"}

@@ -27,6 +27,7 @@ import { coursesApi, learningApi } from "../../api/services";
 import { useAuth } from "../../auth/useAuth";
 import { useI18n } from "../../i18n/useI18n";
 import { AccessTypeBadge } from "../../components/ui/AccessTypeBadge";
+import { CourseLeaderboardPanel } from "../../components/learning/CourseLeaderboard";
 import { DifficultyBadge } from "../../components/ui/DifficultyBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
@@ -154,6 +155,7 @@ function CourseCta({ course }: { course: CourseDetails }) {
 export default function CourseDetailsPage() {
     const { locale } = useI18n();
     const isRu = locale === "ru";
+    const { isAuthenticated } = useAuth();
     const { courseId } = useParams();
     const parsedCourseId = parseRouteCourseId(courseId);
     const [course, setCourse] = useState<CourseDetails | null>(null);
@@ -334,6 +336,7 @@ export default function CourseDetailsPage() {
                                     {isRu ? "Смотреть программу курса можно без регистрации. Войди, чтобы записаться, сохранять прогресс и решать задания." : "You can view the course program without registration. Sign in to enroll, save progress and solve assignments."}
                                 </Typography>
                                 <CourseCta course={course} />
+                                {isAuthenticated ? <CourseLeaderboardPanel courseId={course.id} /> : null}
                                 <Divider />
                                 <Stack spacing={1.2}>
                                     <Stack direction="row" spacing={1} alignItems="center">
