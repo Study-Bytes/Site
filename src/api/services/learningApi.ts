@@ -12,6 +12,9 @@ import type {
     HintDto,
     LearningCourse,
     LearningItem,
+    ModuleDeadlineState,
+    ModuleDeadlineTaskCompletion,
+    ModuleStartResponse,
     QuizOptionDto,
     RunItemRequest,
     SubmissionHistoryItem,
@@ -26,6 +29,9 @@ function normalizeLearningCourse(course: LearningCourse): LearningCourse {
         ...course,
         modules: readArray<CourseModuleSummary>(course.modules).map((module) => ({
             ...module,
+            deadlineType: module.deadlineType ?? "NONE",
+            deadlineAt: module.deadlineAt ?? null,
+            timeLimitMinutes: module.timeLimitMinutes ?? null,
             items: readArray<CourseItemSummary>(module.items),
         })),
     };
@@ -36,6 +42,16 @@ function normalizeCourseLeaderboard(leaderboard: CourseLeaderboardResponse): Cou
         ...leaderboard,
         top: readArray<CourseLeaderboardEntry>(leaderboard.top),
         currentUser: leaderboard.currentUser ?? null,
+    };
+}
+
+function normalizeModuleDeadlineState(state: ModuleDeadlineState): ModuleDeadlineState {
+    return {
+        ...state,
+        moduleCompletedAt: state.moduleCompletedAt ?? null,
+        moduleCompletedBeforeDeadline: state.moduleCompletedBeforeDeadline ?? null,
+        tasksCompletedBeforeDeadline: readArray<ModuleDeadlineTaskCompletion>(state.tasksCompletedBeforeDeadline),
+        tasksCompletedAfterDeadline: readArray<ModuleDeadlineTaskCompletion>(state.tasksCompletedAfterDeadline),
     };
 }
 
@@ -78,6 +94,16 @@ export const learningApi = {
     async getCourseLeaderboard(courseId: number): Promise<CourseLeaderboardResponse> {
         if (env.useMockBff) return mockBff.getCourseLeaderboard(courseId);
         return normalizeCourseLeaderboard(await request<CourseLeaderboardResponse>(`/learn/courses/${courseId}/leaderboard`));
+    },
+
+    startModule(courseId: number, moduleId: number): Promise<ModuleStartResponse> {
+        if (env.useMockBff) return mockBff.startModule(courseId, moduleId);
+        return request<ModuleStartResponse>(`/learn/courses/${courseId}/modules/${moduleId}/start`, { method: "POST" });
+    },
+
+    async getModuleDeadlineState(courseId: number, moduleId: number, deadlineAt: string): Promise<ModuleDeadlineState> {
+        if (env.useMockBff) return mockBff.getModuleDeadlineState(courseId, moduleId, deadlineAt);
+        return normalizeModuleDeadlineState(await request<ModuleDeadlineState>(`/learn/courses/${courseId}/modules/${moduleId}/deadline-state`, { query: { deadlineAt } }));
     },
 
     async getLearningItem(courseId: number, itemId: number): Promise<LearningItem> {

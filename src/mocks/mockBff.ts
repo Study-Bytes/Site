@@ -22,6 +22,8 @@ import type {
     Locale,
     LoginRequest,
     ModuleUpsertRequest,
+    ModuleDeadlineState,
+    ModuleStartResponse,
     QuizOptionUpsertRequest,
     RegisterRequest,
     ReorderItemsRequest,
@@ -77,6 +79,7 @@ const mockAccounts: MockAccount[] = [
 
 const currentUserKey = "studybytes_mock_current_user";
 const enrolledCoursesKey = "studybytes_mock_enrolled_courses";
+const moduleStartedAtKeyPrefix = "studybytes_mock_module_started_at";
 
 const itemDetails: Record<number, TeacherItemDetails> = {
     5001: {
@@ -257,6 +260,9 @@ let courses: TeacherCourseDetails[] = [
                     { id: 5002, title: "Syntax quiz", itemType: "QUIZ", orderIndex: 1, estimatedMinutes: 8, completed: true },
                     { id: 5003, title: "First method", itemType: "CODING", orderIndex: 2, estimatedMinutes: 20, completed: false },
                 ],
+                deadlineType: "RELATIVE_FROM_START",
+                deadlineAt: null,
+                timeLimitMinutes: 120,
             },
         ],
     },
@@ -291,6 +297,9 @@ let courses: TeacherCourseDetails[] = [
                     { id: 5101, title: "SELECT and WHERE", itemType: "THEORY", orderIndex: 0, estimatedMinutes: 15, completed: true },
                     { id: 5102, title: "Write SQL query", itemType: "SQL", orderIndex: 1, estimatedMinutes: 25, completed: false },
                 ],
+                deadlineType: "ABSOLUTE",
+                deadlineAt: new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 19),
+                timeLimitMinutes: null,
             },
         ],
     },
@@ -390,6 +399,40 @@ function progressForCourse(courseId: number) {
     if (courseId === 102) return { progressPercent: 100, status: "COMPLETED" as const, nextItemId: null };
     const course = findCourse(courseId);
     return { progressPercent: 0, status: "IN_PROGRESS" as const, nextItemId: course.modules[0]?.items[0]?.id ?? null };
+}
+
+function moduleStartedAtStorageKey(userId: number, courseId: number, moduleId: number) {
+    return `${moduleStartedAtKeyPrefix}:${userId}:${courseId}:${moduleId}`;
+}
+
+function loadModuleStartedAt(userId: number, courseId: number, moduleId: number) {
+    return localStorage.getItem(moduleStartedAtStorageKey(userId, courseId, moduleId));
+}
+
+function persistModuleStartedAt(userId: number, courseId: number, moduleId: number, startedAt: string) {
+    localStorage.setItem(moduleStartedAtStorageKey(userId, courseId, moduleId), startedAt);
+}
+
+function deadlineStateForModule(courseId: number, moduleId: number, deadlineAt: string): ModuleDeadlineState {
+    const course = findCourse(courseId);
+    const module = course.modules.find((entry) => entry.id === moduleId);
+    if (!module) throw new ApiError("Module not found", 404);
+    const deadlineTime = new Date(deadlineAt).getTime();
+    const completedItems = module.items.filter((item) => item.completed);
+    const isModuleCompleted = completedItems.length > 0 && completedItems.length === module.items.length;
+    const completedAt = isModuleCompleted ? new Date(deadlineTime - 3600000).toISOString().slice(0, 19) : null;
+    const isOverdue = Date.now() > deadlineTime;
+
+    return {
+        courseId,
+        moduleId,
+        deadlineAt,
+        moduleCompletedAt: completedAt,
+        moduleCompletedBeforeDeadline: completedAt ? new Date(completedAt).getTime() <= deadlineTime : null,
+        deadlineStatus: completedAt ? (new Date(completedAt).getTime() <= deadlineTime ? "COMPLETED_ON_TIME" : "COMPLETED_LATE") : isOverdue ? "OVERDUE" : "IN_PROGRESS_ON_TIME",
+        tasksCompletedBeforeDeadline: completedItems.map((item) => ({ taskId: item.id, completedAt: new Date(deadlineTime - 7200000).toISOString().slice(0, 19) })),
+        tasksCompletedAfterDeadline: [],
+    };
 }
 
 const leaderboardUsers = [
@@ -622,6 +665,21 @@ export const mockBff = {
         return delay(buildCourseLeaderboard(courseId));
     },
 
+    async startModule(courseId: number, moduleId: number): Promise<ModuleStartResponse> {
+        const user = requireUser();
+        findCourse(courseId);
+        const existingStartedAt = loadModuleStartedAt(user.id, courseId, moduleId);
+        if (existingStartedAt) return delay({ courseId, moduleId, startedAt: existingStartedAt, alreadyStarted: true });
+        const startedAt = new Date().toISOString().slice(0, 19);
+        persistModuleStartedAt(user.id, courseId, moduleId, startedAt);
+        return delay({ courseId, moduleId, startedAt, alreadyStarted: false });
+    },
+
+    async getModuleDeadlineState(courseId: number, moduleId: number, deadlineAt: string): Promise<ModuleDeadlineState> {
+        requireUser();
+        return delay(deadlineStateForModule(courseId, moduleId, deadlineAt));
+    },
+
     async getLearningItem(courseId: number, itemId: number): Promise<LearningItem> {
         requireUser();
         const course = findCourse(courseId);
@@ -816,7 +874,7 @@ export const mockBff = {
     async createModule(courseId: number, request: ModuleUpsertRequest): Promise<CourseModuleSummary> {
         requireTeacher();
         const course = findCourse(courseId);
-        const module = { id: nextId(courses.flatMap((item) => item.modules.map((module) => module.id))), title: request.title, orderIndex: request.orderIndex, items: [] };
+        const module = { id: nextId(courses.flatMap((item) => item.modules.map((module) => module.id))), title: request.title, orderIndex: request.orderIndex, deadlineType: request.deadlineType ?? "NONE", deadlineAt: request.deadlineAt ?? null, timeLimitMinutes: request.timeLimitMinutes ?? null, items: [] };
         course.modules.push(module);
         course.updatedAt = new Date().toISOString();
         return delay(module);
@@ -825,7 +883,13 @@ export const mockBff = {
     async updateModule(moduleId: number, request: ModuleUpsertRequest): Promise<CourseModuleSummary> {
         requireTeacher();
         const { course, module } = findModule(moduleId);
-        Object.assign(module, request);
+        Object.assign(module, {
+            title: request.title,
+            orderIndex: request.orderIndex,
+            deadlineType: request.deadlineType ?? "NONE",
+            deadlineAt: request.deadlineAt ?? null,
+            timeLimitMinutes: request.timeLimitMinutes ?? null,
+        });
         course.updatedAt = new Date().toISOString();
         return delay(module);
     },

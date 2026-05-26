@@ -14,6 +14,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
@@ -26,7 +27,10 @@ import { Link as RouterLink, useParams } from "react-router-dom";
 import { getErrorMessage } from "../../api/apiError";
 import type {
     ContentBlockDto,
+    CourseModuleSummary,
+    LearningCourse,
     LearningItem,
+    ModuleDeadlineState,
     QuizOptionDto,
     SubmissionHistoryItem,
     SubmissionResult,
@@ -41,6 +45,7 @@ import { LoadingState } from "../../components/ui/LoadingState";
 import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { studyBytesColors } from "../../theme/theme";
+import { deadlineStatusColor, deadlineStatusLabel, deadlineTypeLabel, effectiveModuleDeadlineAt, formatDateTime, getStoredModuleStartedAt, storeModuleStartedAt } from "../../utils/moduleDeadlines";
 
 function parseId(value: string | undefined) {
     const id = Number(value);
@@ -275,6 +280,12 @@ export default function LearningItemPage() {
     const parsedCourseId = parseId(courseId);
     const parsedItemId = parseId(itemId);
     const [learningItem, setLearningItem] = useState<LearningItem | null>(null);
+    const [learningCourse, setLearningCourse] = useState<LearningCourse | null>(null);
+    const [moduleStarts, setModuleStarts] = useState<Record<number, string>>({});
+    const [deadlineState, setDeadlineState] = useState<ModuleDeadlineState | null>(null);
+    const [isDeadlineLoading, setDeadlineLoading] = useState(false);
+    const [isStartingModule, setStartingModule] = useState(false);
+    const [deadlineError, setDeadlineError] = useState<string | null>(null);
     const [sourceCode, setSourceCode] = useState("");
     const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
     const [result, setResult] = useState<SubmissionResult | null>(null);
@@ -290,6 +301,14 @@ export default function LearningItemPage() {
     const isQuiz = itemType === "QUIZ";
     const isContentOnly = itemType === "THEORY" || itemType === "FILE";
 
+    const currentModule = useMemo<CourseModuleSummary | null>(() => {
+        if (!learningCourse || !parsedItemId) return null;
+        return learningCourse.modules.find((module) => module.items.some((item) => item.id === parsedItemId)) ?? null;
+    }, [learningCourse, parsedItemId]);
+    const currentModuleStartedAt = currentModule ? moduleStarts[currentModule.id] ?? null : null;
+    const currentModuleDeadlineAt = currentModule ? effectiveModuleDeadlineAt(currentModule, currentModuleStartedAt) : null;
+    const requiresModuleStart = currentModule?.deadlineType === "RELATIVE_FROM_START" && !currentModuleStartedAt;
+
     const loadItem = useCallback(async () => {
         if (!parsedCourseId || !parsedItemId) {
             setError(isRu ? "Некорректный адрес курса или урока" : "Invalid course or item id");
@@ -299,11 +318,19 @@ export default function LearningItemPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const [item, submissions] = await Promise.all([
+            const [item, submissions, course] = await Promise.all([
                 learningApi.getLearningItem(parsedCourseId, parsedItemId),
                 learningApi.getItemSubmissions(parsedCourseId, parsedItemId).catch(() => [] as SubmissionHistoryItem[]),
+                learningApi.getLearningCourse(parsedCourseId),
             ]);
             setLearningItem(item);
+            setLearningCourse(course);
+            const storedStarts: Record<number, string> = {};
+            course.modules.forEach((module) => {
+                const startedAt = getStoredModuleStartedAt(course.id, module.id);
+                if (startedAt) storedStarts[module.id] = startedAt;
+            });
+            setModuleStarts(storedStarts);
             setSourceCode(item.item.starterCode ?? "");
             setSelectedOptionIds(item.item.options.filter((option) => option.selected).map((option) => option.id));
             setResult(null);
@@ -318,6 +345,30 @@ export default function LearningItemPage() {
     useEffect(() => {
         void loadItem();
     }, [loadItem]);
+
+    useEffect(() => {
+        if (!parsedCourseId || !currentModule || !currentModuleDeadlineAt) {
+            setDeadlineState(null);
+            return;
+        }
+        let isActive = true;
+        setDeadlineLoading(true);
+        setDeadlineError(null);
+        learningApi
+            .getModuleDeadlineState(parsedCourseId, currentModule.id, currentModuleDeadlineAt)
+            .then((state) => {
+                if (isActive) setDeadlineState(state);
+            })
+            .catch((requestError) => {
+                if (isActive) setDeadlineError(getErrorMessage(requestError, isRu ? "Не удалось загрузить дедлайн" : "Failed to load deadline state"));
+            })
+            .finally(() => {
+                if (isActive) setDeadlineLoading(false);
+            });
+        return () => {
+            isActive = false;
+        };
+    }, [currentModule, currentModuleDeadlineAt, isRu, parsedCourseId]);
 
     const submitPayload = useMemo(() => {
         if (itemType === "SQL") return { sql: sourceCode };
@@ -344,6 +395,21 @@ export default function LearningItemPage() {
 
     const toggleOption = (optionId: number) => {
         setSelectedOptionIds((current) => (current.includes(optionId) ? current.filter((id) => id !== optionId) : [...current, optionId]));
+    };
+
+    const startCurrentModule = async () => {
+        if (!parsedCourseId || !currentModule) return;
+        setStartingModule(true);
+        setDeadlineError(null);
+        try {
+            const response = await learningApi.startModule(parsedCourseId, currentModule.id);
+            storeModuleStartedAt(parsedCourseId, currentModule.id, response.startedAt);
+            setModuleStarts((current) => ({ ...current, [currentModule.id]: response.startedAt }));
+        } catch (requestError) {
+            setDeadlineError(getErrorMessage(requestError, isRu ? "Не удалось начать модуль" : "Failed to start module"));
+        } finally {
+            setStartingModule(false);
+        }
     };
 
     return (
@@ -381,6 +447,44 @@ export default function LearningItemPage() {
                         </Stack>
                     </Paper>
 
+                    {currentModule && currentModule.deadlineType !== "NONE" ? (
+                        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                            <Stack spacing={1.3}>
+                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                    <Chip icon={<AccessTimeRoundedIcon />} label={deadlineTypeLabel(currentModule.deadlineType, isRu)} variant="outlined" sx={{ fontWeight: 900 }} />
+                                    {currentModuleStartedAt ? <Chip label={`${isRu ? "Старт" : "Started"}: ${formatDateTime(currentModuleStartedAt, locale)}`} variant="outlined" sx={{ fontWeight: 900 }} /> : null}
+                                    {currentModuleDeadlineAt ? <Chip label={`${isRu ? "Дедлайн" : "Deadline"}: ${formatDateTime(currentModuleDeadlineAt, locale)}`} variant="outlined" sx={{ fontWeight: 900 }} /> : null}
+                                    {deadlineState ? <Chip label={deadlineStatusLabel(deadlineState.deadlineStatus, isRu)} color={deadlineStatusColor(deadlineState.deadlineStatus)} variant="outlined" sx={{ fontWeight: 900 }} /> : null}
+                                </Stack>
+                                {isDeadlineLoading ? <LinearProgress sx={{ height: 6, borderRadius: 999 }} /> : null}
+                                {deadlineError ? <Alert severity="warning">{deadlineError}</Alert> : null}
+                                {deadlineState ? (
+                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                        {isRu ? "Задач до дедлайна" : "Tasks before deadline"}: {deadlineState.tasksCompletedBeforeDeadline.length} · {isRu ? "после дедлайна" : "after deadline"}: {deadlineState.tasksCompletedAfterDeadline.length}
+                                    </Typography>
+                                ) : null}
+                            </Stack>
+                        </Paper>
+                    ) : null}
+
+                    {requiresModuleStart && currentModule ? (
+                        <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 4 }, borderRadius: 2 }}>
+                            <Stack spacing={2}>
+                                <Typography variant="h4">{isRu ? "Сначала начните модуль" : "Start the module first"}</Typography>
+                                <Typography sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+                                    {isRu
+                                        ? "У этого модуля есть таймер от старта. Задания откроются после явного запуска, повторный старт не сбросит время."
+                                        : "This module has a timer from start. Items unlock after an explicit start, and starting again will not reset the timer."}
+                                </Typography>
+                                <Button variant="contained" startIcon={<PlayArrowRoundedIcon />} disabled={isStartingModule} onClick={() => void startCurrentModule()} sx={{ alignSelf: "flex-start" }}>
+                                    {isRu ? "Начать / продолжить модуль" : "Start / continue module"}
+                                </Button>
+                            </Stack>
+                        </Paper>
+                    ) : null}
+
+                    {!requiresModuleStart ? (
+                        <>
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: isExecutable ? "minmax(0, 1fr) 420px" : "1fr" }, gap: 3, alignItems: "start" }}>
                         <Stack spacing={3}>
                             <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
@@ -530,6 +634,8 @@ export default function LearningItemPage() {
                             </Button>
                         )}
                     </Stack>
+                        </>
+                    ) : null}
                 </Stack>
             ) : null}
         </PageContainer>

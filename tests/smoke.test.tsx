@@ -88,6 +88,16 @@ describe("StudyBytes role-based behavior", () => {
         expect(screen.queryByText(/Your result|Ваш результат/i)).not.toBeInTheDocument();
     });
 
+    it("gates direct access to timed module items until explicit module start", async () => {
+        localStorage.removeItem("studybytes_module_started_at:101:1001");
+        localStorage.removeItem("studybytes_mock_module_started_at:1:101:1001");
+        await loginAs("STUDENT");
+        renderRoute("/learn/101/items/5003", "ru");
+        expect(await screen.findByRole("heading", { name: /Сначала начните модуль/i }, findOptions)).toBeInTheDocument();
+        await userEvent.click(await screen.findByRole("button", { name: /Начать \/ продолжить модуль/i }, findOptions));
+        expect(await screen.findByRole("heading", { name: /Инструкция/i }, findOptions)).toBeInTheDocument();
+    });
+
     it("shows access denied when student opens teacher routes", async () => {
         await loginAs("STUDENT");
         renderRoute("/teacher/courses");
@@ -112,6 +122,7 @@ describe("StudyBytes role-based behavior", () => {
         await loginAs("TEACHER");
         renderRoute("/teacher/courses/101/edit", "ru");
         expect(await screen.findByText(/Структура курса/i, {}, findOptions)).toBeInTheDocument();
+        expect(await screen.findByText(/Таймер от старта/i, {}, findOptions)).toBeInTheDocument();
         expect((await screen.findAllByRole("button", { name: /Скрыть панель/i }, findOptions)).length).toBeGreaterThan(0);
     });
 

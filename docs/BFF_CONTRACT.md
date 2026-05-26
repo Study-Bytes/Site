@@ -156,6 +156,8 @@ POST /api/v1/learn/courses/{courseId}/enroll
 GET  /api/v1/learn/my-courses
 GET  /api/v1/learn/courses/{courseId}
 GET  /api/v1/learn/courses/{courseId}/leaderboard
+POST /api/v1/learn/courses/{courseId}/modules/{moduleId}/start
+GET  /api/v1/learn/courses/{courseId}/modules/{moduleId}/deadline-state?deadlineAt={deadlineAt}
 GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 ```
 
@@ -184,6 +186,22 @@ GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 ```
 
 The Site renders only 10 top rows. If `currentUser.userId` is already present in the returned top list, the Site highlights that top row and does not render a duplicate current-user row.
+
+Course module DTOs include deadline settings:
+
+```json
+{
+  "id": 10,
+  "title": "SQL Checkpoint",
+  "orderIndex": 1,
+  "deadlineType": "RELATIVE_FROM_START",
+  "deadlineAt": null,
+  "timeLimitMinutes": 120,
+  "items": []
+}
+```
+
+The module start and deadline-state endpoints are proxied to LearningService. The Site calls `deadline-state` only when it has an effective deadline: direct `deadlineAt` for `ABSOLUTE`, or `startedAt + timeLimitMinutes` after an explicit module start for `RELATIVE_FROM_START`.
 
 ### Submissions/execution
 

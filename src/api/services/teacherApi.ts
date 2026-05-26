@@ -29,6 +29,9 @@ function normalizeTeacherCourseDetails(course: TeacherCourseDetails): TeacherCou
         ...course,
         modules: readArray<CourseModuleSummary>(course.modules).map((module) => ({
             ...module,
+            deadlineType: module.deadlineType ?? "NONE",
+            deadlineAt: module.deadlineAt ?? null,
+            timeLimitMinutes: module.timeLimitMinutes ?? null,
             items: readArray<CourseItemSummary>(module.items),
         })),
     };
