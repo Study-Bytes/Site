@@ -90,7 +90,7 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
                         <Stack direction="row" spacing={0.7} alignItems="center" sx={{ color: "text.secondary" }}>
                             <AccessTimeRoundedIcon sx={{ fontSize: 16 }} />
                             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                {formatDuration(course.estimatedMinutes)}
+                                {formatDuration(course.estimatedMinutes, isRu)}
                             </Typography>
                         </Stack>
                     </Stack>

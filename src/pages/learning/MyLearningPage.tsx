@@ -79,7 +79,7 @@ function LearningCourseCard({
                             {isTeacherOnly ? (isRu ? "Авторский курс" : "Teacher course") : `${progressPercent}% ${isRu ? "пройдено" : "complete"}`}
                         </Typography>
                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                            {formatDuration(enrollment.course.estimatedMinutes)}
+                            {formatDuration(enrollment.course.estimatedMinutes, isRu)}
                         </Typography>
                     </Stack>
                     <LinearProgress variant="determinate" value={progressPercent} sx={{ height: 8, borderRadius: 999 }} />

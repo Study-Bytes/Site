@@ -1,6 +1,8 @@
-import { lazy, Suspense } from "react";
+import { Component, lazy, Suspense } from "react";
+import type { ComponentType, LazyExoticComponent } from "react";
 import type { ReactNode } from "react";
 import { Route, Routes } from "react-router-dom";
+import { ErrorState } from "./components/ui/ErrorState";
 import { LoadingState } from "./components/ui/LoadingState";
 import { AppShell } from "./layouts/AppShell";
 import { PageContainer } from "./layouts/PageContainer";
@@ -12,39 +14,98 @@ import { AnonymousOnly } from "./routes/AnonymousOnly";
 import { RequireAuth } from "./routes/RequireAuth";
 import { RequireRole } from "./routes/RequireRole";
 
-const Home = lazy(() => import("./pages/Home"));
-const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
-const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
-const CourseDetailsPage = lazy(() => import("./pages/courses/CourseDetailsPage"));
-const CoursesPage = lazy(() => import("./pages/courses/CoursesPage"));
-const LearningCoursePage = lazy(() => import("./pages/learning/LearningCoursePage"));
-const LearningItemPage = lazy(() => import("./pages/learning/LearningItemPage"));
-const MyLearningPage = lazy(() => import("./pages/learning/MyLearningPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const PrivacyPolicyPage = lazy(() => import("./pages/legal/PrivacyPolicyPage"));
-const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
-const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
-const AdminCoursesPage = lazy(() => import("./pages/admin/AdminCoursesPage"));
-const AdminModerationQueuePage = lazy(() => import("./pages/admin/AdminModerationQueuePage"));
-const AdminCourseReviewPage = lazy(() => import("./pages/admin/AdminCourseReviewPage"));
-const TeacherCourseEditPage = lazy(() => import("./pages/teacher/TeacherCourseEditPage"));
-const TeacherCourseNewPage = lazy(() => import("./pages/teacher/TeacherCourseNewPage"));
-const TeacherCourseBlankPage = lazy(() => import("./pages/teacher/TeacherCourseBlankPage"));
-const TeacherCoursesPage = lazy(() => import("./pages/teacher/TeacherCoursesPage"));
-const TeacherDashboardPage = lazy(() => import("./pages/teacher/TeacherDashboardPage"));
-const TeacherItemEditorPage = lazy(() => import("./pages/teacher/TeacherItemEditorPage"));
+function isChunkLoadError(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return /dynamically imported module|loading chunk|chunkloaderror|module script|importing a module script/i.test(message);
+}
+
+function lazyPage<TProps extends object>(key: string, loader: () => Promise<{ default: ComponentType<TProps> }>): LazyExoticComponent<ComponentType<TProps>> {
+    return lazy(() =>
+        loader().catch((error) => {
+            const reloadKey = `studybytes_lazy_reload_${key}`;
+            if (isChunkLoadError(error) && sessionStorage.getItem(reloadKey) !== "true") {
+                sessionStorage.setItem(reloadKey, "true");
+                window.location.reload();
+                return new Promise<{ default: ComponentType<TProps> }>(() => undefined);
+            }
+            throw error;
+        })
+    );
+}
+
+type LazyBoundaryState = {
+    error: Error | null;
+};
+
+class LazyPageBoundary extends Component<{ children: ReactNode }, LazyBoundaryState> {
+    state: LazyBoundaryState = { error: null };
+
+    static getDerivedStateFromError(error: Error): LazyBoundaryState {
+        return { error };
+    }
+
+    componentDidCatch(error: Error) {
+        if (!isChunkLoadError(error)) return;
+        Object.keys(sessionStorage)
+            .filter((key) => key.startsWith("studybytes_lazy_reload_"))
+            .forEach((key) => sessionStorage.removeItem(key));
+    }
+
+    render() {
+        if (this.state.error) {
+            return (
+                <PageContainer>
+                    <ErrorState
+                        message="Не удалось загрузить страницу. Failed to load this page."
+                        onRetry={() => {
+                            Object.keys(sessionStorage)
+                                .filter((key) => key.startsWith("studybytes_lazy_reload_"))
+                                .forEach((key) => sessionStorage.removeItem(key));
+                            window.location.reload();
+                        }}
+                    />
+                </PageContainer>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+const Home = lazyPage("home", () => import("./pages/Home"));
+const LoginPage = lazyPage("login", () => import("./pages/auth/LoginPage"));
+const RegisterPage = lazyPage("register", () => import("./pages/auth/RegisterPage"));
+const CourseDetailsPage = lazyPage("course-details", () => import("./pages/courses/CourseDetailsPage"));
+const CoursesPage = lazyPage("courses", () => import("./pages/courses/CoursesPage"));
+const LearningCoursePage = lazyPage("learning-course", () => import("./pages/learning/LearningCoursePage"));
+const LearningItemPage = lazyPage("learning-item", () => import("./pages/learning/LearningItemPage"));
+const MyLearningPage = lazyPage("my-learning", () => import("./pages/learning/MyLearningPage"));
+const ProfilePage = lazyPage("profile", () => import("./pages/ProfilePage"));
+const PrivacyPolicyPage = lazyPage("privacy", () => import("./pages/legal/PrivacyPolicyPage"));
+const TermsPage = lazyPage("terms", () => import("./pages/legal/TermsPage"));
+const AdminDashboardPage = lazyPage("admin-dashboard", () => import("./pages/admin/AdminDashboardPage"));
+const AdminCoursesPage = lazyPage("admin-courses", () => import("./pages/admin/AdminCoursesPage"));
+const AdminModerationQueuePage = lazyPage("admin-moderation", () => import("./pages/admin/AdminModerationQueuePage"));
+const AdminCourseReviewPage = lazyPage("admin-course-review", () => import("./pages/admin/AdminCourseReviewPage"));
+const TeacherCourseEditPage = lazyPage("teacher-course-edit", () => import("./pages/teacher/TeacherCourseEditPage"));
+const TeacherCourseNewPage = lazyPage("teacher-course-new", () => import("./pages/teacher/TeacherCourseNewPage"));
+const TeacherCourseBlankPage = lazyPage("teacher-course-blank", () => import("./pages/teacher/TeacherCourseBlankPage"));
+const TeacherCoursesPage = lazyPage("teacher-courses", () => import("./pages/teacher/TeacherCoursesPage"));
+const TeacherDashboardPage = lazyPage("teacher-dashboard", () => import("./pages/teacher/TeacherDashboardPage"));
+const TeacherItemEditorPage = lazyPage("teacher-item-editor", () => import("./pages/teacher/TeacherItemEditorPage"));
 
 function PageSuspense({ children }: { children: ReactNode }) {
     return (
-        <Suspense
-            fallback={
-                <PageContainer>
-                    <LoadingState rows={3} />
-                </PageContainer>
-            }
-        >
-            {children}
-        </Suspense>
+        <LazyPageBoundary>
+            <Suspense
+                fallback={
+                    <PageContainer>
+                        <LoadingState rows={3} />
+                    </PageContainer>
+                }
+            >
+                {children}
+            </Suspense>
+        </LazyPageBoundary>
     );
 }
 

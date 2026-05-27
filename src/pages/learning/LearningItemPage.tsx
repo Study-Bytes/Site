@@ -522,8 +522,8 @@ export default function LearningItemPage() {
                                             <Typography sx={{ fontWeight: 950, color: "error.main" }}>{isRu ? "Модуль с таймером" : "Timed module"}</Typography>
                                             <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
                                                 {isRu
-                                                    ? `Лимит: ${formatDuration(currentModule.timeLimitMinutes ?? 0)}. Начинайте, когда готовы пройти модуль без пауз.`
-                                                    : `Limit: ${formatDuration(currentModule.timeLimitMinutes ?? 0)}. Start when you are ready to work through the module without breaks.`}
+                                                    ? `Лимит: ${formatDuration(currentModule.timeLimitMinutes ?? 0, isRu)}. Начинайте, когда готовы пройти модуль без пауз.`
+                                                    : `Limit: ${formatDuration(currentModule.timeLimitMinutes ?? 0, isRu)}. Start when you are ready to work through the module without breaks.`}
                                             </Typography>
                                         </Box>
                                     </Stack>
@@ -534,7 +534,7 @@ export default function LearningItemPage() {
                                         <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 950 }}>
                                             {isRu ? "Лимит" : "Limit"}
                                         </Typography>
-                                        <Typography variant="h5">{formatDuration(currentModule.timeLimitMinutes ?? 0)}</Typography>
+                                        <Typography variant="h5">{formatDuration(currentModule.timeLimitMinutes ?? 0, isRu)}</Typography>
                                     </Box>
                                     <Box sx={{ flex: 1, py: 0.5 }}>
                                         <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 950 }}>

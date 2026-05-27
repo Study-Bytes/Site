@@ -116,7 +116,7 @@ function ModuleDeadlinePanel({
 
                 {module.deadlineType === "RELATIVE_FROM_START" && !startedAt ? (
                     <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                        {isRu ? `Таймер запустится только после нажатия. Лимит: ${formatDuration(module.timeLimitMinutes ?? 0)}.` : `Timer starts only after this action. Limit: ${formatDuration(module.timeLimitMinutes ?? 0)}.`}
+                        {isRu ? `Таймер запустится только после нажатия. Лимит: ${formatDuration(module.timeLimitMinutes ?? 0, isRu)}.` : `Timer starts only after this action. Limit: ${formatDuration(module.timeLimitMinutes ?? 0, isRu)}.`}
                     </Typography>
                 ) : null}
 
@@ -335,7 +335,7 @@ export default function LearningCoursePage() {
                                         </Stack>
                                         <Stack direction="row" justifyContent="space-between">
                                             <Typography sx={{ color: "text.secondary" }}>{isRu ? "Длительность" : "Duration"}</Typography>
-                                            <Typography sx={{ fontWeight: 950 }}>{formatDuration(course.estimatedMinutes)}</Typography>
+                                            <Typography sx={{ fontWeight: 950 }}>{formatDuration(course.estimatedMinutes, isRu)}</Typography>
                                         </Stack>
                                     </Stack>
                                 </Stack>

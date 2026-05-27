@@ -223,7 +223,7 @@ export default function TeacherCoursesPage() {
                                                 <DifficultyBadge difficulty={course.difficulty} />
                                                 <AccessTypeBadge accessType={course.accessType} />
                                                 <Chip size="small" label={course.enrollmentEnabled ? (isRu ? "Запись открыта" : "Enrollment open") : (isRu ? "Запись закрыта" : "Enrollment disabled")} />
-                                                <Chip size="small" label={formatDuration(course.estimatedMinutes)} />
+                                                <Chip size="small" label={formatDuration(course.estimatedMinutes, isRu)} />
                                             </Stack>
                                             <Typography variant="h5">{course.title}</Typography>
                                             <Typography sx={{ color: "text.secondary", mt: 0.5 }}>{course.shortDescription}</Typography>

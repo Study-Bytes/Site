@@ -214,6 +214,7 @@ function validateItemDraft(input: CourseItemUpsertRequest, isRu = false): ApiVal
     const item = normalizeItemDraft(input);
     const errors: ApiValidationError[] = [];
     if (!item.title) errors.push({ field: "item.title", message: isRu ? "Укажите название урока" : "Item title is required" });
+    if (!item.statement) errors.push({ field: "item.statement", message: isRu ? "Добавьте описание урока" : "Item statement is required" });
     if (!Number.isFinite(item.orderIndex) || item.orderIndex < 0) errors.push({ field: "item.orderIndex", message: isRu ? "Порядок должен быть неотрицательным числом" : "Order index must be non-negative" });
     if ((item.itemType === "CODING" || item.itemType === "SQL") && !item.language) errors.push({ field: "item.language", message: isRu ? "Для CODING и SQL нужен язык" : "Language is required for CODING and SQL items" });
     for (const field of ["timeLimitMs", "memoryLimitMb", "outputLimitKb"] as const) {
@@ -251,6 +252,31 @@ function sortedModules(course: TeacherCourseDetails) {
 
 function sortedItems(module: CourseModuleSummary) {
     return module.items.slice().sort((a, b) => a.orderIndex - b.orderIndex);
+}
+
+function itemSummaryFromDetails(item: TeacherItemDetails): CourseItemSummary {
+    return {
+        id: item.id,
+        title: item.title,
+        itemType: item.itemType,
+        orderIndex: item.orderIndex,
+        estimatedMinutes: null,
+    };
+}
+
+function mergeItemIntoCourse(course: TeacherCourseDetails, moduleId: number, item: TeacherItemDetails): TeacherCourseDetails {
+    const summary = itemSummaryFromDetails(item);
+    return {
+        ...course,
+        modules: course.modules.map((module) => {
+            if (module.id !== moduleId) return module;
+            const existingIndex = module.items.findIndex((current) => current.id === item.id);
+            const nextItems = existingIndex >= 0
+                ? module.items.map((current) => (current.id === item.id ? { ...current, ...summary } : current))
+                : [...module.items, summary];
+            return { ...module, items: sortedItems({ ...module, items: nextItems }) };
+        }),
+    };
 }
 
 function splitTimeLimit(totalMinutes: number | null | undefined) {
@@ -479,12 +505,13 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         }
     };
 
-    const refreshAfterMutation = async (message: string) => {
+    const refreshAfterMutation = async (message: string, mergeFallback?: (loaded: TeacherCourseDetails) => TeacherCourseDetails) => {
         setSuccessMessage(message);
         if (!parsedCourseId) return;
         const loaded = await teacherApi.getCourse(parsedCourseId);
-        setCourse(loaded);
-        setForm(toForm(loaded));
+        const nextCourse = mergeFallback ? mergeFallback(loaded) : loaded;
+        setCourse(nextCourse);
+        setForm(toForm(nextCourse));
     };
 
     const saveModule = async () => {
@@ -574,13 +601,13 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
         try {
             const payload = normalizeItemDraft(itemDialog.draft);
             if (itemDialog.mode === "create") {
-                await teacherApi.createItem(itemDialog.moduleId, payload);
+                const created = await teacherApi.createItem(itemDialog.moduleId, payload);
                 setItemDialog(null);
-                await refreshAfterMutation(isRu ? "Урок создан" : "Item created");
+                await refreshAfterMutation(isRu ? "Урок создан" : "Item created", (loaded) => mergeItemIntoCourse(loaded, itemDialog.moduleId, created));
             } else if (itemDialog.itemId) {
-                await teacherApi.updateItem(itemDialog.itemId, payload);
+                const updated = await teacherApi.updateItem(itemDialog.itemId, payload);
                 setItemDialog(null);
-                await refreshAfterMutation(isRu ? "Урок сохранён" : "Item saved");
+                await refreshAfterMutation(isRu ? "Урок сохранён" : "Item saved", (loaded) => mergeItemIntoCourse(loaded, itemDialog.moduleId, updated));
             }
         } catch (requestError) {
             handleApiError(requestError, isRu ? "Не удалось сохранить урок" : "Failed to save item");
@@ -858,7 +885,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                                                                 module.deadlineType === "ABSOLUTE" && module.deadlineAt
                                                                                     ? `${deadlineTypeLabel(module.deadlineType, isRu)}: ${formatDateTime(module.deadlineAt, locale)}`
                                                                                     : module.deadlineType === "RELATIVE_FROM_START" && module.timeLimitMinutes
-                                                                                      ? `${deadlineTypeLabel(module.deadlineType, isRu)}: ${formatDuration(module.timeLimitMinutes)}`
+                                                                                      ? `${deadlineTypeLabel(module.deadlineType, isRu)}: ${formatDuration(module.timeLimitMinutes, isRu)}`
                                                                                       : deadlineTypeLabel(module.deadlineType, isRu)
                                                                             }
                                                                             variant="outlined"
@@ -1005,7 +1032,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                         <StatusBadge status={course.status} />
                                         <Chip size="small" label={isRu ? `${stats.modules} модулей` : `${stats.modules} modules`} />
                                         <Chip size="small" label={isRu ? `${stats.items} уроков` : `${stats.items} items`} />
-                                        <Chip size="small" label={formatDuration(course.estimatedMinutes)} />
+                                        <Chip size="small" label={formatDuration(course.estimatedMinutes, isRu)} />
                                     </Stack>
                                     <Typography variant="body2" sx={{ color: "text.secondary" }}>
                                         {isRu ? "Создан" : "Created"} {new Date(course.createdAt).toLocaleDateString()}
@@ -1168,7 +1195,7 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                                 />
                                             </Stack>
                                             <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800 }}>
-                                                {isRu ? "Итого" : "Total"}: {formatDuration(moduleDialog.draft.timeLimitMinutes ?? 120)}
+                                                {isRu ? "Итого" : "Total"}: {formatDuration(moduleDialog.draft.timeLimitMinutes ?? 120, isRu)}
                                             </Typography>
                                         </Stack>
                                     </Stack>
@@ -1211,7 +1238,15 @@ export default function TeacherCourseEditPage({ mode = "edit" }: Props) {
                                 </TextField>
                             </Stack>
                             <TextField label={isRu ? "Порядок" : "Order index"} type="number" value={itemDialog.draft.orderIndex} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, orderIndex: Number(event.target.value) } })} />
-                            <TextField label={isRu ? "Условие / описание" : "Statement"} multiline minRows={4} value={itemDialog.draft.statement ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, statement: event.target.value } })} />
+                            <TextField
+                                label={isRu ? "Условие / описание" : "Statement"}
+                                multiline
+                                minRows={4}
+                                value={itemDialog.draft.statement ?? ""}
+                                onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, statement: event.target.value } })}
+                                helperText={isRu ? "Кратко опишите, что увидит студент в уроке." : "Describe what the student will see in this item."}
+                                required
+                            />
                             {itemDialog.draft.itemType === "CODING" || itemDialog.draft.itemType === "SQL" ? (
                                 <Stack spacing={2}>
                                     <TextField label={isRu ? "Язык" : "Language"} helperText={isRu ? "Например: java, python или sql." : "For example: java, python or sql."} value={itemDialog.draft.language ?? ""} onChange={(event) => setItemDialog({ ...itemDialog, draft: { ...itemDialog.draft, language: event.target.value } })} required />

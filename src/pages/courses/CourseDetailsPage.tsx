@@ -256,7 +256,7 @@ export default function CourseDetailsPage() {
                                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 1.5 }}>
                                     <CourseMetric label={isRu ? "Модули" : "Modules"} value={moduleCount} />
                                     <CourseMetric label={isRu ? "Уроки" : "Items"} value={itemCount} />
-                                    <CourseMetric label={isRu ? "Длительность" : "Duration"} value={formatDuration(course.estimatedMinutes)} />
+                                    <CourseMetric label={isRu ? "Длительность" : "Duration"} value={formatDuration(course.estimatedMinutes, isRu)} />
                                     <CourseMetric label={isRu ? "Статус" : "Status"} value={courseStatusLabel(course.status, isRu)} />
                                 </Box>
                             </Stack>
@@ -314,7 +314,7 @@ export default function CourseDetailsPage() {
                                                     <Typography variant="body2" sx={{ color: "text.secondary" }}>
                                                         {deadlineTypeLabel(module.deadlineType, isRu)}
                                                         {module.deadlineType === "ABSOLUTE" && module.deadlineAt ? ` · ${formatDateTime(module.deadlineAt, locale)}` : ""}
-                                                        {module.deadlineType === "RELATIVE_FROM_START" && module.timeLimitMinutes ? ` · ${formatDuration(module.timeLimitMinutes)}` : ""}
+                                                        {module.deadlineType === "RELATIVE_FROM_START" && module.timeLimitMinutes ? ` · ${formatDuration(module.timeLimitMinutes, isRu)}` : ""}
                                                     </Typography>
                                                 ) : null}
                                             </Box>
@@ -352,7 +352,7 @@ export default function CourseDetailsPage() {
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <AccessTimeRoundedIcon fontSize="small" color="primary" />
                                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                            {isRu ? "Примерное время" : "Estimated time"}: {formatDuration(course.estimatedMinutes)}
+                                            {isRu ? "Примерное время" : "Estimated time"}: {formatDuration(course.estimatedMinutes, isRu)}
                                         </Typography>
                                     </Stack>
                                     <Stack direction="row" spacing={1} alignItems="center">
