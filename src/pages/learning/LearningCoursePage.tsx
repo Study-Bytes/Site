@@ -9,7 +9,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
-import { getErrorMessage } from "../../api/apiError";
+import { getErrorMessage, isEnrollmentRequiredError } from "../../api/apiError";
 import type { CourseItemSummary, CourseLeaderboardResponse, CourseModuleSummary, LearningCourse, ModuleDeadlineState } from "../../api/bffContracts";
 import { learningApi } from "../../api/services";
 import { CourseLeaderboard } from "../../components/learning/CourseLeaderboard";
@@ -177,7 +177,14 @@ export default function LearningCoursePage() {
         setIsLoading(true);
         setError(null);
         try {
-            const loaded = await learningApi.getLearningCourse(parsedCourseId);
+            let loaded: LearningCourse;
+            try {
+                loaded = await learningApi.getLearningCourse(parsedCourseId);
+            } catch (requestError) {
+                if (!isEnrollmentRequiredError(requestError)) throw requestError;
+                await learningApi.enrollCourse(parsedCourseId);
+                loaded = await learningApi.getLearningCourse(parsedCourseId);
+            }
             setCourse(loaded);
             const storedStarts: Record<number, string> = {};
             loaded.modules.forEach((module) => {
@@ -200,7 +207,13 @@ export default function LearningCoursePage() {
         setIsLeaderboardLoading(true);
         setLeaderboardError(null);
         try {
-            setLeaderboard(await learningApi.getCourseLeaderboard(parsedCourseId));
+            try {
+                setLeaderboard(await learningApi.getCourseLeaderboard(parsedCourseId));
+            } catch (requestError) {
+                if (!isEnrollmentRequiredError(requestError)) throw requestError;
+                await learningApi.enrollCourse(parsedCourseId);
+                setLeaderboard(await learningApi.getCourseLeaderboard(parsedCourseId));
+            }
         } catch (requestError) {
             setLeaderboardError(getErrorMessage(requestError, isRu ? "Не удалось загрузить рейтинг курса" : "Failed to load course leaderboard"));
         } finally {

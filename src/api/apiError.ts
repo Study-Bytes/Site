@@ -28,3 +28,7 @@ export function getErrorMessage(error: unknown, fallback = "Request failed") {
     if (error instanceof Error) return error.message;
     return fallback;
 }
+
+export function isEnrollmentRequiredError(error: unknown) {
+    return error instanceof ApiError && error.status === 403 && /not enrolled/i.test(error.message);
+}

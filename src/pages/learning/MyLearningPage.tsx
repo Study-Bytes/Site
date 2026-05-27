@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import AutoStoriesRoundedIcon from "@mui/icons-material/AutoStoriesRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../../api/apiError";
 import type { EnrollmentSummary } from "../../api/bffContracts";
 import { learningApi } from "../../api/services";
@@ -18,10 +18,20 @@ import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { formatDuration } from "../../utils/courseFormat";
 
-function LearningCourseCard({ enrollment }: { enrollment: EnrollmentSummary }) {
+function LearningCourseCard({
+    enrollment,
+    isStaff,
+    isContinuing,
+    onContinue,
+}: {
+    enrollment: EnrollmentSummary;
+    isStaff: boolean;
+    isContinuing: boolean;
+    onContinue: (enrollment: EnrollmentSummary) => void;
+}) {
     const { locale } = useI18n();
     const isRu = locale === "ru";
-    const continuePath = enrollment.nextItemId ? `/learn/${enrollment.course.id}/items/${enrollment.nextItemId}` : `/learn/${enrollment.course.id}`;
+    const courseMapPath = isStaff ? `/teacher/courses/${enrollment.course.id}/edit#course-structure-section` : `/learn/${enrollment.course.id}`;
     const isCompleted = enrollment.status === "COMPLETED";
 
     return (
@@ -73,10 +83,10 @@ function LearningCourseCard({ enrollment }: { enrollment: EnrollmentSummary }) {
                 </Stack>
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
-                    <Button component={RouterLink} to={`/learn/${enrollment.course.id}`} variant="outlined" fullWidth>
+                    <Button component={RouterLink} to={courseMapPath} variant="outlined" fullWidth>
                         {isRu ? "Карта курса" : "Course map"}
                     </Button>
-                    <Button component={RouterLink} to={continuePath} variant="contained" endIcon={<ArrowForwardRoundedIcon />} fullWidth>
+                    <Button variant="contained" endIcon={isContinuing ? <CircularProgress size={18} color="inherit" /> : <ArrowForwardRoundedIcon />} disabled={isContinuing} fullWidth onClick={() => onContinue(enrollment)}>
                         {isCompleted ? (isRu ? "Повторить" : "Review") : (isRu ? "Продолжить" : "Continue")}
                     </Button>
                 </Stack>
@@ -89,9 +99,12 @@ export default function MyLearningPage() {
     const { locale } = useI18n();
     const isRu = locale === "ru";
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [items, setItems] = useState<EnrollmentSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [continuingCourseId, setContinuingCourseId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const isStaff = user?.role === "TEACHER" || user?.role === "ADMIN";
 
     const loadItems = useCallback(async () => {
         setIsLoading(true);
@@ -108,6 +121,20 @@ export default function MyLearningPage() {
     useEffect(() => {
         void loadItems();
     }, [loadItems]);
+
+    const continueCourse = async (enrollment: EnrollmentSummary) => {
+        const target = `/learn/${enrollment.course.id}${enrollment.nextItemId ? `/items/${enrollment.nextItemId}` : ""}`;
+        setContinuingCourseId(enrollment.course.id);
+        setError(null);
+        try {
+            await learningApi.enrollCourse(enrollment.course.id);
+            await navigate(target);
+        } catch (requestError) {
+            setError(getErrorMessage(requestError, isRu ? "Не удалось записаться на курс перед продолжением" : "Failed to enroll before continuing"));
+        } finally {
+            setContinuingCourseId(null);
+        }
+    };
 
     const inProgress = useMemo(() => items.filter((item) => item.status !== "COMPLETED"), [items]);
     const completed = useMemo(() => items.filter((item) => item.status === "COMPLETED"), [items]);
@@ -147,7 +174,7 @@ export default function MyLearningPage() {
                             </Box>
                             {continueEnrollment ? (
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                                    <Button component={RouterLink} to={`/learn/${continueEnrollment.course.id}${continueEnrollment.nextItemId ? `/items/${continueEnrollment.nextItemId}` : ""}`} variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
+                                    <Button variant="contained" endIcon={continuingCourseId === continueEnrollment.course.id ? <CircularProgress size={18} color="inherit" /> : <ArrowForwardRoundedIcon />} disabled={continuingCourseId === continueEnrollment.course.id} onClick={() => void continueCourse(continueEnrollment)}>
                                         {isRu ? `Продолжить ${continueEnrollment.course.title}` : `Continue ${continueEnrollment.course.title}`}
                                     </Button>
                                     <Button component={RouterLink} to="/courses" variant="outlined">
@@ -213,7 +240,7 @@ export default function MyLearningPage() {
                         <Typography variant="h3">{isRu ? "В процессе" : "In progress"}</Typography>
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 2.5 }}>
                             {inProgress.map((item) => (
-                                <LearningCourseCard key={item.course.id} enrollment={item} />
+                                <LearningCourseCard key={item.course.id} enrollment={item} isStaff={isStaff} isContinuing={continuingCourseId === item.course.id} onContinue={(enrollment) => void continueCourse(enrollment)} />
                             ))}
                         </Box>
                     </Stack>
@@ -224,7 +251,7 @@ export default function MyLearningPage() {
                         <Typography variant="h3">{isRu ? "Завершено" : "Completed"}</Typography>
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 2.5 }}>
                             {completed.map((item) => (
-                                <LearningCourseCard key={item.course.id} enrollment={item} />
+                                <LearningCourseCard key={item.course.id} enrollment={item} isStaff={isStaff} isContinuing={continuingCourseId === item.course.id} onContinue={(enrollment) => void continueCourse(enrollment)} />
                             ))}
                         </Box>
                     </Stack>

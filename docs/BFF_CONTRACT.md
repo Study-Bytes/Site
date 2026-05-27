@@ -163,6 +163,8 @@ GET  /api/v1/learn/courses/{courseId}/modules/{moduleId}/deadline-state?deadline
 GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 ```
 
+`POST /api/v1/learn/courses/{courseId}/enroll` must be idempotent. The Site calls it before opening the learning player from course cards, so repeated calls for an already enrolled user should return the current enrollment state. `TEACHER` and `ADMIN` users may call it to create their own learning enrollment before continuing a course; BFF should not require a separate student role for that action.
+
 `GET /api/v1/learn/courses/{courseId}/leaderboard` returns `CourseLeaderboardResponse`: top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list.
 
 ```json

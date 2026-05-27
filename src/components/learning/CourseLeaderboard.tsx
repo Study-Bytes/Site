@@ -4,7 +4,7 @@ import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, getErrorMessage } from "../../api/apiError";
+import { getErrorMessage, isEnrollmentRequiredError } from "../../api/apiError";
 import type { CourseLeaderboardEntry, CourseLeaderboardResponse } from "../../api/bffContracts";
 import { learningApi } from "../../api/services";
 import { useI18n } from "../../i18n/useI18n";
@@ -42,10 +42,6 @@ function rankLabel(rank: number | null | undefined, isRu: boolean) {
 function isTopPlace(rank: number | null | undefined) {
     const value = validRank(rank);
     return Boolean(value && value <= 3);
-}
-
-function isEnrollmentRequiredError(error: unknown) {
-    return error instanceof ApiError && error.status === 403 && /not enrolled/i.test(error.message);
 }
 
 function dedupeByUser(entries: CourseLeaderboardEntry[]) {
