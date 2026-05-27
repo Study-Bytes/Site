@@ -10,6 +10,7 @@ import { learningApi } from "../../api/services";
 import { useI18n } from "../../i18n/useI18n";
 
 const leaderboardLimit = 10;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function clampProgress(value: number) {
     if (!Number.isFinite(value)) return 0;
@@ -17,7 +18,11 @@ function clampProgress(value: number) {
 }
 
 function displayName(entry: CourseLeaderboardEntry, isRu: boolean) {
-    return entry.fullName?.trim() || (entry.userId ? `#${entry.userId}` : isRu ? "Пользователь" : "User");
+    const name = entry.fullName?.trim();
+    if (name && !emailPattern.test(name)) return name;
+    const rank = validRank(entry.rank);
+    if (rank) return isRu ? `Участник #${rank}` : `Participant #${rank}`;
+    return entry.userId ? `#${entry.userId}` : isRu ? "Пользователь" : "User";
 }
 
 function initials(name: string) {

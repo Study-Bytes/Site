@@ -2388,10 +2388,12 @@ components:
         fullName:
           type: string
           nullable: true
+          description: Display name resolved from UserService. Must not contain an email address.
           example: Ada Lovelace
         avatarUrl:
           type: string
           nullable: true
+          description: Renderable public avatar URL or null when the user has no avatar.
           example: https://cdn.example.com/avatars/11.png
         progressPercent:
           type: integer

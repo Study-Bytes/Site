@@ -25,9 +25,25 @@ import { normalizeCourseModuleSummary, readArray, unwrapListResponse } from "../
 
 type RawLeaderboardEntry = Partial<CourseLeaderboardEntry> & Record<string, unknown>;
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const avatarFilesPrefix = `${env.bffApiPrefix}/avatar-files/`;
+
+function isEmailLike(value: string) {
+    return emailPattern.test(value.trim());
+}
+
+function readValue(entry: RawLeaderboardEntry, key: string): unknown {
+    return key.split(".").reduce<unknown>((current, part) => {
+        if (current && typeof current === "object" && part in current) {
+            return (current as Record<string, unknown>)[part];
+        }
+        return undefined;
+    }, entry);
+}
+
 function readNumberField(entry: RawLeaderboardEntry, keys: string[]) {
     for (const key of keys) {
-        const value = entry[key];
+        const value = readValue(entry, key);
         if (typeof value === "number" && Number.isFinite(value)) return value;
         if (typeof value === "string" && value.trim()) {
             const parsed = Number(value);
@@ -38,13 +54,38 @@ function readNumberField(entry: RawLeaderboardEntry, keys: string[]) {
     return null;
 }
 
-function readStringField(entry: RawLeaderboardEntry, keys: string[]) {
+function readStringField(entry: RawLeaderboardEntry, keys: string[], options: { allowEmail?: boolean } = {}) {
     for (const key of keys) {
-        const value = entry[key];
-        if (typeof value === "string" && value.trim()) return value.trim();
+        const value = readValue(entry, key);
+        if (typeof value === "string" && value.trim()) {
+            const trimmed = value.trim();
+            if (!options.allowEmail && isEmailLike(trimmed)) continue;
+            return trimmed;
+        }
     }
 
     return null;
+}
+
+function normalizeAvatarUrl(value: string | null) {
+    if (!value) return null;
+
+    if (/^(blob|data):/i.test(value)) return value;
+
+    try {
+        const parsed = new URL(value, typeof window === "undefined" ? "http://localhost" : window.location.origin);
+        const normalizedPath = parsed.pathname.replace(/\/{2,}/g, "/");
+        const isStoredBffAvatar = normalizedPath.startsWith(avatarFilesPrefix) || normalizedPath.startsWith("/api/v1/avatar-files/");
+        if (isStoredBffAvatar) {
+            return `${env.bffBaseUrl}${normalizedPath}${parsed.search}${parsed.hash}`;
+        }
+        if (/^https?:\/\//i.test(value)) return value;
+    } catch {
+        // fall through to relative URL normalization
+    }
+
+    if (value.startsWith("/")) return `${env.bffBaseUrl}${value}`;
+    return `${env.bffBaseUrl}/${value.replace(/^\/+/, "")}`;
 }
 
 function normalizeLearningCourse(course: LearningCourse): LearningCourse {
@@ -54,7 +95,7 @@ function normalizeLearningCourse(course: LearningCourse): LearningCourse {
     };
 }
 
-function normalizeCourseLeaderboard(leaderboard: CourseLeaderboardResponse): CourseLeaderboardResponse {
+export function normalizeCourseLeaderboard(leaderboard: CourseLeaderboardResponse): CourseLeaderboardResponse {
     const top = readArray<RawLeaderboardEntry>(leaderboard.top).map((entry, index) => normalizeLeaderboardEntry(entry, index + 1));
 
     return {
@@ -67,8 +108,8 @@ function normalizeCourseLeaderboard(leaderboard: CourseLeaderboardResponse): Cou
 function normalizeLeaderboardEntry(entry: RawLeaderboardEntry, fallbackRank: number): CourseLeaderboardEntry {
     const rank = readNumberField(entry, ["rank", "place", "position"]) ?? fallbackRank;
     const userId = readNumberField(entry, ["userId", "studentId", "id", "user_id"]) ?? fallbackRank;
-    const fullName = readStringField(entry, ["fullName", "nickname", "nick", "username", "displayName", "name", "email"]);
-    const avatarUrl = readStringField(entry, ["avatarUrl", "avatar", "photoUrl", "imageUrl"]);
+    const fullName = readStringField(entry, ["fullName", "displayName", "name", "user.fullName", "profile.fullName", "user.displayName", "profile.displayName", "nickname", "nick", "username"]);
+    const avatarUrl = normalizeAvatarUrl(readStringField(entry, ["avatarUrl", "avatar", "photoUrl", "imageUrl", "user.avatarUrl", "profile.avatarUrl", "user.avatar", "profile.avatar"], { allowEmail: true }));
     const progressPercent = readNumberField(entry, ["progressPercent", "progress", "percent", "coursePercent", "completionPercent"]) ?? 0;
 
     return {

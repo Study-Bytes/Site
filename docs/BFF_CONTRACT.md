@@ -169,7 +169,7 @@ GET  /api/v1/learn/courses/{courseId}/items/{itemId}
 
 `GET /api/v1/learn/my-courses` may include teacher-owned rows with `relation: "TEACHER"`, `progressPercent: null`, `status: null`, and `nextItemId: null`. The Site treats those rows as an explicit "open as learner" action and calls `enroll` only for that relation; learner rows must use the continue endpoints directly.
 
-`GET /api/v1/learn/courses/{courseId}/leaderboard` returns `CourseLeaderboardResponse`: top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list.
+`GET /api/v1/learn/courses/{courseId}/leaderboard` returns `CourseLeaderboardResponse`: top 10 enrolled users by progress percent and the current JWT user's own place. Ties are ordered deterministically and do not expand the top 10 list. BFF must enrich raw LearningService rows with user profile data and return `userId`, `fullName`, and `avatarUrl`; `fullName` must be a display name, not an email address.
 
 ```json
 {
