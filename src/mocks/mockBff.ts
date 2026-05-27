@@ -894,6 +894,7 @@ export const mockBff = {
         const admin = requireUser();
         if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
         const course = findCourse(courseId);
+        if (course.status !== "PENDING_REVIEW") throw new ApiError("Cannot approve course from current status", 409);
         course.status = "PUBLISHED";
         course.publishedAt = new Date().toISOString();
         course.reviewedAt = new Date().toISOString();
@@ -907,10 +908,13 @@ export const mockBff = {
         const admin = requireUser();
         if (admin.role !== "ADMIN") throw new ApiError("Admin access required", 403);
         const course = findCourse(courseId);
+        const reviewComment = input.reviewComment?.trim();
+        if (course.status !== "PENDING_REVIEW") throw new ApiError("Cannot reject course from current status", 409);
+        if (!reviewComment) throw new ApiError("Review comment is required", 400);
         course.status = "CHANGES_REQUESTED";
         course.reviewedAt = new Date().toISOString();
         course.reviewedByUserId = admin.id;
-        course.reviewComment = input.reviewComment?.trim() || "Changes requested";
+        course.reviewComment = reviewComment;
         course.updatedAt = new Date().toISOString();
         return delay(course);
     },
