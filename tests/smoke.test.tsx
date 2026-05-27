@@ -132,6 +132,15 @@ describe("StudyBytes role-based behavior", () => {
         expect(await screen.findByText(/Course moderation/i, {}, findOptions)).toBeInTheDocument();
     });
 
+    it("hides moderation actions for a published admin course review", async () => {
+        await loginAs("ADMIN");
+        renderRoute("/admin/courses/101/review");
+        expect(await screen.findByRole("heading", { name: /Java Core/i }, findOptions)).toBeInTheDocument();
+        expect(await screen.findByText(/not waiting for moderation/i, {}, findOptions)).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Approve and publish/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Request changes/i })).not.toBeInTheDocument();
+    });
+
     it("redirects authenticated users away from login", async () => {
         await loginAs("STUDENT");
         renderRoute("/login");

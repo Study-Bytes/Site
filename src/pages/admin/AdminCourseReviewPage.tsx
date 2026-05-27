@@ -31,6 +31,7 @@ export default function AdminCourseReviewPage() {
     const [reviewComment, setReviewComment] = useState("");
 
     const stats = useMemo(() => course ? { modules: getCourseModuleCount(course), items: getCourseItemCount(course) } : { modules: 0, items: 0 }, [course]);
+    const canModerateCourse = course?.status === "PENDING_REVIEW";
 
     const load = useCallback(async () => {
         if (!parsedCourseId) {
@@ -52,7 +53,7 @@ export default function AdminCourseReviewPage() {
     useEffect(() => { void load(); }, [load]);
 
     const approve = async () => {
-        if (!course) return;
+        if (!course || course.status !== "PENDING_REVIEW") return;
         setAction("approve");
         setError(null);
         setSuccess(null);
@@ -68,7 +69,7 @@ export default function AdminCourseReviewPage() {
     };
 
     const reject = async () => {
-        if (!course) return;
+        if (!course || course.status !== "PENDING_REVIEW") return;
         setAction("reject");
         setError(null);
         setSuccess(null);
@@ -101,10 +102,14 @@ export default function AdminCourseReviewPage() {
                                 <Typography sx={{ color: "text.secondary", maxWidth: 900 }}>{course.description}</Typography>
                                 <Typography variant="body2" sx={{ color: "text.secondary" }}>{isRu ? "Преподаватель" : "Teacher"}: {course.createdByUserFullName ?? course.createdByUserEmail ?? course.createdByUserId}</Typography>
                                 {course.reviewComment ? <Alert severity="warning">{isRu ? "Предыдущий комментарий" : "Previous review"}: {course.reviewComment}</Alert> : null}
-                                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                                    <Button variant="contained" color="success" startIcon={<CheckCircleRoundedIcon />} disabled={action !== null || course.status === "PUBLISHED"} onClick={() => void approve()}>{isRu ? "Одобрить и опубликовать" : "Approve and publish"}</Button>
-                                    <Button variant="outlined" color="error" startIcon={<CancelRoundedIcon />} disabled={action !== null} onClick={() => setRejectOpen(true)}>{isRu ? "Запросить правки" : "Request changes"}</Button>
-                                </Stack>
+                                {canModerateCourse ? (
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                                        <Button variant="contained" color="success" startIcon={<CheckCircleRoundedIcon />} disabled={action !== null} onClick={() => void approve()}>{isRu ? "Одобрить и опубликовать" : "Approve and publish"}</Button>
+                                        <Button variant="outlined" color="error" startIcon={<CancelRoundedIcon />} disabled={action !== null} onClick={() => setRejectOpen(true)}>{isRu ? "Запросить правки" : "Request changes"}</Button>
+                                    </Stack>
+                                ) : (
+                                    <Alert severity="info">{isRu ? "Курс не ожидает модерации, поэтому действия проверки недоступны." : "This course is not waiting for moderation, so review actions are unavailable."}</Alert>
+                                )}
                             </Stack>
                         </Paper>
 
@@ -146,14 +151,14 @@ export default function AdminCourseReviewPage() {
                 ) : null}
             </Stack>
 
-            <Dialog open={rejectOpen} onClose={() => setRejectOpen(false)} fullWidth maxWidth="sm">
+            <Dialog open={rejectOpen && canModerateCourse} onClose={() => setRejectOpen(false)} fullWidth maxWidth="sm">
                 <DialogTitle>{isRu ? "Запросить правки" : "Request changes"}</DialogTitle>
                 <DialogContent>
                     <TextField label={isRu ? "Комментарий модератора" : "Review comment"} value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} multiline minRows={4} fullWidth sx={{ mt: 1 }} />
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setRejectOpen(false)}>{isRu ? "Отмена" : "Cancel"}</Button>
-                    <Button color="error" variant="contained" disabled={action !== null || !reviewComment.trim()} onClick={() => void reject()}>{isRu ? "Вернуть с комментарием" : "Reject with comment"}</Button>
+                    <Button color="error" variant="contained" disabled={action !== null || !canModerateCourse || !reviewComment.trim()} onClick={() => void reject()}>{isRu ? "Вернуть с комментарием" : "Reject with comment"}</Button>
                 </DialogActions>
             </Dialog>
         </PageContainer>
