@@ -98,6 +98,11 @@ export default function CoursesPage() {
     const [duration, setDuration] = useState<DurationFilter>("ALL");
     const [sort, setSort] = useState<SortOption>("RELEVANCE");
     const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+    const searchHelperText = query.trim()
+        ? isRu
+            ? "Если результатов нет, проверь раскладку клавиатуры."
+            : "If results look wrong, check the keyboard layout."
+        : undefined;
 
     useEffect(() => {
         setQuery(urlSearch);
@@ -161,6 +166,7 @@ export default function CoursesPage() {
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder={isRu ? "Название, тема или адрес курса" : "Search by title, topic or slug"}
                 label={isRu ? "Поиск" : "Search"}
+                helperText={searchHelperText}
                 fullWidth
                 InputProps={{
                     startAdornment: (
@@ -244,6 +250,7 @@ export default function CoursesPage() {
                         value={query}
                         onChange={(event) => setSearchQuery(event.target.value)}
                         placeholder={isRu ? "Курс, тема или навык..." : "Search for courses, topics, or skills..."}
+                        helperText={searchHelperText}
                         fullWidth
                         sx={{ display: { xs: "block", md: "none" } }}
                         InputProps={{

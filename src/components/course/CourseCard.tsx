@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Box, Button, Card, CardContent, CardMedia, Chip, Divider, Stack, Typography } from "@mui/material";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import { Link as RouterLink } from "react-router-dom";
 import type { CourseCatalogItem } from "../../api/bffContracts";
@@ -9,6 +11,37 @@ import { useI18n } from "../../i18n/useI18n";
 import { formatDuration } from "../../utils/courseFormat";
 import { courseAccessLabel } from "../../utils/courseLabels";
 import { DifficultyBadge } from "../ui/DifficultyBadge";
+
+function CourseCoverMedia({ course, compact, isRu }: { course: CourseCatalogItem; compact: boolean; isRu: boolean }) {
+    const [failedCoverUrl, setFailedCoverUrl] = useState<string | null>(null);
+    const height = compact ? 132 : 180;
+    const imageFailed = Boolean(course.coverImageUrl && failedCoverUrl === course.coverImageUrl);
+
+    if (course.coverImageUrl && !imageFailed) {
+        return <CardMedia component="img" height={height} image={course.coverImageUrl} alt={course.title} onError={() => setFailedCoverUrl(course.coverImageUrl)} sx={{ objectFit: "cover" }} />;
+    }
+
+    return (
+        <Box
+            sx={{
+                height,
+                display: "grid",
+                placeItems: "center",
+                background: (theme) =>
+                    theme.palette.mode === "dark"
+                        ? "radial-gradient(circle at 20% 20%, rgba(195,192,255,0.24), transparent 28%), radial-gradient(circle at 80% 10%, rgba(60,221,199,0.18), transparent 30%), linear-gradient(135deg, #2a2933 0%, #13121b 100%)"
+                        : "radial-gradient(circle at 20% 20%, rgba(53,37,205,0.28), transparent 28%), radial-gradient(circle at 80% 10%, rgba(113,42,226,0.22), transparent 30%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
+            }}
+        >
+            <Stack spacing={0.9} alignItems="center" sx={{ color: "text.secondary", textAlign: "center", px: 2 }}>
+                <MenuBookRoundedIcon color="primary" sx={{ fontSize: 38 }} />
+                <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                    {imageFailed ? (isRu ? "Обложка недоступна" : "Cover unavailable") : (isRu ? "Обложка скоро появится" : "Cover pending")}
+                </Typography>
+            </Stack>
+        </Box>
+    );
+}
 
 export function CourseCard({ course, compact = false }: { course: CourseCatalogItem; compact?: boolean }) {
     const { locale } = useI18n();
@@ -34,19 +67,7 @@ export function CourseCard({ course, compact = false }: { course: CourseCatalogI
             }}
         >
             <Box sx={{ position: "relative" }}>
-                {course.coverImageUrl ? (
-                    <CardMedia component="img" height={compact ? "132" : "180"} image={course.coverImageUrl} alt={course.title} sx={{ objectFit: "cover" }} />
-                ) : (
-                    <Box
-                        sx={{
-                            height: compact ? 132 : 180,
-                            background: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "radial-gradient(circle at 20% 20%, rgba(195,192,255,0.24), transparent 28%), radial-gradient(circle at 80% 10%, rgba(60,221,199,0.18), transparent 30%), linear-gradient(135deg, #2a2933 0%, #13121b 100%)"
-                                    : "radial-gradient(circle at 20% 20%, rgba(53,37,205,0.28), transparent 28%), radial-gradient(circle at 80% 10%, rgba(113,42,226,0.22), transparent 30%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
-                        }}
-                    />
-                )}
+                <CourseCoverMedia course={course} compact={compact} isRu={isRu} />
                 <Chip
                     size="small"
                     icon={course.accessType === "PRIVATE" ? <LockOutlinedIcon /> : undefined}

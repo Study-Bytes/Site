@@ -12,10 +12,10 @@ import type { UserRole } from "../../api/bffContracts";
 import { useI18n } from "../../i18n/useI18n";
 
 const createRegisterSchema = (isRu: boolean) => z.object({
-    fullName: z.string().min(2, isRu ? "Укажите имя" : "Full name is required").max(80, isRu ? "Слишком длинное имя" : "Too long"),
+    fullName: z.string().min(1, isRu ? "Укажите имя" : "Full name is required").min(2, isRu ? "Имя должно содержать минимум 2 символа" : "Full name must contain at least 2 characters").max(80, isRu ? "Слишком длинное имя" : "Too long"),
     email: z.string().min(1, isRu ? "Укажите email" : "Email is required").refine((value) => z.email().safeParse(value).success, { message: isRu ? "Некорректный email" : "Invalid email" }),
-    password: z.string().min(8, isRu ? "Пароль должен содержать минимум 8 символов" : "Password must contain at least 8 characters"),
-    confirmPassword: z.string().min(8, isRu ? "Повторите пароль" : "Confirm password"),
+    password: z.string().min(1, isRu ? "Укажите пароль" : "Password is required").min(8, isRu ? "Пароль должен содержать минимум 8 символов" : "Password must contain at least 8 characters"),
+    confirmPassword: z.string().min(1, isRu ? "Повторите пароль" : "Confirm password is required").min(8, isRu ? "Пароль должен содержать минимум 8 символов" : "Password must contain at least 8 characters"),
 }).refine((value) => value.password === value.confirmPassword, {
     message: isRu ? "Пароли не совпадают" : "Passwords do not match",
     path: ["confirmPassword"],
@@ -50,11 +50,14 @@ export default function RegisterPage() {
     const {
         register,
         handleSubmit,
-        formState: { errors, isSubmitting },
+        formState: { errors, isSubmitting, isSubmitted },
     } = useForm<RegisterForm>({
         resolver: zodResolver(registerSchema),
         defaultValues: { fullName: "", email: "", password: "", confirmPassword: "" },
+        mode: "onTouched",
+        reValidateMode: "onChange",
     });
+    const hasValidationErrors = Object.keys(errors).length > 0;
 
     const onSubmit: SubmitHandler<RegisterForm> = async (values) => {
         setServerError(null);
@@ -98,11 +101,12 @@ export default function RegisterPage() {
                                 : "Admin accounts cannot be self-registered. Teachers can create courses immediately, but publication for all users requires admin moderation."}
                         </Alert>
                         {serverError ? <Alert severity="error">{serverError}</Alert> : null}
-                        <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
-                            <TextField label={isRu ? "Имя" : "Full name"} autoComplete="name" {...register("fullName")} error={Boolean(errors.fullName)} helperText={errors.fullName?.message} />
-                            <TextField label="Email" type="email" autoComplete="email" {...register("email")} error={Boolean(errors.email)} helperText={errors.email?.message} />
-                            <TextField label={isRu ? "Пароль" : "Password"} type="password" autoComplete="new-password" {...register("password")} error={Boolean(errors.password)} helperText={errors.password?.message} />
-                            <TextField label={isRu ? "Повторите пароль" : "Confirm password"} type="password" autoComplete="new-password" {...register("confirmPassword")} error={Boolean(errors.confirmPassword)} helperText={errors.confirmPassword?.message} />
+                        {isSubmitted && hasValidationErrors ? <Alert severity="warning">{isRu ? "Заполните обязательные поля и исправьте ошибки." : "Fill in the required fields and fix validation errors."}</Alert> : null}
+                        <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)} noValidate>
+                            <TextField label={isRu ? "Имя" : "Full name"} autoComplete="name" required {...register("fullName")} error={Boolean(errors.fullName)} helperText={errors.fullName?.message} />
+                            <TextField label="Email" type="email" autoComplete="email" required {...register("email")} error={Boolean(errors.email)} helperText={errors.email?.message} />
+                            <TextField label={isRu ? "Пароль" : "Password"} type="password" autoComplete="new-password" required {...register("password")} error={Boolean(errors.password)} helperText={errors.password?.message} />
+                            <TextField label={isRu ? "Повторите пароль" : "Confirm password"} type="password" autoComplete="new-password" required {...register("confirmPassword")} error={Boolean(errors.confirmPassword)} helperText={errors.confirmPassword?.message} />
                             <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
                                 {role === "TEACHER"
                                     ? isRu ? "Создать аккаунт преподавателя" : "Create teacher account"

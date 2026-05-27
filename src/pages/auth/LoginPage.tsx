@@ -57,15 +57,12 @@ export default function LoginPage() {
                             </Typography>
                         </Box>
                         {serverError ? <Alert severity="error">{serverError}</Alert> : null}
-                        <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
-                            <TextField label="Email" type="email" autoComplete="email" {...register("email")} error={Boolean(errors.email)} helperText={errors.email?.message} />
-                            <TextField label={isRu ? "Пароль" : "Password"} type="password" autoComplete="current-password" {...register("password")} error={Boolean(errors.password)} helperText={errors.password?.message} />
+                        <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)} noValidate>
+                            <TextField label="Email" type="email" autoComplete="email" required {...register("email")} error={Boolean(errors.email)} helperText={errors.email?.message} />
+                            <TextField label={isRu ? "Пароль" : "Password"} type="password" autoComplete="current-password" required {...register("password")} error={Boolean(errors.password)} helperText={errors.password?.message} />
                             <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
                                 {isRu ? "Войти" : "Login"}
                             </Button>
-                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                {isRu ? "Восстановление пароля появится позже." : "Forgot password is coming soon."}
-                            </Typography>
                             <Typography variant="body2">
                                 {isRu ? "Нет аккаунта?" : "No account?"}{" "}
                                 <Button component={RouterLink} to="/register" sx={{ p: 0, minWidth: 0 }}>

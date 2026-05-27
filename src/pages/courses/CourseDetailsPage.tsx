@@ -162,6 +162,7 @@ export default function CourseDetailsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isNotFound, setIsNotFound] = useState(false);
+    const [failedCoverUrl, setFailedCoverUrl] = useState<string | null>(null);
 
     const loadCourse = useCallback(async () => {
         if (!parsedCourseId) {
@@ -194,6 +195,7 @@ export default function CourseDetailsPage() {
 
     const itemCount = useMemo(() => (course ? getCourseItemCount(course) : 0), [course]);
     const moduleCount = useMemo(() => (course ? getCourseModuleCount(course) : 0), [course]);
+    const courseCoverFailed = Boolean(course?.coverImageUrl && failedCoverUrl === course.coverImageUrl);
 
     return (
         <PageContainer>
@@ -260,22 +262,25 @@ export default function CourseDetailsPage() {
                             </Stack>
 
                             <Stack spacing={2.5}>
-                                {course.coverImageUrl ? (
-                                    <Box component="img" src={course.coverImageUrl} alt={course.title} sx={{ width: "100%", borderRadius: 2, display: "block", maxHeight: 330, objectFit: "cover" }} />
+                                {course.coverImageUrl && !courseCoverFailed ? (
+                                    <Box component="img" src={course.coverImageUrl} alt={course.title} onError={() => setFailedCoverUrl(course.coverImageUrl)} sx={{ width: "100%", borderRadius: 2, display: "block", maxHeight: 330, objectFit: "cover" }} />
                                 ) : (
                                     <Paper
                                         sx={{
                                             height: 280,
                                             borderRadius: 2,
-                                            display: "grid",
-                                            placeItems: "center",
                                             background: (theme) =>
                                                 theme.palette.mode === "dark"
                                                     ? "radial-gradient(circle at 22% 18%, rgba(195,192,255,0.24), transparent 30%), radial-gradient(circle at 82% 12%, rgba(60,221,199,0.18), transparent 28%), linear-gradient(135deg, #2a2933 0%, #13121b 100%)"
                                                     : "radial-gradient(circle at 22% 18%, rgba(53,37,205,0.28), transparent 30%), radial-gradient(circle at 82% 12%, rgba(113,42,226,0.24), transparent 28%), linear-gradient(135deg, #f8f4ff 0%, #e8e1ff 100%)",
                                         }}
                                     >
-                                        <MenuBookRoundedIcon color="primary" sx={{ fontSize: 72 }} />
+                                        <Stack spacing={1} alignItems="center" justifyContent="center" sx={{ height: "100%", color: "text.secondary", textAlign: "center", px: 3 }}>
+                                            <MenuBookRoundedIcon color="primary" sx={{ fontSize: 72 }} />
+                                            <Typography sx={{ fontWeight: 900 }}>
+                                                {courseCoverFailed ? (isRu ? "Обложка курса недоступна" : "Course cover unavailable") : (isRu ? "Обложка курса скоро появится" : "Course cover pending")}
+                                            </Typography>
+                                        </Stack>
                                     </Paper>
                                 )}
                                 <Box sx={{ display: { xs: "block", md: "none" } }}>

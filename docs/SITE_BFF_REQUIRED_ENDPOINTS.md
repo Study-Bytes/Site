@@ -79,6 +79,8 @@ After moderation is enabled, the public catalog must show only:
 status=PUBLISHED
 ```
 
+Course content shown in cards and course structure is authored data. BFF/CourseService should not publish placeholder titles such as `fff`, `lesson 1`, or typo-heavy descriptions. `coverImageUrl` must be either `null` or a public URL/path that the deployed Site can load; the frontend renders a fallback when an image is missing, but the catalog should still provide real covers for published courses.
+
 ## Student Learning
 
 ```http

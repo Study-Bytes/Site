@@ -147,6 +147,8 @@ size
 
 Preferred response shape is `PageResponse<CourseCatalogItem>`. For early BFF development, the Site also accepts a plain `CourseCatalogItem[]` response and normalizes it in `coursesApi`.
 
+Published course data should be production-ready: avoid placeholder module/item titles, fix typos before publishing, and return `coverImageUrl` only when the image is reachable by the deployed Site. The frontend has a visual fallback for missing covers, but published cards should not rely on it.
+
 `GET /api/v1/courses/{courseId}` is public and is used by Course Details. It must not require authentication. It must return public course metadata, modules and item summaries only. Hidden tests, expected outputs and correct quiz answers must not be included.
 
 `GET /api/v1/course-items/{itemId}` is public only if item previews are enabled. It must return student-safe preview content only.
