@@ -25,7 +25,7 @@ import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
-import { getErrorMessage, isEnrollmentRequiredError } from "../../api/apiError";
+import { getErrorMessage } from "../../api/apiError";
 import type {
     ContentBlockDto,
     CourseModuleSummary,
@@ -320,22 +320,11 @@ export default function LearningItemPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const loadBundle = () =>
-                Promise.all([
-                    learningApi.getLearningItem(parsedCourseId, parsedItemId),
-                    learningApi.getItemSubmissions(parsedCourseId, parsedItemId).catch(() => [] as SubmissionHistoryItem[]),
-                    learningApi.getLearningCourse(parsedCourseId),
-                ]);
-            let item: LearningItem;
-            let submissions: SubmissionHistoryItem[];
-            let course: LearningCourse;
-            try {
-                [item, submissions, course] = await loadBundle();
-            } catch (requestError) {
-                if (!isEnrollmentRequiredError(requestError)) throw requestError;
-                await learningApi.enrollCourse(parsedCourseId);
-                [item, submissions, course] = await loadBundle();
-            }
+            const [item, submissions, course] = await Promise.all([
+                learningApi.getLearningItem(parsedCourseId, parsedItemId),
+                learningApi.getItemSubmissions(parsedCourseId, parsedItemId).catch(() => [] as SubmissionHistoryItem[]),
+                learningApi.getLearningCourse(parsedCourseId),
+            ]);
             setLearningItem(item);
             setLearningCourse(course);
             const storedStarts: Record<number, string> = {};

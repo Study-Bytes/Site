@@ -99,7 +99,9 @@ GET  /api/v1/learn/submissions/{submissionId}
 
 These are frontend-facing learning endpoints. BFF may aggregate data from LearningService, CourseService, and CodeExecutorService internally.
 
-`POST /api/v1/learn/courses/{courseId}/enroll` must be idempotent because the Site calls it before continuing from learning cards. If a `TEACHER` or `ADMIN` user chooses to continue a course, BFF should allow creating a personal learning enrollment for that user instead of rejecting only because the role is not `STUDENT`.
+`POST /api/v1/learn/courses/{courseId}/enroll` is used only for explicit course enrollment/start actions. Continuing an already enrolled course must use `GET /api/v1/learn/courses/{courseId}` or item endpoints, so learning cards must not repeat `enroll`.
+
+If `GET /api/v1/learn/my-courses` includes teacher-owned rows, mark them with `relation: "TEACHER"` and return `progressPercent: null`, `status: null`, `nextItemId: null`. The Site calls `enroll` only from the explicit "open as learner" action for those rows.
 
 `GET /api/v1/learn/courses/{courseId}/leaderboard` must return `CourseLeaderboardResponse`: top 10 enrolled users by `progressPercent` plus the current JWT user's own place. Ties must be ordered deterministically and must not expand the top 10 list. If the current user is already in the returned top list, the Site highlights that row and does not render a duplicate current-user row.
 

@@ -185,9 +185,10 @@ export type TestCaseDto = {
 
 export type EnrollmentSummary = {
     course: CourseCatalogItem;
-    progressPercent: number;
-    status: LearningStatus;
+    progressPercent: number | null;
+    status: LearningStatus | null;
     nextItemId: number | null;
+    relation?: "LEARNER" | "TEACHER";
 };
 
 export type EnrollCourseResponse = {

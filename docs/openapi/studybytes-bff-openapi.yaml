@@ -342,7 +342,7 @@ paths:
       tags:
       - Learning
       summary: Enroll current user in course
-      description: Creates or returns the current user's enrollment. This operation is idempotent; repeated calls for an already enrolled user should return the current enrollment state. Teachers and admins may use it to create their own learning enrollment before opening the learning player.
+      description: Creates the current user's enrollment from an explicit enrollment/start action. Clients should open or continue an already enrolled course through GET /learn/courses/{courseId} or item endpoints instead of repeating enroll.
       operationId: enrollCourse
       security:
       - BearerAuth: []
@@ -2317,15 +2317,25 @@ components:
           $ref: '#/components/schemas/CourseCatalogItem'
         progressPercent:
           type: integer
+          nullable: true
           format: int32
           example: 35
         status:
-          $ref: '#/components/schemas/LearningStatus'
+          allOf:
+          - $ref: '#/components/schemas/LearningStatus'
+          nullable: true
         nextItemId:
           type: integer
           nullable: true
           format: int64
           example: 100
+        relation:
+          type: string
+          nullable: true
+          enum:
+          - LEARNER
+          - TEACHER
+          description: LEARNER for real LearningService enrollments; TEACHER for owner/admin rows that are not learner enrollments yet.
       required:
       - course
       - progressPercent

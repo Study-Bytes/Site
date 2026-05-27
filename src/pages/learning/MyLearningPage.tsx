@@ -5,7 +5,7 @@ import AutoStoriesRoundedIcon from "@mui/icons-material/AutoStoriesRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { getErrorMessage } from "../../api/apiError";
+import { getErrorMessage, isAlreadyEnrolledError } from "../../api/apiError";
 import type { EnrollmentSummary } from "../../api/bffContracts";
 import { learningApi } from "../../api/services";
 import { useAuth } from "../../auth/useAuth";
@@ -32,7 +32,10 @@ function LearningCourseCard({
     const { locale } = useI18n();
     const isRu = locale === "ru";
     const courseMapPath = isStaff ? `/teacher/courses/${enrollment.course.id}/edit#course-structure-section` : `/learn/${enrollment.course.id}`;
+    const continuePath = `/learn/${enrollment.course.id}${enrollment.nextItemId ? `/items/${enrollment.nextItemId}` : ""}`;
     const isCompleted = enrollment.status === "COMPLETED";
+    const isTeacherOnly = enrollment.relation === "TEACHER";
+    const progressPercent = enrollment.progressPercent ?? 0;
 
     return (
         <Paper
@@ -56,8 +59,8 @@ function LearningCourseCard({
                     <Chip
                         size="small"
                         icon={isCompleted ? <CheckCircleRoundedIcon /> : <PlayCircleOutlineRoundedIcon />}
-                        label={enrollment.status}
-                        color={isCompleted ? "success" : "primary"}
+                        label={isTeacherOnly ? (isRu ? "Автор" : "Author") : enrollment.status}
+                        color={isCompleted ? "success" : isTeacherOnly ? "default" : "primary"}
                         variant="outlined"
                         sx={{ fontWeight: 900 }}
                     />
@@ -73,22 +76,28 @@ function LearningCourseCard({
                 <Stack spacing={1}>
                     <Stack direction="row" justifyContent="space-between" spacing={2}>
                         <Typography variant="body2" sx={{ fontWeight: 900 }}>
-                            {enrollment.progressPercent}% {isRu ? "пройдено" : "complete"}
+                            {isTeacherOnly ? (isRu ? "Авторский курс" : "Teacher course") : `${progressPercent}% ${isRu ? "пройдено" : "complete"}`}
                         </Typography>
                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
                             {formatDuration(enrollment.course.estimatedMinutes)}
                         </Typography>
                     </Stack>
-                    <LinearProgress variant="determinate" value={enrollment.progressPercent} sx={{ height: 8, borderRadius: 999 }} />
+                    <LinearProgress variant="determinate" value={progressPercent} sx={{ height: 8, borderRadius: 999 }} />
                 </Stack>
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                     <Button component={RouterLink} to={courseMapPath} variant="outlined" fullWidth>
                         {isRu ? "Карта курса" : "Course map"}
                     </Button>
-                    <Button variant="contained" endIcon={isContinuing ? <CircularProgress size={18} color="inherit" /> : <ArrowForwardRoundedIcon />} disabled={isContinuing} fullWidth onClick={() => onContinue(enrollment)}>
-                        {isCompleted ? (isRu ? "Повторить" : "Review") : (isRu ? "Продолжить" : "Continue")}
-                    </Button>
+                    {isTeacherOnly ? (
+                        <Button variant="contained" endIcon={isContinuing ? <CircularProgress size={18} color="inherit" /> : <ArrowForwardRoundedIcon />} disabled={isContinuing} fullWidth onClick={() => onContinue(enrollment)}>
+                            {isRu ? "Открыть как студент" : "Open as learner"}
+                        </Button>
+                    ) : (
+                        <Button component={RouterLink} to={continuePath} variant="contained" endIcon={<ArrowForwardRoundedIcon />} fullWidth>
+                            {isCompleted ? (isRu ? "Повторить" : "Review") : (isRu ? "Продолжить" : "Continue")}
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
         </Paper>
@@ -122,7 +131,7 @@ export default function MyLearningPage() {
         void loadItems();
     }, [loadItems]);
 
-    const continueCourse = async (enrollment: EnrollmentSummary) => {
+    const enrollTeacherCourseAndContinue = async (enrollment: EnrollmentSummary) => {
         const target = `/learn/${enrollment.course.id}${enrollment.nextItemId ? `/items/${enrollment.nextItemId}` : ""}`;
         setContinuingCourseId(enrollment.course.id);
         setError(null);
@@ -130,7 +139,11 @@ export default function MyLearningPage() {
             await learningApi.enrollCourse(enrollment.course.id);
             await navigate(target);
         } catch (requestError) {
-            setError(getErrorMessage(requestError, isRu ? "Не удалось записаться на курс перед продолжением" : "Failed to enroll before continuing"));
+            if (isAlreadyEnrolledError(requestError)) {
+                await navigate(target);
+                return;
+            }
+            setError(getErrorMessage(requestError, isRu ? "Не удалось открыть курс как студент" : "Failed to open course as learner"));
         } finally {
             setContinuingCourseId(null);
         }
@@ -140,7 +153,7 @@ export default function MyLearningPage() {
     const completed = useMemo(() => items.filter((item) => item.status === "COMPLETED"), [items]);
     const averageProgress = useMemo(() => {
         if (items.length === 0) return 0;
-        return Math.round(items.reduce((sum, item) => sum + item.progressPercent, 0) / items.length);
+        return Math.round(items.reduce((sum, item) => sum + (item.progressPercent ?? 0), 0) / items.length);
     }, [items]);
     const continueEnrollment = inProgress[0] ?? completed[0] ?? null;
 
@@ -174,9 +187,20 @@ export default function MyLearningPage() {
                             </Box>
                             {continueEnrollment ? (
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                                    <Button variant="contained" endIcon={continuingCourseId === continueEnrollment.course.id ? <CircularProgress size={18} color="inherit" /> : <ArrowForwardRoundedIcon />} disabled={continuingCourseId === continueEnrollment.course.id} onClick={() => void continueCourse(continueEnrollment)}>
-                                        {isRu ? `Продолжить ${continueEnrollment.course.title}` : `Continue ${continueEnrollment.course.title}`}
-                                    </Button>
+                                    {continueEnrollment.relation === "TEACHER" ? (
+                                        <Button
+                                            variant="contained"
+                                            endIcon={continuingCourseId === continueEnrollment.course.id ? <CircularProgress size={18} color="inherit" /> : <ArrowForwardRoundedIcon />}
+                                            disabled={continuingCourseId === continueEnrollment.course.id}
+                                            onClick={() => void enrollTeacherCourseAndContinue(continueEnrollment)}
+                                        >
+                                            {isRu ? `Открыть ${continueEnrollment.course.title} как студент` : `Open ${continueEnrollment.course.title} as learner`}
+                                        </Button>
+                                    ) : (
+                                        <Button component={RouterLink} to={`/learn/${continueEnrollment.course.id}${continueEnrollment.nextItemId ? `/items/${continueEnrollment.nextItemId}` : ""}`} variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
+                                            {isRu ? `Продолжить ${continueEnrollment.course.title}` : `Continue ${continueEnrollment.course.title}`}
+                                        </Button>
+                                    )}
                                     <Button component={RouterLink} to="/courses" variant="outlined">
                                         {isRu ? "Найти ещё курсы" : "Browse more courses"}
                                     </Button>
@@ -240,7 +264,7 @@ export default function MyLearningPage() {
                         <Typography variant="h3">{isRu ? "В процессе" : "In progress"}</Typography>
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 2.5 }}>
                             {inProgress.map((item) => (
-                                <LearningCourseCard key={item.course.id} enrollment={item} isStaff={isStaff} isContinuing={continuingCourseId === item.course.id} onContinue={(enrollment) => void continueCourse(enrollment)} />
+                                <LearningCourseCard key={item.course.id} enrollment={item} isStaff={isStaff} isContinuing={continuingCourseId === item.course.id} onContinue={(enrollment) => void enrollTeacherCourseAndContinue(enrollment)} />
                             ))}
                         </Box>
                     </Stack>
@@ -251,7 +275,7 @@ export default function MyLearningPage() {
                         <Typography variant="h3">{isRu ? "Завершено" : "Completed"}</Typography>
                         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 2.5 }}>
                             {completed.map((item) => (
-                                <LearningCourseCard key={item.course.id} enrollment={item} isStaff={isStaff} isContinuing={continuingCourseId === item.course.id} onContinue={(enrollment) => void continueCourse(enrollment)} />
+                                <LearningCourseCard key={item.course.id} enrollment={item} isStaff={isStaff} isContinuing={continuingCourseId === item.course.id} onContinue={(enrollment) => void enrollTeacherCourseAndContinue(enrollment)} />
                             ))}
                         </Box>
                     </Stack>
