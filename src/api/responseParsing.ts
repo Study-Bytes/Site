@@ -1,5 +1,6 @@
 import { ApiError } from "./apiError";
-import type { CourseItemSummary, CourseModuleSummary, ModuleDeadlineType } from "./bffContracts";
+import type { CourseItemSummary, CourseModuleSummary, CourseStatus, ModuleDeadlineType } from "./bffContracts";
+import { normalizeCourseStatus } from "../utils/courseStatus";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -22,6 +23,13 @@ export function normalizeCourseModuleSummary(module: CourseModuleSummary): Cours
         deadlineAt,
         timeLimitMinutes,
         items: readArray<CourseItemSummary>(module.items),
+    };
+}
+
+export function normalizeCourseSummaryStatus<T extends { status: CourseStatus | string }>(course: T): T & { status: CourseStatus } {
+    return {
+        ...course,
+        status: normalizeCourseStatus(course.status),
     };
 }
 

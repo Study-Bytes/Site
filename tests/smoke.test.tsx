@@ -132,6 +132,28 @@ describe("StudyBytes role-based behavior", () => {
         expect(await screen.findByText(/Course moderation/i, {}, findOptions)).toBeInTheDocument();
     });
 
+    it("shows moderation actions for a pending admin course review", async () => {
+        await loginAs("TEACHER");
+        const course = await mockBff.createTeacherCourse({
+            slug: `pending-review-${Date.now()}`,
+            title: "Pending review course",
+            shortDescription: "Course waiting for admin checks.",
+            description: "A course created in smoke tests to verify moderation actions.",
+            difficulty: "BEGINNER",
+            accessType: "PUBLIC",
+            enrollmentEnabled: true,
+            coverImageUrl: null,
+            estimatedMinutes: 30,
+        });
+        await mockBff.submitTeacherCourseForReview(course.id);
+
+        await loginAs("ADMIN");
+        renderRoute(`/admin/courses/${course.id}/review`);
+        expect(await screen.findByRole("heading", { name: /Pending review course/i }, findOptions)).toBeInTheDocument();
+        expect(await screen.findByRole("button", { name: /Approve and publish/i }, findOptions)).toBeInTheDocument();
+        expect(await screen.findByRole("button", { name: /Request changes/i }, findOptions)).toBeInTheDocument();
+    });
+
     it("hides moderation actions for a published admin course review", async () => {
         await loginAs("ADMIN");
         renderRoute("/admin/courses/101/review");

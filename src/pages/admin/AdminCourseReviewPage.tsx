@@ -16,6 +16,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useI18n } from "../../i18n/useI18n";
 import { PageContainer } from "../../layouts/PageContainer";
 import { getCourseItemCount, getCourseModuleCount, parseRouteCourseId } from "../../utils/courseFormat";
+import { isPendingReviewStatus } from "../../utils/courseStatus";
 
 export default function AdminCourseReviewPage() {
     const { locale } = useI18n();
@@ -31,7 +32,7 @@ export default function AdminCourseReviewPage() {
     const [reviewComment, setReviewComment] = useState("");
 
     const stats = useMemo(() => course ? { modules: getCourseModuleCount(course), items: getCourseItemCount(course) } : { modules: 0, items: 0 }, [course]);
-    const canModerateCourse = course?.status === "PENDING_REVIEW";
+    const canModerateCourse = isPendingReviewStatus(course?.status);
 
     const load = useCallback(async () => {
         if (!parsedCourseId) {
@@ -53,7 +54,7 @@ export default function AdminCourseReviewPage() {
     useEffect(() => { void load(); }, [load]);
 
     const approve = async () => {
-        if (!course || course.status !== "PENDING_REVIEW") return;
+        if (!course || !isPendingReviewStatus(course.status)) return;
         setAction("approve");
         setError(null);
         setSuccess(null);
@@ -69,7 +70,7 @@ export default function AdminCourseReviewPage() {
     };
 
     const reject = async () => {
-        if (!course || course.status !== "PENDING_REVIEW") return;
+        if (!course || !isPendingReviewStatus(course.status)) return;
         setAction("reject");
         setError(null);
         setSuccess(null);

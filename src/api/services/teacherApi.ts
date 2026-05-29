@@ -22,13 +22,17 @@ import type {
     TestCaseUpsertRequest,
     ModuleUpsertRequest,
 } from "../bffContracts";
-import { normalizeCourseModuleSummary, readArray, unwrapListResponse } from "../responseParsing";
+import { normalizeCourseModuleSummary, normalizeCourseSummaryStatus, readArray, unwrapListResponse } from "../responseParsing";
 
 function normalizeTeacherCourseDetails(course: TeacherCourseDetails): TeacherCourseDetails {
     return {
-        ...course,
+        ...normalizeCourseSummaryStatus(course),
         modules: readArray<CourseModuleSummary>(course.modules).map(normalizeCourseModuleSummary),
     };
+}
+
+function normalizeTeacherCourseSummary(course: TeacherCourseSummary): TeacherCourseSummary {
+    return normalizeCourseSummaryStatus(course);
 }
 
 function normalizeTeacherItemDetails(item: TeacherItemDetails): TeacherItemDetails {
@@ -45,7 +49,7 @@ export const teacherApi = {
     async listCourses(query?: TeacherCourseQuery): Promise<TeacherCourseSummary[]> {
         if (env.useMockBff) return mockBff.getTeacherCourses(query);
         const response = await request<unknown>("/teacher/courses", { query });
-        return unwrapListResponse<TeacherCourseSummary>(response, "Курсы преподавателя", ["items", "courses", "content", "data"]);
+        return unwrapListResponse<TeacherCourseSummary>(response, "Курсы преподавателя", ["items", "courses", "content", "data"]).map(normalizeTeacherCourseSummary);
     },
 
     async createCourse(input: CourseUpsertRequest): Promise<TeacherCourseDetails> {

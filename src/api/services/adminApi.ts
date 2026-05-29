@@ -2,26 +2,30 @@ import { env } from "../../config/env";
 import { mockBff } from "../../mocks/mockBff";
 import { request } from "../apiClient";
 import type { CourseModerationReviewRequest, CourseModuleSummary, TeacherCourseDetails, TeacherCourseQuery, TeacherCourseSummary } from "../bffContracts";
-import { normalizeCourseModuleSummary, readArray, unwrapListResponse } from "../responseParsing";
+import { normalizeCourseModuleSummary, normalizeCourseSummaryStatus, readArray, unwrapListResponse } from "../responseParsing";
 
 function normalizeTeacherCourseDetails(course: TeacherCourseDetails): TeacherCourseDetails {
     return {
-        ...course,
+        ...normalizeCourseSummaryStatus(course),
         modules: readArray<CourseModuleSummary>(course.modules).map(normalizeCourseModuleSummary),
     };
+}
+
+function normalizeTeacherCourseSummary(course: TeacherCourseSummary): TeacherCourseSummary {
+    return normalizeCourseSummaryStatus(course);
 }
 
 export const adminApi = {
     async listCourses(query?: TeacherCourseQuery): Promise<TeacherCourseSummary[]> {
         if (env.useMockBff) return mockBff.listAdminCourses(query);
         const response = await request<unknown>("/admin/courses", { query });
-        return unwrapListResponse<TeacherCourseSummary>(response, "Список курсов администратора", ["items", "courses", "content", "data"]);
+        return unwrapListResponse<TeacherCourseSummary>(response, "Список курсов администратора", ["items", "courses", "content", "data"]).map(normalizeTeacherCourseSummary);
     },
 
     async listModerationQueue(query?: TeacherCourseQuery): Promise<TeacherCourseSummary[]> {
         if (env.useMockBff) return mockBff.listModerationQueue(query);
         const response = await request<unknown>("/admin/courses/moderation", { query });
-        return unwrapListResponse<TeacherCourseSummary>(response, "Очередь модерации", ["items", "courses", "content", "data"]);
+        return unwrapListResponse<TeacherCourseSummary>(response, "Очередь модерации", ["items", "courses", "content", "data"]).map(normalizeTeacherCourseSummary);
     },
 
     async getCourseReview(courseId: number): Promise<TeacherCourseDetails> {
