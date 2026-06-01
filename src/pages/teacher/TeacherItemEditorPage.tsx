@@ -89,7 +89,6 @@ function formFromItem(item: TeacherItemDetails): CourseItemUpsertRequest {
         orderIndex: item.orderIndex,
         language: item.language,
         starterCode: item.starterCode,
-        solutionCode: item.solutionCode,
         timeLimitMs: item.timeLimitMs,
         memoryLimitMb: item.memoryLimitMb,
         outputLimitKb: item.outputLimitKb,
@@ -110,7 +109,6 @@ function normalizeItemForm(input: CourseItemUpsertRequest): CourseItemUpsertRequ
         orderIndex: Number(input.orderIndex),
         language: executable ? input.language?.trim() || "" : null,
         starterCode: executable ? input.starterCode ?? "" : null,
-        solutionCode: executable ? input.solutionCode ?? null : null,
         timeLimitMs: executable ? Number(input.timeLimitMs ?? 2000) : null,
         memoryLimitMb: executable ? Number(input.memoryLimitMb ?? 256) : null,
         outputLimitKb: executable ? Number(input.outputLimitKb ?? 128) : null,
@@ -420,11 +418,10 @@ export default function TeacherItemEditorPage() {
                 </FormSectionCard>
 
                 {isExecutable ? (
-                    <FormSectionCard id="item-execution-section" title={isRu ? "Настройки проверки" : "Execution settings"} description={isRu ? "Настрой язык, ограничения выполнения и код для проверки решения." : "Configure language, execution limits and solution-checking code."}>
+                    <FormSectionCard id="item-execution-section" title={isRu ? "Настройки проверки" : "Execution settings"} description={isRu ? "Настрой язык, ограничения выполнения и стартовый код." : "Configure language, execution limits and starter code."}>
                         <Stack spacing={2}>
                             <TextField label={isRu ? "Язык" : "Language"} value={form.language ?? ""} onChange={(event) => updateForm("language", event.target.value)} required />
                             <TextField label={isRu ? "Стартовый код" : "Starter code"} multiline minRows={8} value={form.starterCode ?? ""} onChange={(event) => updateForm("starterCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />
-                            <TextField label={isRu ? "Эталонное решение" : "Solution code"} multiline minRows={8} value={form.solutionCode ?? ""} onChange={(event) => updateForm("solutionCode", event.target.value)} sx={{ "& textarea": { fontFamily: "monospace" } }} />
                             <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                                 <TextField label={isRu ? "Лимит времени, мс" : "Time limit, ms"} type="number" value={form.timeLimitMs ?? 2000} onChange={(event) => updateForm("timeLimitMs", Number(event.target.value))} fullWidth />
                                 <TextField label={isRu ? "Память, МБ" : "Memory, MB"} type="number" value={form.memoryLimitMb ?? 256} onChange={(event) => updateForm("memoryLimitMb", Number(event.target.value))} fullWidth />

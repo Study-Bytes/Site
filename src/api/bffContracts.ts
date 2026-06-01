@@ -373,7 +373,6 @@ export type TeacherItemDetails = {
     orderIndex: number;
     language: string | null;
     starterCode: string | null;
-    solutionCode: string | null;
     timeLimitMs: number | null;
     memoryLimitMb: number | null;
     outputLimitKb: number | null;
